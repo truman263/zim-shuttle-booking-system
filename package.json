@@ -1,0 +1,23 @@
+{
+  "name": "zim-shuttle-booking-system",
+  "version": "1.0.0",
+  "private": true,
+  "description": "A premium booking system for shuttle, car rental and transport businesses in Zimbabwe.",
+  "scripts": {
+    "dev": "pnpm --parallel --filter web --filter api dev",
+    "dev:web": "pnpm --filter web dev",
+    "dev:api": "pnpm --filter api start:dev",
+    "build": "pnpm --recursive build",
+    "lint": "pnpm --recursive lint"
+  },
+  "keywords": [
+    "shuttle",
+    "car-rental",
+    "booking-system",
+    "zimbabwe",
+    "transport"
+  ],
+  "author": "LadyBird Shuttle Services",
+  "license": "MIT",
+  "packageManager": "pnpm@11.1.3"
+}
