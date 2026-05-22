@@ -12,6 +12,7 @@ import { PaymentsModule } from './payments/payments.module';
 import { DashboardModule } from './dashboard/dashboard.module';
 import { ZonesModule } from './zones/zones.module';
 import { PricingRulesModule } from './pricing-rules/pricing-rules.module';
+import { PricingCalculatorModule } from './pricing-calculator/pricing-calculator.module';
 
 @Module({
   imports: [
@@ -26,6 +27,7 @@ import { PricingRulesModule } from './pricing-rules/pricing-rules.module';
     DashboardModule,
     ZonesModule,
     PricingRulesModule,
+    PricingCalculatorModule,
   ],
   controllers: [AppController],
   providers: [AppService],
