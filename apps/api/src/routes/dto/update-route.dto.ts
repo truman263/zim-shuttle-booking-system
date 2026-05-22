@@ -1,7 +1,6 @@
 import {
   IsBoolean,
   IsEnum,
-  IsNotEmpty,
   IsNumber,
   IsOptional,
   IsString,
@@ -14,26 +13,23 @@ import {
   RouteType,
 } from '@prisma/client';
 
-export class CreateRouteDto {
+export class UpdateRouteDto {
+  @IsOptional()
   @IsString()
-  @IsNotEmpty()
-  companyId: string;
+  name?: string;
 
+  @IsOptional()
   @IsString()
-  @IsNotEmpty()
-  name: string;
+  pickupCity?: string;
 
+  @IsOptional()
   @IsString()
-  @IsNotEmpty()
-  pickupCity: string;
+  destinationCity?: string;
 
-  @IsString()
-  @IsNotEmpty()
-  destinationCity: string;
-
+  @IsOptional()
   @IsNumber()
   @Min(0)
-  basePrice: number;
+  basePrice?: number;
 
   @IsOptional()
   @IsBoolean()

@@ -1,6 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateRouteDto } from './dto/create-route.dto';
+import { UpdateRouteDto } from './dto/update-route.dto';
 
 @Injectable()
 export class RoutesService {
@@ -23,6 +24,15 @@ export class RoutesService {
         destinationCity: createRouteDto.destinationCity,
         basePrice: createRouteDto.basePrice,
         isActive: createRouteDto.isActive ?? true,
+        routeType: createRouteDto.routeType,
+        pricingMode: createRouteDto.pricingMode,
+        priceUnit: createRouteDto.priceUnit,
+        distanceKm: createRouteDto.distanceKm,
+        estimatedDurationMinutes: createRouteDto.estimatedDurationMinutes,
+        roadCondition: createRouteDto.roadCondition,
+      },
+      include: {
+        company: true,
       },
     });
   }
@@ -38,9 +48,46 @@ export class RoutesService {
     });
   }
 
-  findOne(id: string) {
-    return this.prisma.route.findUnique({
+  async findOne(id: string) {
+    const route = await this.prisma.route.findUnique({
       where: { id },
+      include: {
+        company: true,
+        bookings: true,
+      },
+    });
+
+    if (!route) {
+      throw new NotFoundException('Route not found');
+    }
+
+    return route;
+  }
+
+  async update(id: string, updateRouteDto: UpdateRouteDto) {
+    const route = await this.prisma.route.findUnique({
+      where: { id },
+    });
+
+    if (!route) {
+      throw new NotFoundException('Route not found');
+    }
+
+    return this.prisma.route.update({
+      where: { id },
+      data: {
+        name: updateRouteDto.name,
+        pickupCity: updateRouteDto.pickupCity,
+        destinationCity: updateRouteDto.destinationCity,
+        basePrice: updateRouteDto.basePrice,
+        isActive: updateRouteDto.isActive,
+        routeType: updateRouteDto.routeType,
+        pricingMode: updateRouteDto.pricingMode,
+        priceUnit: updateRouteDto.priceUnit,
+        distanceKm: updateRouteDto.distanceKm,
+        estimatedDurationMinutes: updateRouteDto.estimatedDurationMinutes,
+        roadCondition: updateRouteDto.roadCondition,
+      },
       include: {
         company: true,
       },

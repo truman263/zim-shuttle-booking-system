@@ -10,6 +10,8 @@ import { CustomersModule } from './customers/customers.module';
 import { BookingsModule } from './bookings/bookings.module';
 import { PaymentsModule } from './payments/payments.module';
 import { DashboardModule } from './dashboard/dashboard.module';
+import { ZonesModule } from './zones/zones.module';
+import { PricingRulesModule } from './pricing-rules/pricing-rules.module';
 
 @Module({
   imports: [
@@ -22,6 +24,8 @@ import { DashboardModule } from './dashboard/dashboard.module';
     BookingsModule,
     PaymentsModule,
     DashboardModule,
+    ZonesModule,
+    PricingRulesModule,
   ],
   controllers: [AppController],
   providers: [AppService],
