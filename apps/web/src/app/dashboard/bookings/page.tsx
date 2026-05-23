@@ -1,6 +1,6 @@
 'use client';
 
-import { FormEvent, useEffect, useMemo, useState } from 'react';
+import { FormEvent, ReactNode, useEffect, useMemo, useState } from 'react';
 import { apiGet, apiPatch, apiPost } from '@/lib/api';
 
 const COMPANY_ID = 'cmpfkzypy0000l4ew82k92cl1';
@@ -13,6 +13,8 @@ type BookingMode =
   | 'HOURLY_HIRE'
   | 'DAILY_HIRE'
   | 'CUSTOM_QUOTE';
+
+type TripDirection = 'ONE_WAY' | 'ROUND_TRIP';
 
 type Customer = {
   id: string;
@@ -65,34 +67,49 @@ type Booking = {
   id: string;
   bookingRef: string;
   tripType: string;
+  tripDirection?: TripDirection;
   customTripType?: string | null;
+
   pickupLocation: string;
   destination: string;
   pickupDate: string;
   dropoffDate?: string | null;
+
+  returnDate?: string | null;
+  returnPickupLocation?: string | null;
+  returnDestination?: string | null;
+  returnNotes?: string | null;
+
   durationHours?: string | number | null;
   durationDays?: string | number | null;
   passengers: number;
+
   estimatedPrice?: string | number | null;
   finalPrice: string | number | null;
   depositAmount?: string | number | null;
+
   luggageDetails?: string | null;
   specialNotes?: string | null;
+
   status: string;
   paymentStatus: string;
+
   customer?: {
     id: string;
     fullName: string;
     phone: string;
   };
+
   route?: {
     id: string;
     name: string;
   } | null;
+
   driver?: {
     id: string;
     fullName: string;
   } | null;
+
   vehicle?: {
     id: string;
     name: string;
@@ -126,12 +143,19 @@ type BookingForm = {
   vehicleId: string;
 
   tripType: string;
+  tripDirection: TripDirection;
   customTripType: string;
 
   pickupLocation: string;
   destination: string;
   pickupDate: string;
   dropoffDate: string;
+
+  returnDate: string;
+  returnPickupLocation: string;
+  returnDestination: string;
+  returnNotes: string;
+
   passengers: string;
 
   distanceKm: string;
@@ -140,6 +164,7 @@ type BookingForm = {
 
   hourlyRate: string;
   dailyRate: string;
+  roundTripDiscountPercentage: string;
 
   luggageDetails: string;
   specialNotes: string;
@@ -163,12 +188,19 @@ const initialForm: BookingForm = {
   vehicleId: '',
 
   tripType: 'CITY_TO_CITY',
+  tripDirection: 'ONE_WAY',
   customTripType: '',
 
   pickupLocation: '',
   destination: '',
   pickupDate: '',
   dropoffDate: '',
+
+  returnDate: '',
+  returnPickupLocation: '',
+  returnDestination: '',
+  returnNotes: '',
+
   passengers: '1',
 
   distanceKm: '',
@@ -177,6 +209,7 @@ const initialForm: BookingForm = {
 
   hourlyRate: '',
   dailyRate: '',
+  roundTripDiscountPercentage: '0',
 
   luggageDetails: '',
   specialNotes: '',
@@ -289,6 +322,8 @@ export default function BookingsPage() {
   const usesHourly = form.bookingMode === 'HOURLY_HIRE';
   const usesDaily = form.bookingMode === 'DAILY_HIRE';
   const usesManualQuote = form.bookingMode === 'CUSTOM_QUOTE';
+  const usesRoundTrip = form.tripDirection === 'ROUND_TRIP';
+  const supportsTripDirection = !usesHourly && !usesDaily;
   const needsDropoff = usesHourly || usesDaily || usesManualQuote;
 
   const duration = useMemo(() => {
@@ -365,6 +400,7 @@ export default function BookingsPage() {
       'distanceKm',
       'hourlyRate',
       'dailyRate',
+      'roundTripDiscountPercentage',
     ];
 
     const nextValue = decimalFields.includes(field)
@@ -387,7 +423,9 @@ export default function BookingsPage() {
       field === 'pickupDate' ||
       field === 'dropoffDate' ||
       field === 'hourlyRate' ||
-      field === 'dailyRate'
+      field === 'dailyRate' ||
+      field === 'tripDirection' ||
+      field === 'roundTripDiscountPercentage'
     ) {
       setCalculation(null);
     }
@@ -410,6 +448,8 @@ export default function BookingsPage() {
           ? 'CUSTOM'
           : form.tripType;
 
+    const shouldUseOneWay = mode === 'HOURLY_HIRE' || mode === 'DAILY_HIRE';
+
     setForm((currentForm) => ({
       ...currentForm,
       bookingMode: mode,
@@ -418,6 +458,13 @@ export default function BookingsPage() {
       hourlyRate: mode === 'HOURLY_HIRE' ? currentForm.hourlyRate : '',
       dailyRate: mode === 'DAILY_HIRE' ? currentForm.dailyRate : '',
       tripType: nextTripType,
+      tripDirection: shouldUseOneWay ? 'ONE_WAY' : currentForm.tripDirection,
+      returnDate: shouldUseOneWay ? '' : currentForm.returnDate,
+      returnPickupLocation: shouldUseOneWay
+        ? ''
+        : currentForm.returnPickupLocation,
+      returnDestination: shouldUseOneWay ? '' : currentForm.returnDestination,
+      returnNotes: shouldUseOneWay ? '' : currentForm.returnNotes,
       pickupLocation: mode === 'SAVED_ROUTE' ? currentForm.pickupLocation : '',
       destination: mode === 'SAVED_ROUTE' ? currentForm.destination : '',
       estimatedPrice: '',
@@ -426,6 +473,36 @@ export default function BookingsPage() {
 
     setCalculation(null);
     setShowBreakdown(false);
+  }
+
+  function setTripDirection(direction: TripDirection) {
+    setForm((currentForm) => {
+      if (direction === 'ONE_WAY') {
+        return {
+          ...currentForm,
+          tripDirection: direction,
+          returnDate: '',
+          returnPickupLocation: '',
+          returnDestination: '',
+          returnNotes: '',
+          estimatedPrice: '',
+          finalPrice: '',
+        };
+      }
+
+      return {
+        ...currentForm,
+        tripDirection: direction,
+        returnPickupLocation:
+          currentForm.returnPickupLocation || currentForm.destination,
+        returnDestination:
+          currentForm.returnDestination || currentForm.pickupLocation,
+        estimatedPrice: '',
+        finalPrice: '',
+      };
+    });
+
+    setCalculation(null);
   }
 
   function mapRouteTypeToTripType(routeType?: string) {
@@ -451,6 +528,8 @@ export default function BookingsPage() {
         routeId: '',
         pickupLocation: '',
         destination: '',
+        returnPickupLocation: '',
+        returnDestination: '',
         distanceKm: '',
         roadCondition: '',
         estimatedPrice: '',
@@ -467,6 +546,14 @@ export default function BookingsPage() {
       bookingMode: 'SAVED_ROUTE',
       pickupLocation: route.pickupCity,
       destination: route.destinationCity,
+      returnPickupLocation:
+        currentForm.tripDirection === 'ROUND_TRIP'
+          ? route.destinationCity
+          : currentForm.returnPickupLocation,
+      returnDestination:
+        currentForm.tripDirection === 'ROUND_TRIP'
+          ? route.pickupCity
+          : currentForm.returnDestination,
       tripType: mapRouteTypeToTripType(route.routeType),
       roadCondition: route.roadCondition || '',
       distanceKm: '',
@@ -513,7 +600,9 @@ export default function BookingsPage() {
       booking.status === 'CANCELLED' ||
       booking.status === 'NO_SHOW'
     ) {
-      setErrorMessage('Completed, cancelled or no-show bookings cannot be edited.');
+      setErrorMessage(
+        'Completed, cancelled or no-show bookings cannot be edited.',
+      );
       return;
     }
 
@@ -535,12 +624,19 @@ export default function BookingsPage() {
       vehicleId: booking.vehicle?.id ?? '',
 
       tripType: booking.tripType,
+      tripDirection: booking.tripDirection ?? 'ONE_WAY',
       customTripType: booking.customTripType ?? '',
 
       pickupLocation: booking.pickupLocation ?? '',
       destination: booking.destination ?? '',
       pickupDate: formatDateForInput(booking.pickupDate),
       dropoffDate: formatDateForInput(booking.dropoffDate),
+
+      returnDate: formatDateForInput(booking.returnDate),
+      returnPickupLocation: booking.returnPickupLocation ?? '',
+      returnDestination: booking.returnDestination ?? '',
+      returnNotes: booking.returnNotes ?? '',
+
       passengers: String(booking.passengers ?? 1),
 
       luggageDetails: booking.luggageDetails ?? '',
@@ -605,6 +701,41 @@ export default function BookingsPage() {
       }
     }
 
+    if (usesRoundTrip) {
+      const returnDate = new Date(form.returnDate);
+      const pickupDate = new Date(form.pickupDate);
+      const roundTripDiscount = parseMoney(form.roundTripDiscountPercentage);
+
+      if (!form.returnDate || Number.isNaN(returnDate.getTime())) {
+        setErrorMessage('Return date and time are required for round trip.');
+        return;
+      }
+
+      if (!Number.isNaN(pickupDate.getTime()) && returnDate <= pickupDate) {
+        setErrorMessage('Return date must be after pickup date.');
+        return;
+      }
+
+      if (!form.returnPickupLocation.trim()) {
+        setErrorMessage('Return pickup location is required for round trip.');
+        return;
+      }
+
+      if (!form.returnDestination.trim()) {
+        setErrorMessage('Return destination is required for round trip.');
+        return;
+      }
+
+      if (
+        !Number.isFinite(roundTripDiscount) ||
+        roundTripDiscount < 0 ||
+        roundTripDiscount > 100
+      ) {
+        setErrorMessage('Round trip discount must be between 0 and 100.');
+        return;
+      }
+    }
+
     if (usesHourly) {
       const hourlyRate = parseMoney(form.hourlyRate);
 
@@ -663,6 +794,10 @@ export default function BookingsPage() {
           companyId: COMPANY_ID,
           routeId: usesRoute ? form.routeId : undefined,
           pricingMode,
+          tripDirection: form.tripDirection,
+          roundTripDiscountPercentage: usesRoundTrip
+            ? parseMoney(form.roundTripDiscountPercentage)
+            : 0,
           distanceKm: usesCustomDistance ? Number(form.distanceKm) : undefined,
           durationHours: usesHourly ? duration.hours : undefined,
           durationDays: usesDaily ? duration.days : undefined,
@@ -792,6 +927,37 @@ export default function BookingsPage() {
       return;
     }
 
+    let returnDate: Date | null = null;
+
+    if (usesRoundTrip) {
+      if (!form.returnDate) {
+        setErrorMessage('Return date and time are required for round trip.');
+        return;
+      }
+
+      returnDate = new Date(form.returnDate);
+
+      if (Number.isNaN(returnDate.getTime())) {
+        setErrorMessage('Return date and time are invalid.');
+        return;
+      }
+
+      if (returnDate <= pickupDate) {
+        setErrorMessage('Return date must be after pickup date.');
+        return;
+      }
+
+      if (!form.returnPickupLocation.trim()) {
+        setErrorMessage('Return pickup location is required for round trip.');
+        return;
+      }
+
+      if (!form.returnDestination.trim()) {
+        setErrorMessage('Return destination is required for round trip.');
+        return;
+      }
+    }
+
     const passengers = Number(form.passengers);
 
     if (!Number.isInteger(passengers) || passengers < 1) {
@@ -849,6 +1015,7 @@ export default function BookingsPage() {
         driverId: form.driverId || (editingBookingId ? null : undefined),
         vehicleId: form.vehicleId || (editingBookingId ? null : undefined),
         tripType: form.tripType,
+        tripDirection: form.tripDirection,
         customTripType:
           form.tripType === 'CUSTOM' ? form.customTripType.trim() : undefined,
         pickupLocation: form.pickupLocation.trim(),
@@ -859,6 +1026,28 @@ export default function BookingsPage() {
           : editingBookingId
             ? null
             : undefined,
+
+        returnDate: usesRoundTrip
+          ? returnDate?.toISOString()
+          : editingBookingId
+            ? null
+            : undefined,
+        returnPickupLocation: usesRoundTrip
+          ? form.returnPickupLocation.trim()
+          : editingBookingId
+            ? null
+            : undefined,
+        returnDestination: usesRoundTrip
+          ? form.returnDestination.trim()
+          : editingBookingId
+            ? null
+            : undefined,
+        returnNotes: usesRoundTrip
+          ? form.returnNotes.trim() || undefined
+          : editingBookingId
+            ? null
+            : undefined,
+
         passengers,
         luggageDetails: form.luggageDetails.trim() || undefined,
         specialNotes: form.specialNotes.trim() || undefined,
@@ -923,8 +1112,8 @@ export default function BookingsPage() {
             Bookings Management
           </h1>
           <p className="mt-3 max-w-2xl text-sm leading-6 text-neutral-400">
-            Create premium bookings for saved routes, custom transfers, hourly
-            hire, daily rental and manual quotes.
+            Create premium bookings for saved routes, custom transfers, one-way
+            trips, round trips, hourly hire, daily rental and manual quotes.
           </p>
         </div>
 
@@ -962,11 +1151,7 @@ export default function BookingsPage() {
           className="mb-8 overflow-hidden rounded-3xl border border-white/10 bg-[#050505]"
         >
           <PanelHeader
-            eyebrow={
-              editingBookingId
-                ? 'Premium Booking Workflow'
-                : 'Premium Booking Workflow'
-            }
+            eyebrow="Premium Booking Workflow"
             title={editingBookingId ? 'Edit Booking' : 'Create Booking'}
             subtitle={
               editingBookingId
@@ -1078,13 +1263,13 @@ export default function BookingsPage() {
               <SectionTitle
                 number="02"
                 title="Trip Setup"
-                subtitle="Choose the booking mode. The form only shows the fields needed for that mode."
+                subtitle="Choose the booking mode, trip direction and travel schedule."
               />
 
               <div className="mt-4 grid gap-3 md:grid-cols-3 xl:grid-cols-5">
                 {[
                   ['SAVED_ROUTE', 'Saved Route'],
-                  ['CUSTOM_TRIP', 'Custom Trip'],
+                  ['CUSTOM_TRIP', 'Distance-Based Trip'],
                   ['HOURLY_HIRE', 'Hourly Hire'],
                   ['DAILY_HIRE', 'Daily Hire'],
                   ['CUSTOM_QUOTE', 'Custom Quote'],
@@ -1100,6 +1285,40 @@ export default function BookingsPage() {
                 ))}
               </div>
 
+              {supportsTripDirection && (
+                <div className="mt-5 rounded-3xl border border-white/10 bg-white/[0.03] p-4">
+                  <p className="text-sm font-semibold text-white">
+                    Trip Direction
+                  </p>
+                  <p className="mt-1 text-xs text-neutral-500">
+                    Choose whether the customer is travelling one way or also
+                    needs a return journey.
+                  </p>
+
+                  <div className="mt-4 grid gap-3 md:grid-cols-2">
+                    <button
+                      type="button"
+                      onClick={() => setTripDirection('ONE_WAY')}
+                      className={modeButtonClass(
+                        form.tripDirection === 'ONE_WAY',
+                      )}
+                    >
+                      One-way Trip
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => setTripDirection('ROUND_TRIP')}
+                      className={modeButtonClass(
+                        form.tripDirection === 'ROUND_TRIP',
+                      )}
+                    >
+                      Round Trip
+                    </button>
+                  </div>
+                </div>
+              )}
+
               <div className="mt-4 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
                 {usesRoute && (
                   <FormField label="Route" required>
@@ -1112,7 +1331,10 @@ export default function BookingsPage() {
                     >
                       <option value="">Select saved route</option>
                       {routes
-                        .filter((route) => route.isActive)
+                        .filter(
+                          (route) =>
+                            route.isActive || route.id === selectedRoute?.id,
+                        )
                         .map((route) => (
                           <option key={route.id} value={route.id}>
                             {route.name} - ${String(route.basePrice)}
@@ -1200,6 +1422,83 @@ export default function BookingsPage() {
                 </FormField>
               </div>
 
+              {usesRoundTrip && (
+                <div className="mt-5 rounded-3xl border border-[#C8A96A]/20 bg-[#C8A96A]/10 p-5">
+                  <p className="text-sm font-semibold text-[#C8A96A]">
+                    Return Journey Details
+                  </p>
+                  <p className="mt-1 text-xs text-neutral-400">
+                    These details are required for round-trip bookings.
+                  </p>
+
+                  <div className="mt-4 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+                    <FormField label="Return Date & Time" required>
+                      <input
+                        value={form.returnDate}
+                        onChange={(event) =>
+                          updateForm('returnDate', event.target.value)
+                        }
+                        type="datetime-local"
+                        className="input-field"
+                      />
+                    </FormField>
+
+                    <FormField label="Return Pickup Location" required>
+                      <input
+                        value={form.returnPickupLocation}
+                        onChange={(event) =>
+                          updateForm(
+                            'returnPickupLocation',
+                            event.target.value,
+                          )
+                        }
+                        placeholder="Example: Masvingo"
+                        className="input-field"
+                      />
+                    </FormField>
+
+                    <FormField label="Return Destination" required>
+                      <input
+                        value={form.returnDestination}
+                        onChange={(event) =>
+                          updateForm('returnDestination', event.target.value)
+                        }
+                        placeholder="Example: Harare"
+                        className="input-field"
+                      />
+                    </FormField>
+
+                    <FormField label="Round Trip Discount %">
+                      <input
+                        value={form.roundTripDiscountPercentage}
+                        onChange={(event) =>
+                          updateForm(
+                            'roundTripDiscountPercentage',
+                            event.target.value,
+                          )
+                        }
+                        inputMode="decimal"
+                        placeholder="Example: 10"
+                        className="input-field"
+                      />
+                    </FormField>
+                  </div>
+
+                  <div className="mt-4">
+                    <FormField label="Return Notes">
+                      <input
+                        value={form.returnNotes}
+                        onChange={(event) =>
+                          updateForm('returnNotes', event.target.value)
+                        }
+                        placeholder="Example: Customer returning after three days"
+                        className="input-field"
+                      />
+                    </FormField>
+                  </div>
+                </div>
+              )}
+
               {selectedRoute && usesRoute && (
                 <div className="mt-4 rounded-2xl border border-[#C8A96A]/20 bg-[#C8A96A]/10 p-4 text-sm">
                   <div className="flex flex-col justify-between gap-3 md:flex-row md:items-center">
@@ -1274,7 +1573,7 @@ export default function BookingsPage() {
                     }
                     placeholder={
                       usesRoute
-                        ? 'Example: Terminal 2, Harare Airport'
+                        ? 'Example: Mbare Musika / Exact pickup point'
                         : 'Enter pickup location'
                     }
                     className="input-field"
@@ -1292,7 +1591,7 @@ export default function BookingsPage() {
                     }
                     placeholder={
                       usesRoute
-                        ? 'Example: Hotel entrance, Harare CBD'
+                        ? 'Example: Masvingo CBD / Exact drop-off point'
                         : 'Enter destination'
                     }
                     className="input-field"
@@ -1402,13 +1701,13 @@ export default function BookingsPage() {
                   </select>
                 </FormField>
 
-                <FormField label="Pricing Zone">
+                <FormField label="Special Pricing Area">
                   <select
                     value={form.pricingZone}
                     onChange={(event) => applyZone(event.target.value)}
                     className="input-field"
                   >
-                    <option value="">No pricing zone</option>
+                    <option value="">No special pricing area</option>
                     {zones
                       .filter((zone) => zone.isActive)
                       .map((zone) => (
@@ -1422,8 +1721,8 @@ export default function BookingsPage() {
 
               {selectedZone?.roadCondition && (
                 <div className="mt-4 rounded-2xl border border-[#C8A96A]/20 bg-[#C8A96A]/10 p-4 text-sm text-[#C8A96A]">
-                  Pricing zone selected: {selectedZone.name}. Road condition has
-                  been aligned to {selectedZone.roadCondition}.
+                  Special pricing area selected: {selectedZone.name}. Road
+                  condition has been aligned to {selectedZone.roadCondition}.
                 </div>
               )}
 
@@ -1469,8 +1768,9 @@ export default function BookingsPage() {
                       Estimated Fare
                     </h3>
                     <p className="mt-1 text-sm text-neutral-500">
-                      Uses route pricing, distance rules, hourly/daily rates,
-                      vehicle type, road condition and pricing zone.
+                      Uses route pricing, distance rules, one-way/round-trip
+                      selection, hourly/daily rates, vehicle type, road condition
+                      and special pricing areas.
                     </p>
                   </div>
 
@@ -1544,7 +1844,7 @@ export default function BookingsPage() {
                       updateForm('estimatedPrice', event.target.value)
                     }
                     inputMode="decimal"
-                    placeholder="0.00"
+                    placeholder="Auto-filled after calculation"
                     className="input-field"
                   />
                 </FormField>
@@ -1556,7 +1856,7 @@ export default function BookingsPage() {
                       updateForm('finalPrice', event.target.value)
                     }
                     inputMode="decimal"
-                    placeholder="0.00"
+                    placeholder="Final price"
                     className="input-field"
                   />
                 </FormField>
@@ -1568,7 +1868,7 @@ export default function BookingsPage() {
                       updateForm('depositAmount', event.target.value)
                     }
                     inputMode="decimal"
-                    placeholder="0.00"
+                    placeholder="Deposit paid"
                     className="input-field"
                   />
                 </FormField>
@@ -1708,11 +2008,16 @@ function SectionTitle({
 }) {
   return (
     <div className="border-t border-white/10 pt-6 first:border-t-0 first:pt-0">
-      <p className="text-xs uppercase tracking-[0.3em] text-[#C8A96A]">
-        {number}
-      </p>
-      <h3 className="mt-2 text-lg font-semibold text-white">{title}</h3>
-      <p className="mt-1 text-sm text-neutral-500">{subtitle}</p>
+      <div className="flex items-start gap-3">
+        <span className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-[#C8A96A]/30 bg-[#C8A96A]/10 text-[11px] font-bold text-[#C8A96A]">
+          {number}
+        </span>
+
+        <div>
+          <h3 className="text-lg font-semibold text-white">{title}</h3>
+          <p className="mt-1 text-sm text-neutral-500">{subtitle}</p>
+        </div>
+      </div>
     </div>
   );
 }
@@ -1723,7 +2028,7 @@ function FormField({
   required,
 }: {
   label: string;
-  children: React.ReactNode;
+  children: ReactNode;
   required?: boolean;
 }) {
   return (
@@ -1797,7 +2102,7 @@ function BookingsTable({
 }) {
   return (
     <div className="overflow-hidden rounded-3xl border border-white/10 bg-white/[0.04]">
-      <div className="flex items-center justify-between border-b border-white/10 px-6 py-5">
+      <div className="flex flex-col justify-between gap-4 border-b border-white/10 px-6 py-5 md:flex-row md:items-center">
         <div>
           <h2 className="text-lg font-semibold">All Bookings</h2>
           <p className="mt-1 text-sm text-neutral-500">
@@ -1815,17 +2120,14 @@ function BookingsTable({
       </div>
 
       <div className="overflow-x-auto">
-        <table className="w-full min-w-[1220px] table-fixed border-collapse text-left text-[11px]">
+        <table className="w-full min-w-[1120px] table-fixed border-collapse text-left text-[12px]">
           <thead className="border-b border-white/10 bg-white/[0.03] text-neutral-400">
             <tr>
-              <th className="w-[9%] px-3 py-4 font-medium">Booking</th>
-              <th className="w-[10%] px-3 py-4 font-medium">Customer</th>
-              <th className="w-[12%] px-3 py-4 font-medium">Trip</th>
-              <th className="w-[10%] px-3 py-4 font-medium">Pickup</th>
-              <th className="w-[10%] px-3 py-4 font-medium">Drop-off</th>
-              <th className="w-[8%] px-3 py-4 font-medium">Driver</th>
-              <th className="w-[10%] px-3 py-4 font-medium">Vehicle</th>
-              <th className="w-[4%] px-2 py-4 text-center font-medium">
+              <th className="w-[14%] px-4 py-4 font-medium">Customer</th>
+              <th className="w-[21%] px-4 py-4 font-medium">Trip</th>
+              <th className="w-[18%] px-4 py-4 font-medium">Schedule</th>
+              <th className="w-[17%] px-4 py-4 font-medium">Assignment</th>
+              <th className="w-[5%] px-2 py-4 text-center font-medium">
                 Pax
               </th>
               <th className="w-[8%] px-2 py-4 text-center font-medium">
@@ -1837,7 +2139,9 @@ function BookingsTable({
               <th className="w-[6%] px-2 py-4 text-right font-medium">
                 Amount
               </th>
-              <th className="w-[12%] px-3 py-4 font-medium">Actions</th>
+              <th className="w-[11%] px-4 py-4 text-right font-medium">
+                Actions
+              </th>
             </tr>
           </thead>
 
@@ -1845,99 +2149,110 @@ function BookingsTable({
             {bookings.map((booking) => {
               const isFinalStatus =
                 booking.status === 'COMPLETED' ||
-                booking.status === 'CANCELLED';
+                booking.status === 'CANCELLED' ||
+                booking.status === 'NO_SHOW';
+
+              const isRoundTrip = booking.tripDirection === 'ROUND_TRIP';
 
               return (
                 <tr
                   key={booking.id}
                   className="border-b border-white/5 align-top transition hover:bg-white/[0.03]"
                 >
-                  <td className="px-3 py-4">
-                    <p className="break-words font-semibold leading-5 text-white">
-                      {booking.bookingRef}
-                    </p>
-                    <p className="mt-1 leading-5 text-neutral-500">
-                      {booking.customTripType ||
-                        booking.tripType.replaceAll('_', ' ')}
-                    </p>
-                  </td>
-
-                  <td className="px-3 py-4">
+                  <td className="px-4 py-5">
                     <p className="font-semibold leading-5 text-white">
-                      {booking.customer?.fullName ?? 'Unknown'}
+                      {booking.customer?.fullName ?? 'Unknown Customer'}
                     </p>
                     <p className="mt-1 leading-5 text-neutral-500">
                       {booking.customer?.phone ?? 'No phone'}
                     </p>
+                    <p className="mt-2 break-words text-[11px] font-semibold leading-4 text-[#C8A96A]">
+                      {booking.bookingRef}
+                    </p>
                   </td>
 
-                  <td className="px-3 py-4">
+                  <td className="px-4 py-5">
                     <p className="font-semibold leading-5 text-white">
                       {booking.route?.name ?? 'Custom trip'}
                     </p>
-                    <p className="mt-1 leading-5 text-neutral-500">
+
+                    <div className="mt-2 flex flex-wrap gap-2">
+                      <MiniBadge
+                        label={isRoundTrip ? 'Round trip' : 'One-way'}
+                        tone={isRoundTrip ? 'gold' : 'neutral'}
+                      />
+
+                      <MiniBadge
+                        label={
+                          booking.customTripType ||
+                          booking.tripType.replaceAll('_', ' ')
+                        }
+                        tone="neutral"
+                      />
+                    </div>
+
+                    <p className="mt-3 leading-5 text-neutral-500">
                       {booking.pickupLocation} → {booking.destination}
                     </p>
                   </td>
 
-                  <td className="px-3 py-4 leading-5 text-neutral-300">
-                    {new Date(booking.pickupDate).toLocaleString()}
+                  <td className="px-4 py-5">
+                    <ScheduleBlock booking={booking} />
                   </td>
 
-                  <td className="px-3 py-4 leading-5 text-neutral-300">
-                    {booking.dropoffDate
-                      ? new Date(booking.dropoffDate).toLocaleString()
-                      : 'Not set'}
-
-                    {booking.durationDays && (
-                      <p className="mt-1 text-neutral-500">
-                        {booking.durationDays} day(s)
+                  <td className="px-4 py-5">
+                    <div>
+                      <p className="text-[11px] uppercase tracking-[0.18em] text-neutral-600">
+                        Driver
                       </p>
-                    )}
+                      <p className="mt-1 font-semibold leading-5 text-white">
+                        {booking.driver?.fullName ?? 'Not assigned'}
+                      </p>
+                    </div>
+
+                    <div className="mt-4">
+                      <p className="text-[11px] uppercase tracking-[0.18em] text-neutral-600">
+                        Vehicle
+                      </p>
+
+                      {booking.vehicle ? (
+                        <>
+                          <p className="mt-1 font-semibold leading-5 text-white">
+                            {booking.vehicle.name}
+                          </p>
+                          <p className="mt-1 leading-5 text-neutral-500">
+                            {booking.vehicle.registrationNo}
+                          </p>
+                        </>
+                      ) : (
+                        <p className="mt-1 text-neutral-400">Not assigned</p>
+                      )}
+                    </div>
                   </td>
 
-                  <td className="px-3 py-4 font-semibold leading-5 text-white">
-                    {booking.driver?.fullName ?? 'Not assigned'}
-                  </td>
-
-                  <td className="px-3 py-4">
-                    {booking.vehicle ? (
-                      <>
-                        <p className="font-semibold leading-5 text-white">
-                          {booking.vehicle.name}
-                        </p>
-                        <p className="mt-1 leading-5 text-neutral-500">
-                          {booking.vehicle.registrationNo}
-                        </p>
-                      </>
-                    ) : (
-                      <span className="text-neutral-400">Not assigned</span>
-                    )}
-                  </td>
-
-                  <td className="px-2 py-4 text-center font-semibold text-white">
+                  <td className="px-2 py-5 text-center font-semibold text-white">
                     {booking.passengers}
                   </td>
 
-                  <td className="px-2 py-4 text-center">
+                  <td className="px-2 py-5 text-center">
                     <StatusBadge status={booking.status} />
                   </td>
 
-                  <td className="px-2 py-4 text-center">
+                  <td className="px-2 py-5 text-center">
                     <PaymentBadge status={booking.paymentStatus} />
                   </td>
 
-                  <td className="px-2 py-4 text-right font-semibold text-[#C8A96A]">
+                  <td className="px-2 py-5 text-right font-semibold text-[#C8A96A]">
                     ${booking.finalPrice ?? 0}
                   </td>
 
-                  <td className="px-3 py-4">
-                    <div className="flex flex-col gap-2">
+                  <td className="px-4 py-5">
+                    <div className="flex flex-col items-end gap-2">
                       <button
                         type="button"
                         disabled={isFinalStatus}
                         onClick={() => onEdit(booking)}
-                        className="rounded-full border border-[#C8A96A]/30 bg-[#C8A96A]/10 px-2.5 py-1.5 text-[11px] font-medium text-[#C8A96A] transition hover:bg-[#C8A96A]/20 disabled:cursor-not-allowed disabled:opacity-40"
+                        className="w-[96px] rounded-full border border-[#C8A96A]/30 bg-[#C8A96A]/10 px-3 py-1.5 text-[11px] font-medium text-[#C8A96A] transition hover:bg-[#C8A96A]/20 disabled:cursor-not-allowed disabled:opacity-40"
                       >
                         Edit
                       </button>
@@ -1948,7 +2263,7 @@ function BookingsTable({
                           actionLoadingId === booking.id || isFinalStatus
                         }
                         onClick={() => onStatusChange(booking.id, 'COMPLETED')}
-                        className="rounded-full border border-green-500/30 bg-green-500/10 px-2.5 py-1.5 text-[11px] font-medium text-green-300 transition hover:bg-green-500/20 disabled:cursor-not-allowed disabled:opacity-40"
+                        className="w-[96px] rounded-full border border-green-500/30 bg-green-500/10 px-3 py-1.5 text-[11px] font-medium text-green-300 transition hover:bg-green-500/20 disabled:cursor-not-allowed disabled:opacity-40"
                       >
                         {actionLoadingId === booking.id
                           ? 'Working'
@@ -1961,7 +2276,7 @@ function BookingsTable({
                           actionLoadingId === booking.id || isFinalStatus
                         }
                         onClick={() => onStatusChange(booking.id, 'CANCELLED')}
-                        className="rounded-full border border-red-500/30 bg-red-500/10 px-2.5 py-1.5 text-[11px] font-medium text-red-300 transition hover:bg-red-500/20 disabled:cursor-not-allowed disabled:opacity-40"
+                        className="w-[96px] rounded-full border border-red-500/30 bg-red-500/10 px-3 py-1.5 text-[11px] font-medium text-red-300 transition hover:bg-red-500/20 disabled:cursor-not-allowed disabled:opacity-40"
                       >
                         Cancel
                       </button>
@@ -1980,6 +2295,78 @@ function BookingsTable({
         </div>
       )}
     </div>
+  );
+}
+
+function ScheduleBlock({ booking }: { booking: Booking }) {
+  const isRoundTrip = booking.tripDirection === 'ROUND_TRIP';
+
+  return (
+    <div className="space-y-3">
+      <div>
+        <p className="text-[11px] uppercase tracking-[0.18em] text-neutral-600">
+          Pickup
+        </p>
+        <p className="mt-1 font-semibold leading-5 text-white">
+          {new Date(booking.pickupDate).toLocaleString()}
+        </p>
+      </div>
+
+      {isRoundTrip ? (
+        <div>
+          <p className="text-[11px] uppercase tracking-[0.18em] text-neutral-600">
+            Return
+          </p>
+          <p className="mt-1 font-semibold leading-5 text-white">
+            {booking.returnDate
+              ? new Date(booking.returnDate).toLocaleString()
+              : 'Return not set'}
+          </p>
+          <p className="mt-1 leading-5 text-neutral-500">
+            {booking.returnPickupLocation || 'Return pickup'} →{' '}
+            {booking.returnDestination || 'Return destination'}
+          </p>
+        </div>
+      ) : (
+        <div>
+          <p className="text-[11px] uppercase tracking-[0.18em] text-neutral-600">
+            Drop-off
+          </p>
+          <p className="mt-1 leading-5 text-neutral-500">
+            {booking.dropoffDate
+              ? new Date(booking.dropoffDate).toLocaleString()
+              : 'Not set'}
+          </p>
+
+          {booking.durationDays && (
+            <p className="mt-1 leading-5 text-neutral-500">
+              {booking.durationDays} day(s)
+            </p>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function MiniBadge({
+  label,
+  tone,
+}: {
+  label: string;
+  tone: 'gold' | 'neutral';
+}) {
+  const classes =
+    tone === 'gold'
+      ? 'border-[#C8A96A]/30 bg-[#C8A96A]/10 text-[#C8A96A]'
+      : 'border-white/10 bg-white/[0.04] text-neutral-400';
+
+  return (
+    <span
+      className={`inline-flex max-w-full items-center justify-center rounded-full border px-2.5 py-1 text-[10px] font-semibold uppercase leading-none tracking-wide ${classes}`}
+    >
+      {label}
+    </span>
   );
 }
 
@@ -2005,7 +2392,7 @@ function StatusBadge({ status }: { status: string }) {
   return (
     <span
       title={status.replaceAll('_', ' ')}
-      className={`mx-auto inline-flex h-6 min-w-[72px] items-center justify-center rounded-full border px-2 text-center text-[10px] font-bold uppercase leading-none tracking-wide ${
+      className={`mx-auto inline-flex h-6 min-w-[76px] items-center justify-center rounded-full border px-2 text-center text-[10px] font-bold uppercase leading-none tracking-wide ${
         styles[status] ?? 'border-white/10 bg-white/5 text-neutral-300'
       }`}
     >
@@ -2030,7 +2417,7 @@ function PaymentBadge({ status }: { status: string }) {
   return (
     <span
       title={status.replaceAll('_', ' ')}
-      className={`mx-auto inline-flex h-6 min-w-[68px] items-center justify-center rounded-full border px-2 text-center text-[10px] font-bold uppercase leading-none tracking-wide ${
+      className={`mx-auto inline-flex h-6 min-w-[70px] items-center justify-center rounded-full border px-2 text-center text-[10px] font-bold uppercase leading-none tracking-wide ${
         styles[status] ?? 'border-white/10 bg-white/5 text-neutral-300'
       }`}
     >
