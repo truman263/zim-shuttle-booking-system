@@ -1,4 +1,4 @@
-import { TripType } from '@prisma/client';
+import { TripDirection, TripType } from '@prisma/client';
 import {
   IsDateString,
   IsEnum,
@@ -35,6 +35,10 @@ export class CreateBookingDto {
   tripType: TripType;
 
   @IsOptional()
+  @IsEnum(TripDirection)
+  tripDirection?: TripDirection;
+
+  @IsOptional()
   @IsString()
   customTripType?: string;
 
@@ -52,6 +56,22 @@ export class CreateBookingDto {
   @IsOptional()
   @IsDateString()
   dropoffDate?: string;
+
+  @IsOptional()
+  @IsDateString()
+  returnDate?: string;
+
+  @IsOptional()
+  @IsString()
+  returnPickupLocation?: string;
+
+  @IsOptional()
+  @IsString()
+  returnDestination?: string;
+
+  @IsOptional()
+  @IsString()
+  returnNotes?: string;
 
   @IsOptional()
   @IsNumber()

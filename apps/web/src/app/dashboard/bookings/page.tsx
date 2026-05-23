@@ -73,20 +73,28 @@ type Booking = {
   durationHours?: string | number | null;
   durationDays?: string | number | null;
   passengers: number;
+  estimatedPrice?: string | number | null;
   finalPrice: string | number | null;
+  depositAmount?: string | number | null;
+  luggageDetails?: string | null;
+  specialNotes?: string | null;
   status: string;
   paymentStatus: string;
   customer?: {
+    id: string;
     fullName: string;
     phone: string;
   };
   route?: {
+    id: string;
     name: string;
   } | null;
   driver?: {
+    id: string;
     fullName: string;
   } | null;
   vehicle?: {
+    id: string;
     name: string;
     registrationNo: string;
   } | null;
@@ -188,6 +196,7 @@ export default function BookingsPage() {
 
   const [form, setForm] = useState<BookingForm>(initialForm);
   const [showForm, setShowForm] = useState(false);
+  const [editingBookingId, setEditingBookingId] = useState('');
   const [calculation, setCalculation] = useState<PriceCalculation | null>(null);
   const [showBreakdown, setShowBreakdown] = useState(false);
 
@@ -259,13 +268,21 @@ export default function BookingsPage() {
   );
   const selectedZone = zones.find((zone) => zone.zoneType === form.pricingZone);
 
-  const availableDrivers = drivers.filter(
-    (driver) => driver.status === 'AVAILABLE',
-  );
+  const availableDrivers = drivers.filter((driver) => {
+    if (editingBookingId && driver.id === form.driverId) {
+      return true;
+    }
 
-  const availableVehicles = vehicles.filter(
-    (vehicle) => vehicle.status === 'AVAILABLE',
-  );
+    return driver.status === 'AVAILABLE';
+  });
+
+  const availableVehicles = vehicles.filter((vehicle) => {
+    if (editingBookingId && vehicle.id === form.vehicleId) {
+      return true;
+    }
+
+    return vehicle.status === 'AVAILABLE';
+  });
 
   const usesRoute = form.bookingMode === 'SAVED_ROUTE';
   const usesCustomDistance = form.bookingMode === 'CUSTOM_TRIP';
@@ -323,6 +340,23 @@ export default function BookingsPage() {
     return Number.isFinite(parsed) ? parsed.toFixed(2) : '0.00';
   }
 
+  function formatDateForInput(value?: string | null) {
+    if (!value) {
+      return '';
+    }
+
+    const date = new Date(value);
+
+    if (Number.isNaN(date.getTime())) {
+      return '';
+    }
+
+    const offset = date.getTimezoneOffset();
+    const localDate = new Date(date.getTime() - offset * 60 * 1000);
+
+    return localDate.toISOString().slice(0, 16);
+  }
+
   function updateForm(field: keyof BookingForm, value: string) {
     const decimalFields: (keyof BookingForm)[] = [
       'estimatedPrice',
@@ -357,6 +391,15 @@ export default function BookingsPage() {
     ) {
       setCalculation(null);
     }
+  }
+
+  function resetForm() {
+    setForm(initialForm);
+    setEditingBookingId('');
+    setCalculation(null);
+    setShowBreakdown(false);
+    setErrorMessage('');
+    setSuccessMessage('');
   }
 
   function setBookingMode(mode: BookingMode) {
@@ -446,6 +489,75 @@ export default function BookingsPage() {
     }));
 
     setCalculation(null);
+  }
+
+  function inferBookingMode(booking: Booking): BookingMode {
+    if (booking.route?.id) {
+      return 'SAVED_ROUTE';
+    }
+
+    if (booking.tripType === 'CAR_RENTAL' && booking.dropoffDate) {
+      return 'DAILY_HIRE';
+    }
+
+    if (booking.tripType === 'CUSTOM') {
+      return 'CUSTOM_QUOTE';
+    }
+
+    return 'CUSTOM_TRIP';
+  }
+
+  function startEditBooking(booking: Booking) {
+    if (
+      booking.status === 'COMPLETED' ||
+      booking.status === 'CANCELLED' ||
+      booking.status === 'NO_SHOW'
+    ) {
+      setErrorMessage('Completed, cancelled or no-show bookings cannot be edited.');
+      return;
+    }
+
+    setEditingBookingId(booking.id);
+    setShowForm(true);
+    setCalculation(null);
+    setShowBreakdown(false);
+    setErrorMessage('');
+    setSuccessMessage('');
+
+    setForm({
+      ...initialForm,
+      customerMode: 'EXISTING',
+      bookingMode: inferBookingMode(booking),
+
+      customerId: booking.customer?.id ?? '',
+      routeId: booking.route?.id ?? '',
+      driverId: booking.driver?.id ?? '',
+      vehicleId: booking.vehicle?.id ?? '',
+
+      tripType: booking.tripType,
+      customTripType: booking.customTripType ?? '',
+
+      pickupLocation: booking.pickupLocation ?? '',
+      destination: booking.destination ?? '',
+      pickupDate: formatDateForInput(booking.pickupDate),
+      dropoffDate: formatDateForInput(booking.dropoffDate),
+      passengers: String(booking.passengers ?? 1),
+
+      luggageDetails: booking.luggageDetails ?? '',
+      specialNotes: booking.specialNotes ?? '',
+
+      estimatedPrice: booking.estimatedPrice
+        ? formatMoney(booking.estimatedPrice)
+        : booking.finalPrice
+          ? formatMoney(booking.finalPrice)
+          : '',
+      finalPrice: booking.finalPrice ? formatMoney(booking.finalPrice) : '',
+      depositAmount: booking.depositAmount
+        ? formatMoney(booking.depositAmount)
+        : '',
+    });
+
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
   async function calculatePrice() {
@@ -626,7 +738,7 @@ export default function BookingsPage() {
     return customer.id;
   }
 
-  async function createBooking(event: FormEvent<HTMLFormElement>) {
+  async function saveBooking(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
     setErrorMessage('');
@@ -656,11 +768,6 @@ export default function BookingsPage() {
 
     if (Number.isNaN(pickupDate.getTime())) {
       setErrorMessage('Pickup date and time are invalid.');
-      return;
-    }
-
-    if (pickupDate.getTime() < Date.now()) {
-      setErrorMessage('Pickup date cannot be in the past.');
       return;
     }
 
@@ -736,37 +843,49 @@ export default function BookingsPage() {
 
       const customerId = await resolveCustomerId();
 
-      await apiPost<Booking>('/bookings', {
-        companyId: COMPANY_ID,
+      const payload = {
         customerId,
-        routeId: usesRoute ? form.routeId : undefined,
-        driverId: form.driverId || undefined,
-        vehicleId: form.vehicleId || undefined,
+        routeId: usesRoute ? form.routeId : editingBookingId ? null : undefined,
+        driverId: form.driverId || (editingBookingId ? null : undefined),
+        vehicleId: form.vehicleId || (editingBookingId ? null : undefined),
         tripType: form.tripType,
         customTripType:
           form.tripType === 'CUSTOM' ? form.customTripType.trim() : undefined,
         pickupLocation: form.pickupLocation.trim(),
         destination: form.destination.trim(),
         pickupDate: pickupDate.toISOString(),
-        dropoffDate: dropoffDate ? dropoffDate.toISOString() : undefined,
+        dropoffDate: dropoffDate
+          ? dropoffDate.toISOString()
+          : editingBookingId
+            ? null
+            : undefined,
         passengers,
         luggageDetails: form.luggageDetails.trim() || undefined,
         specialNotes: form.specialNotes.trim() || undefined,
         estimatedPrice,
         finalPrice,
         depositAmount,
-      });
+      };
 
-      setSuccessMessage('Booking created successfully.');
-      setForm(initialForm);
-      setCalculation(null);
+      if (editingBookingId) {
+        await apiPatch(`/bookings/${editingBookingId}`, payload);
+        setSuccessMessage('Booking updated successfully.');
+      } else {
+        await apiPost<Booking>('/bookings', {
+          companyId: COMPANY_ID,
+          ...payload,
+        });
+        setSuccessMessage('Booking created successfully.');
+      }
+
+      resetForm();
       setShowForm(false);
       await fetchPageData();
     } catch (error) {
       setErrorMessage(
         error instanceof Error
           ? error.message
-          : 'Something went wrong while creating booking',
+          : 'Something went wrong while saving booking',
       );
     } finally {
       setSaving(false);
@@ -812,9 +931,13 @@ export default function BookingsPage() {
         <button
           type="button"
           onClick={() => {
-            setShowForm((current) => !current);
-            setErrorMessage('');
-            setSuccessMessage('');
+            if (showForm) {
+              resetForm();
+              setShowForm(false);
+            } else {
+              resetForm();
+              setShowForm(true);
+            }
           }}
           className="rounded-full bg-white px-5 py-3 text-sm font-semibold text-black transition hover:bg-[#C8A96A]"
         >
@@ -835,13 +958,21 @@ export default function BookingsPage() {
       {showForm && (
         <form
           noValidate
-          onSubmit={createBooking}
+          onSubmit={saveBooking}
           className="mb-8 overflow-hidden rounded-3xl border border-white/10 bg-[#050505]"
         >
           <PanelHeader
-            eyebrow="Premium Booking Workflow"
-            title="Create Booking"
-            subtitle="A guided workflow for customer details, trip setup, assignment and pricing."
+            eyebrow={
+              editingBookingId
+                ? 'Premium Booking Workflow'
+                : 'Premium Booking Workflow'
+            }
+            title={editingBookingId ? 'Edit Booking' : 'Create Booking'}
+            subtitle={
+              editingBookingId
+                ? 'Update booking details, assignment, dates, pricing and payment information.'
+                : 'A guided workflow for customer details, trip setup, assignment and pricing.'
+            }
           />
 
           <div className="space-y-8 p-6">
@@ -951,47 +1082,22 @@ export default function BookingsPage() {
               />
 
               <div className="mt-4 grid gap-3 md:grid-cols-3 xl:grid-cols-5">
-                <button
-                  type="button"
-                  onClick={() => setBookingMode('SAVED_ROUTE')}
-                  className={modeButtonClass(form.bookingMode === 'SAVED_ROUTE')}
-                >
-                  Saved Route
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => setBookingMode('CUSTOM_TRIP')}
-                  className={modeButtonClass(form.bookingMode === 'CUSTOM_TRIP')}
-                >
-                  Custom Trip
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => setBookingMode('HOURLY_HIRE')}
-                  className={modeButtonClass(form.bookingMode === 'HOURLY_HIRE')}
-                >
-                  Hourly Hire
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => setBookingMode('DAILY_HIRE')}
-                  className={modeButtonClass(form.bookingMode === 'DAILY_HIRE')}
-                >
-                  Daily Hire
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => setBookingMode('CUSTOM_QUOTE')}
-                  className={modeButtonClass(
-                    form.bookingMode === 'CUSTOM_QUOTE',
-                  )}
-                >
-                  Custom Quote
-                </button>
+                {[
+                  ['SAVED_ROUTE', 'Saved Route'],
+                  ['CUSTOM_TRIP', 'Custom Trip'],
+                  ['HOURLY_HIRE', 'Hourly Hire'],
+                  ['DAILY_HIRE', 'Daily Hire'],
+                  ['CUSTOM_QUOTE', 'Custom Quote'],
+                ].map(([mode, label]) => (
+                  <button
+                    key={mode}
+                    type="button"
+                    onClick={() => setBookingMode(mode as BookingMode)}
+                    className={modeButtonClass(form.bookingMode === mode)}
+                  >
+                    {label}
+                  </button>
+                ))}
               </div>
 
               <div className="mt-4 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
@@ -1477,17 +1583,20 @@ export default function BookingsPage() {
                 disabled={saving}
                 className="rounded-full bg-white px-6 py-3 text-sm font-semibold text-black transition hover:bg-[#C8A96A] disabled:cursor-not-allowed disabled:opacity-50"
               >
-                {saving ? 'Saving Booking...' : 'Save Booking'}
+                {saving
+                  ? editingBookingId
+                    ? 'Saving Changes...'
+                    : 'Saving Booking...'
+                  : editingBookingId
+                    ? 'Save Changes'
+                    : 'Save Booking'}
               </button>
 
               <button
                 type="button"
                 onClick={() => {
-                  setForm(initialForm);
-                  setCalculation(null);
+                  resetForm();
                   setShowForm(false);
-                  setErrorMessage('');
-                  setSuccessMessage('');
                 }}
                 className="rounded-full border border-white/10 px-6 py-3 text-sm font-medium text-neutral-300 transition hover:border-white/30 hover:text-white"
               >
@@ -1509,6 +1618,7 @@ export default function BookingsPage() {
           bookings={bookings}
           actionLoadingId={actionLoadingId}
           onRefresh={fetchPageData}
+          onEdit={startEditBooking}
           onStatusChange={updateBookingStatus}
         />
       )}
@@ -1676,11 +1786,13 @@ function BookingsTable({
   bookings,
   actionLoadingId,
   onRefresh,
+  onEdit,
   onStatusChange,
 }: {
   bookings: Booking[];
   actionLoadingId: string;
   onRefresh: () => void;
+  onEdit: (booking: Booking) => void;
   onStatusChange: (bookingId: string, status: string) => void;
 }) {
   return (
@@ -1703,7 +1815,7 @@ function BookingsTable({
       </div>
 
       <div className="overflow-x-auto">
-        <table className="w-full min-w-[1180px] table-fixed border-collapse text-left text-[11px]">
+        <table className="w-full min-w-[1220px] table-fixed border-collapse text-left text-[11px]">
           <thead className="border-b border-white/10 bg-white/[0.03] text-neutral-400">
             <tr>
               <th className="w-[9%] px-3 py-4 font-medium">Booking</th>
@@ -1716,16 +1828,16 @@ function BookingsTable({
               <th className="w-[4%] px-2 py-4 text-center font-medium">
                 Pax
               </th>
-              <th className="w-[9%] px-2 py-4 text-center font-medium">
+              <th className="w-[8%] px-2 py-4 text-center font-medium">
                 Status
               </th>
-              <th className="w-[9%] px-2 py-4 text-center font-medium">
+              <th className="w-[8%] px-2 py-4 text-center font-medium">
                 Payment
               </th>
               <th className="w-[6%] px-2 py-4 text-right font-medium">
                 Amount
               </th>
-              <th className="w-[9%] px-3 py-4 font-medium">Actions</th>
+              <th className="w-[12%] px-3 py-4 font-medium">Actions</th>
             </tr>
           </thead>
 
@@ -1821,6 +1933,15 @@ function BookingsTable({
 
                   <td className="px-3 py-4">
                     <div className="flex flex-col gap-2">
+                      <button
+                        type="button"
+                        disabled={isFinalStatus}
+                        onClick={() => onEdit(booking)}
+                        className="rounded-full border border-[#C8A96A]/30 bg-[#C8A96A]/10 px-2.5 py-1.5 text-[11px] font-medium text-[#C8A96A] transition hover:bg-[#C8A96A]/20 disabled:cursor-not-allowed disabled:opacity-40"
+                      >
+                        Edit
+                      </button>
+
                       <button
                         type="button"
                         disabled={

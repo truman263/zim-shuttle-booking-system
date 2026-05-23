@@ -7,6 +7,7 @@ import {
   BookingStatus,
   DriverStatus,
   PaymentStatus,
+  TripDirection,
   VehicleStatus,
 } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
@@ -38,6 +39,9 @@ export class BookingsService {
       throw new BadRequestException('Customer does not belong to this company');
     }
 
+    const tripDirection =
+      createBookingDto.tripDirection ?? TripDirection.ONE_WAY;
+
     if (
       createBookingDto.tripType === 'CUSTOM' &&
       !createBookingDto.customTripType?.trim()
@@ -67,6 +71,14 @@ export class BookingsService {
       durationHours = calculatedDuration.durationHours;
       durationDays = calculatedDuration.durationDays;
     }
+
+    const returnDate = this.validateReturnTripFields(
+      tripDirection,
+      pickupDate,
+      createBookingDto.returnDate,
+      createBookingDto.returnPickupLocation,
+      createBookingDto.returnDestination,
+    );
 
     if (
       createBookingDto.depositAmount !== undefined &&
@@ -123,12 +135,28 @@ export class BookingsService {
 
           bookingRef,
           tripType: createBookingDto.tripType,
+          tripDirection,
           customTripType: createBookingDto.customTripType?.trim(),
 
           pickupLocation: createBookingDto.pickupLocation.trim(),
           destination: createBookingDto.destination.trim(),
           pickupDate,
           dropoffDate,
+
+          returnDate,
+          returnPickupLocation:
+            tripDirection === TripDirection.ROUND_TRIP
+              ? createBookingDto.returnPickupLocation?.trim()
+              : undefined,
+          returnDestination:
+            tripDirection === TripDirection.ROUND_TRIP
+              ? createBookingDto.returnDestination?.trim()
+              : undefined,
+          returnNotes:
+            tripDirection === TripDirection.ROUND_TRIP
+              ? createBookingDto.returnNotes?.trim()
+              : undefined,
+
           durationHours,
           durationDays,
           passengers: createBookingDto.passengers,
@@ -269,6 +297,9 @@ export class BookingsService {
     }
 
     const nextTripType = updateBookingDto.tripType ?? existingBooking.tripType;
+    const nextTripDirection =
+      updateBookingDto.tripDirection ?? existingBooking.tripDirection;
+
     const nextCustomTripType =
       updateBookingDto.customTripType === undefined
         ? existingBooking.customTripType
@@ -315,6 +346,29 @@ export class BookingsService {
       durationHours = null;
       durationDays = null;
     }
+
+    const returnDateInput =
+      updateBookingDto.returnDate === undefined
+        ? existingBooking.returnDate
+        : updateBookingDto.returnDate;
+
+    const returnPickupLocationInput =
+      updateBookingDto.returnPickupLocation === undefined
+        ? existingBooking.returnPickupLocation
+        : updateBookingDto.returnPickupLocation;
+
+    const returnDestinationInput =
+      updateBookingDto.returnDestination === undefined
+        ? existingBooking.returnDestination
+        : updateBookingDto.returnDestination;
+
+    const returnDate = this.validateReturnTripFields(
+      nextTripDirection,
+      pickupDate,
+      returnDateInput,
+      returnPickupLocationInput,
+      returnDestinationInput,
+    );
 
     const finalPrice =
       updateBookingDto.finalPrice === undefined
@@ -391,6 +445,7 @@ export class BookingsService {
             updateBookingDto.vehicleId === undefined ? undefined : nextVehicleId,
 
           tripType: updateBookingDto.tripType,
+          tripDirection: updateBookingDto.tripDirection,
           customTripType:
             updateBookingDto.customTripType === undefined
               ? undefined
@@ -400,6 +455,24 @@ export class BookingsService {
           destination: updateBookingDto.destination?.trim(),
           pickupDate,
           dropoffDate,
+
+          returnDate:
+            nextTripDirection === TripDirection.ROUND_TRIP ? returnDate : null,
+          returnPickupLocation:
+            nextTripDirection === TripDirection.ROUND_TRIP
+              ? returnPickupLocationInput?.trim() || null
+              : null,
+          returnDestination:
+            nextTripDirection === TripDirection.ROUND_TRIP
+              ? returnDestinationInput?.trim() || null
+              : null,
+          returnNotes:
+            nextTripDirection === TripDirection.ROUND_TRIP
+              ? updateBookingDto.returnNotes === undefined
+                ? existingBooking.returnNotes
+                : updateBookingDto.returnNotes?.trim() || null
+              : null,
+
           durationHours,
           durationDays,
           passengers: updateBookingDto.passengers,
@@ -582,6 +655,49 @@ export class BookingsService {
       durationHours: Number(calculatedHours.toFixed(2)),
       durationDays: Number(calculatedDays.toFixed(2)),
     };
+  }
+
+  private validateReturnTripFields(
+    tripDirection: TripDirection,
+    pickupDate: Date,
+    returnDateInput?: string | Date | null,
+    returnPickupLocation?: string | null,
+    returnDestination?: string | null,
+  ) {
+    if (tripDirection === TripDirection.ONE_WAY) {
+      return null;
+    }
+
+    if (!returnDateInput) {
+      throw new BadRequestException('Return date is required for round trip');
+    }
+
+    const returnDate =
+      returnDateInput instanceof Date
+        ? returnDateInput
+        : new Date(returnDateInput);
+
+    if (Number.isNaN(returnDate.getTime())) {
+      throw new BadRequestException('Invalid return date');
+    }
+
+    if (returnDate <= pickupDate) {
+      throw new BadRequestException('Return date must be after pickup date');
+    }
+
+    if (!returnPickupLocation?.trim()) {
+      throw new BadRequestException(
+        'Return pickup location is required for round trip',
+      );
+    }
+
+    if (!returnDestination?.trim()) {
+      throw new BadRequestException(
+        'Return destination is required for round trip',
+      );
+    }
+
+    return returnDate;
   }
 
   private calculatePaymentStatus(

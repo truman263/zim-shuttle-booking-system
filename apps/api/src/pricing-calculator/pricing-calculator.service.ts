@@ -32,6 +32,7 @@ export class PricingCalculatorService {
     }
 
     const passengers = calculatePriceDto.passengers ?? 1;
+    const tripDirection = calculatePriceDto.tripDirection ?? 'ONE_WAY';
 
     let basePrice = 0;
     let pricingMode = calculatePriceDto.pricingMode;
@@ -223,6 +224,33 @@ export class PricingCalculatorService {
       }
     }
 
+    if (tripDirection === 'ROUND_TRIP') {
+      const oneWaySubtotal = subtotal;
+      subtotal = subtotal * 2;
+
+      breakdown.push({
+        label: 'Round trip: return journey added',
+        type: 'INFO',
+        amount: oneWaySubtotal,
+      });
+
+      const discountPercentage = Number(
+        calculatePriceDto.roundTripDiscountPercentage ?? 0,
+      );
+
+      if (discountPercentage > 0) {
+        const discountAmount = subtotal * (discountPercentage / 100);
+        subtotal -= discountAmount;
+
+        breakdown.push({
+          label: 'Round trip discount',
+          type: 'PERCENTAGE',
+          amount: -discountAmount,
+          percentage: discountPercentage,
+        });
+      }
+    }
+
     const estimatedPrice = this.roundMoney(subtotal);
 
     return {
@@ -230,6 +258,9 @@ export class PricingCalculatorService {
       routeId: calculatePriceDto.routeId ?? null,
       pricingMode,
       priceUnit,
+      tripDirection,
+      roundTripDiscountPercentage:
+        calculatePriceDto.roundTripDiscountPercentage ?? 0,
       distanceKm: distanceKm ?? null,
       durationHours: durationHours ?? null,
       durationDays: durationDays ?? null,

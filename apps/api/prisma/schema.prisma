@@ -78,6 +78,11 @@ enum TripType {
   CUSTOM
 }
 
+enum TripDirection {
+  ONE_WAY
+  ROUND_TRIP
+}
+
 enum RouteType {
   CITY_TO_CITY
   AIRPORT_TRANSFER
@@ -168,12 +173,12 @@ model User {
   companyId String?
   company   Company? @relation(fields: [companyId], references: [id])
 
-  fullName  String
-  email     String   @unique
-  phone     String?
-  password  String
-  role      UserRole @default(CUSTOMER)
-  isActive  Boolean  @default(true)
+  fullName String
+  email    String   @unique
+  phone    String?
+  password String
+  role     UserRole @default(CUSTOMER)
+  isActive Boolean  @default(true)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -318,17 +323,24 @@ model Booking {
   vehicleId String?
   vehicle   Vehicle? @relation(fields: [vehicleId], references: [id])
 
-  bookingRef     String   @unique
+  bookingRef     String        @unique
   tripType       TripType
+  tripDirection  TripDirection @default(ONE_WAY)
   customTripType String?
 
   pickupLocation String
   destination    String
   pickupDate     DateTime
   dropoffDate    DateTime?
-  durationHours  Decimal?
-  durationDays   Decimal?
-  passengers     Int
+
+  returnDate           DateTime?
+  returnPickupLocation String?
+  returnDestination    String?
+  returnNotes          String?
+
+  durationHours Decimal?
+  durationDays  Decimal?
+  passengers    Int
 
   luggageDetails String?
   specialNotes   String?

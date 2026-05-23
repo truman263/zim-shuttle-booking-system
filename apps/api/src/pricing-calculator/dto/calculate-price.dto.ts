@@ -2,6 +2,7 @@ import {
   PriceUnit,
   PricingMode,
   RoadCondition,
+  TripDirection,
   ZoneType,
 } from '@prisma/client';
 import {
@@ -30,6 +31,15 @@ export class CalculatePriceDto {
   @IsOptional()
   @IsEnum(PriceUnit)
   priceUnit?: PriceUnit;
+
+  @IsOptional()
+  @IsEnum(TripDirection)
+  tripDirection?: TripDirection;
+
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  roundTripDiscountPercentage?: number;
 
   @IsOptional()
   @IsNumber()
