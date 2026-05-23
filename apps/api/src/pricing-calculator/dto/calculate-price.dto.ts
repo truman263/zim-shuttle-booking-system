@@ -37,6 +37,26 @@ export class CalculatePriceDto {
   distanceKm?: number;
 
   @IsOptional()
+  @IsNumber()
+  @Min(0)
+  durationHours?: number;
+
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  durationDays?: number;
+
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  hourlyRate?: number;
+
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  dailyRate?: number;
+
+  @IsOptional()
   @IsString()
   vehicleType?: string;
 

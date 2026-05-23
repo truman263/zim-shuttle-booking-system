@@ -1,4 +1,8 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import {
   AdjustmentType,
   PricingMode,
@@ -35,6 +39,8 @@ export class PricingCalculatorService {
     let distanceKm = calculatePriceDto.distanceKm;
     let vehicleType = calculatePriceDto.vehicleType;
     let roadCondition = calculatePriceDto.roadCondition;
+    let durationHours = calculatePriceDto.durationHours;
+    let durationDays = calculatePriceDto.durationDays;
 
     const breakdown: PricingBreakdownItem[] = [];
 
@@ -59,18 +65,20 @@ export class PricingCalculatorService {
       basePrice = Number(route.basePrice);
 
       breakdown.push({
-        label: `Fixed route base price: ${route.name}`,
+        label: `Route base price: ${route.name}`,
         type: 'BASE',
         amount: basePrice,
       });
 
       if (route.priceUnit === 'PER_PASSENGER') {
         const passengerTotal = basePrice * passengers;
+
         breakdown.push({
-          label: `${passengers} passenger(s) × $${basePrice}`,
+          label: `${passengers} passenger(s) × $${this.roundMoney(basePrice)}`,
           type: 'INFO',
           amount: passengerTotal,
         });
+
         basePrice = passengerTotal;
       }
     }
@@ -81,42 +89,39 @@ export class PricingCalculatorService {
       }
 
       if (pricingMode === PricingMode.DISTANCE_BASED) {
-        if (distanceKm === undefined || distanceKm === null) {
-          throw new BadRequestException(
-            'Distance is required for distance-based pricing',
-          );
-        }
+        basePrice = await this.calculateDistanceBasedPrice(
+          calculatePriceDto.companyId,
+          distanceKm,
+          breakdown,
+        );
+      }
 
-        const distanceRule = await this.prisma.pricingRule.findFirst({
-          where: {
-            companyId: calculatePriceDto.companyId,
-            isActive: true,
-            ruleType: PricingRuleType.DISTANCE_BAND,
-            minDistanceKm: {
-              lte: distanceKm,
-            },
-            maxDistanceKm: {
-              gte: distanceKm,
-            },
-          },
-          orderBy: {
-            createdAt: 'desc',
-          },
-        });
+      if (pricingMode === PricingMode.HOURLY) {
+        basePrice = await this.calculateHourlyPrice(
+          calculatePriceDto.companyId,
+          durationHours,
+          calculatePriceDto.hourlyRate,
+          breakdown,
+        );
 
-        if (!distanceRule) {
-          throw new BadRequestException(
-            `No active distance pricing rule found for ${distanceKm}km`,
-          );
-        }
+        priceUnit = 'PER_HOUR';
+      }
 
-        basePrice = Number(distanceRule.amount ?? 0);
+      if (pricingMode === PricingMode.DAILY) {
+        basePrice = await this.calculateDailyPrice(
+          calculatePriceDto.companyId,
+          durationDays,
+          calculatePriceDto.dailyRate,
+          breakdown,
+        );
 
-        breakdown.push({
-          label: `Distance band: ${distanceRule.name}`,
-          type: 'BASE',
-          amount: basePrice,
-        });
+        priceUnit = 'PER_DAY';
+      }
+
+      if (pricingMode === PricingMode.CUSTOM_QUOTE) {
+        throw new BadRequestException(
+          'Custom quote pricing requires admin to enter final price manually',
+        );
       }
     }
 
@@ -145,7 +150,7 @@ export class PricingCalculatorService {
           subtotal += adjustmentValue;
 
           breakdown.push({
-            label: `Zone surcharge: ${zone.name}`,
+            label: `Pricing zone: ${zone.name}`,
             type: 'FIXED_AMOUNT',
             amount: adjustmentValue,
           });
@@ -156,7 +161,7 @@ export class PricingCalculatorService {
           subtotal += adjustmentAmount;
 
           breakdown.push({
-            label: `Zone adjustment: ${zone.name}`,
+            label: `Pricing zone: ${zone.name}`,
             type: 'PERCENTAGE',
             amount: adjustmentAmount,
             percentage: adjustmentValue,
@@ -226,6 +231,8 @@ export class PricingCalculatorService {
       pricingMode,
       priceUnit,
       distanceKm: distanceKm ?? null,
+      durationHours: durationHours ?? null,
+      durationDays: durationDays ?? null,
       vehicleType: vehicleType ?? null,
       roadCondition: roadCondition ?? null,
       zoneType: calculatePriceDto.zoneType ?? null,
@@ -236,6 +243,158 @@ export class PricingCalculatorService {
         amount: this.roundMoney(item.amount),
       })),
     };
+  }
+
+  private async calculateDistanceBasedPrice(
+    companyId: string,
+    distanceKm: number | undefined,
+    breakdown: PricingBreakdownItem[],
+  ) {
+    if (distanceKm === undefined || distanceKm === null || distanceKm <= 0) {
+      throw new BadRequestException(
+        'Distance is required for distance-based pricing',
+      );
+    }
+
+    const distanceRule = await this.prisma.pricingRule.findFirst({
+      where: {
+        companyId,
+        isActive: true,
+        ruleType: PricingRuleType.DISTANCE_BAND,
+        minDistanceKm: {
+          lte: distanceKm,
+        },
+        maxDistanceKm: {
+          gte: distanceKm,
+        },
+      },
+      orderBy: {
+        createdAt: 'desc',
+      },
+    });
+
+    if (!distanceRule) {
+      throw new BadRequestException(
+        `No active distance pricing rule found for ${distanceKm}km`,
+      );
+    }
+
+    const amount = Number(distanceRule.amount ?? 0);
+
+    breakdown.push({
+      label: `Distance band: ${distanceRule.name}`,
+      type: 'BASE',
+      amount,
+    });
+
+    return amount;
+  }
+
+  private async calculateHourlyPrice(
+    companyId: string,
+    durationHours: number | undefined,
+    requestHourlyRate: number | undefined,
+    breakdown: PricingBreakdownItem[],
+  ) {
+    if (
+      durationHours === undefined ||
+      durationHours === null ||
+      durationHours <= 0
+    ) {
+      throw new BadRequestException('Duration hours is required for hourly hire');
+    }
+
+    let hourlyRate = requestHourlyRate;
+
+    if (!hourlyRate) {
+      const hourlyRule = await this.prisma.pricingRule.findFirst({
+        where: {
+          companyId,
+          isActive: true,
+          ruleType: PricingRuleType.TIME_BASED,
+          pricingMode: PricingMode.HOURLY,
+        },
+        orderBy: {
+          createdAt: 'desc',
+        },
+      });
+
+      hourlyRate = Number(hourlyRule?.amount ?? 0);
+    }
+
+    if (!hourlyRate || hourlyRate <= 0) {
+      throw new BadRequestException(
+        'Hourly rate is required. Provide hourlyRate or create an active hourly pricing rule.',
+      );
+    }
+
+    const total = hourlyRate * durationHours;
+
+    breakdown.push({
+      label: `${durationHours} hour(s) × $${this.roundMoney(hourlyRate)} hourly rate`,
+      type: 'BASE',
+      amount: total,
+    });
+
+    return total;
+  }
+
+  private async calculateDailyPrice(
+    companyId: string,
+    durationDays: number | undefined,
+    requestDailyRate: number | undefined,
+    breakdown: PricingBreakdownItem[],
+  ) {
+    if (
+      durationDays === undefined ||
+      durationDays === null ||
+      durationDays <= 0
+    ) {
+      throw new BadRequestException('Duration days is required for daily hire');
+    }
+
+    let dailyRate = requestDailyRate;
+
+    if (!dailyRate) {
+      const dailyRule = await this.prisma.pricingRule.findFirst({
+        where: {
+          companyId,
+          isActive: true,
+          ruleType: PricingRuleType.TIME_BASED,
+          pricingMode: PricingMode.DAILY,
+        },
+        orderBy: {
+          createdAt: 'desc',
+        },
+      });
+
+      dailyRate = Number(dailyRule?.amount ?? 0);
+    }
+
+    if (!dailyRate || dailyRate <= 0) {
+      throw new BadRequestException(
+        'Daily rate is required. Provide dailyRate or create an active daily pricing rule.',
+      );
+    }
+
+    const billableDays = Math.ceil(durationDays);
+    const total = dailyRate * billableDays;
+
+    breakdown.push({
+      label: `${billableDays} day(s) × $${this.roundMoney(dailyRate)} daily rate`,
+      type: 'BASE',
+      amount: total,
+    });
+
+    if (billableDays !== durationDays) {
+      breakdown.push({
+        label: `Actual duration: ${durationDays} day(s), billed as ${billableDays} day(s)`,
+        type: 'INFO',
+        amount: 0,
+      });
+    }
+
+    return total;
   }
 
   private applyRuleAdjustment(
