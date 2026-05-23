@@ -1,3 +1,4 @@
+import { TripType } from '@prisma/client';
 import {
   IsDateString,
   IsEnum,
@@ -8,7 +9,6 @@ import {
   IsString,
   Min,
 } from 'class-validator';
-import { TripType } from '@prisma/client';
 
 export class CreateBookingDto {
   @IsString()
@@ -34,6 +34,10 @@ export class CreateBookingDto {
   @IsEnum(TripType)
   tripType: TripType;
 
+  @IsOptional()
+  @IsString()
+  customTripType?: string;
+
   @IsString()
   @IsNotEmpty()
   pickupLocation: string;
@@ -44,6 +48,20 @@ export class CreateBookingDto {
 
   @IsDateString()
   pickupDate: string;
+
+  @IsOptional()
+  @IsDateString()
+  dropoffDate?: string;
+
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  durationHours?: number;
+
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  durationDays?: number;
 
   @IsInt()
   @Min(1)
@@ -59,13 +77,16 @@ export class CreateBookingDto {
 
   @IsOptional()
   @IsNumber()
+  @Min(0)
   estimatedPrice?: number;
 
   @IsOptional()
   @IsNumber()
+  @Min(0)
   finalPrice?: number;
 
   @IsOptional()
   @IsNumber()
+  @Min(0)
   depositAmount?: number;
 }

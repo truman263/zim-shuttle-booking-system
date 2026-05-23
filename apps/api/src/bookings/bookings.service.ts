@@ -6,6 +6,7 @@ import {
 import {
   BookingStatus,
   DriverStatus,
+  PaymentStatus,
   VehicleStatus,
 } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
@@ -15,217 +16,244 @@ import { CreateBookingDto } from './dto/create-booking.dto';
 export class BookingsService {
   constructor(private readonly prisma: PrismaService) {}
 
-  private generateBookingRef() {
-    const datePart = new Date()
-      .toISOString()
-      .slice(0, 10)
-      .replace(/-/g, '');
-
-    const randomPart = Math.floor(1000 + Math.random() * 9000);
-
-    return `LB-${datePart}-${randomPart}`;
-  }
-
   async create(createBookingDto: CreateBookingDto) {
-    const pickupDate = new Date(createBookingDto.pickupDate);
+    const company = await this.prisma.company.findUnique({
+      where: { id: createBookingDto.companyId },
+    });
 
-    if (pickupDate < new Date()) {
-      throw new BadRequestException('Pickup date cannot be in the past');
+    if (!company) {
+      throw new NotFoundException('Company not found');
     }
 
-    return this.prisma.$transaction(async (tx) => {
-      const company = await tx.company.findUnique({
-        where: { id: createBookingDto.companyId },
-      });
+    const customer = await this.prisma.customer.findUnique({
+      where: { id: createBookingDto.customerId },
+    });
 
-      if (!company) {
-        throw new NotFoundException('Company not found');
+    if (!customer) {
+      throw new NotFoundException('Customer not found');
+    }
+
+    if (customer.companyId !== createBookingDto.companyId) {
+      throw new BadRequestException('Customer does not belong to this company');
+    }
+
+    if (
+      createBookingDto.tripType === 'CUSTOM' &&
+      !createBookingDto.customTripType?.trim()
+    ) {
+      throw new BadRequestException(
+        'Custom trip type is required when trip type is CUSTOM',
+      );
+    }
+
+    const pickupDate = new Date(createBookingDto.pickupDate);
+
+    if (Number.isNaN(pickupDate.getTime())) {
+      throw new BadRequestException('Invalid pickup date');
+    }
+
+    let dropoffDate: Date | undefined;
+    let durationHours = createBookingDto.durationHours;
+    let durationDays = createBookingDto.durationDays;
+
+    if (createBookingDto.dropoffDate) {
+      dropoffDate = new Date(createBookingDto.dropoffDate);
+
+      if (Number.isNaN(dropoffDate.getTime())) {
+        throw new BadRequestException('Invalid drop-off date');
       }
 
-      const customer = await tx.customer.findUnique({
-        where: { id: createBookingDto.customerId },
-      });
-
-      if (!customer) {
-        throw new NotFoundException('Customer not found');
-      }
-
-      if (customer.companyId !== createBookingDto.companyId) {
+      if (dropoffDate <= pickupDate) {
         throw new BadRequestException(
-          'Customer does not belong to this company',
+          'Drop-off date must be after pickup date',
         );
       }
 
-      if (createBookingDto.routeId) {
-        const route = await tx.route.findUnique({
-          where: { id: createBookingDto.routeId },
-        });
+      const durationMs = dropoffDate.getTime() - pickupDate.getTime();
+      const calculatedHours = durationMs / (1000 * 60 * 60);
+      const calculatedDays = calculatedHours / 24;
 
-        if (!route) {
-          throw new NotFoundException('Route not found');
-        }
+      durationHours = Number(calculatedHours.toFixed(2));
+      durationDays = Number(calculatedDays.toFixed(2));
+    }
 
-        if (route.companyId !== createBookingDto.companyId) {
-          throw new BadRequestException(
-            'Route does not belong to this company',
-          );
-        }
+    if (
+      createBookingDto.depositAmount !== undefined &&
+      createBookingDto.finalPrice !== undefined &&
+      createBookingDto.depositAmount > createBookingDto.finalPrice
+    ) {
+      throw new BadRequestException(
+        'Deposit amount cannot be greater than final price',
+      );
+    }
 
-        if (!route.isActive) {
-          throw new BadRequestException('Route is currently inactive');
-        }
+    if (createBookingDto.routeId) {
+      const route = await this.prisma.route.findUnique({
+        where: { id: createBookingDto.routeId },
+      });
+
+      if (!route) {
+        throw new NotFoundException('Route not found');
       }
 
-      if (createBookingDto.vehicleId) {
-        const vehicle = await tx.vehicle.findUnique({
-          where: { id: createBookingDto.vehicleId },
-        });
-
-        if (!vehicle) {
-          throw new NotFoundException('Vehicle not found');
-        }
-
-        if (vehicle.companyId !== createBookingDto.companyId) {
-          throw new BadRequestException(
-            'Vehicle does not belong to this company',
-          );
-        }
-
-        if (vehicle.status !== VehicleStatus.AVAILABLE) {
-          throw new BadRequestException('Vehicle is not available');
-        }
-
-        if (vehicle.passengerCapacity < createBookingDto.passengers) {
-          throw new BadRequestException(
-            'Vehicle capacity is lower than passenger count',
-          );
-        }
+      if (route.companyId !== createBookingDto.companyId) {
+        throw new BadRequestException('Route does not belong to this company');
       }
 
-      if (createBookingDto.driverId) {
-        const driver = await tx.driver.findUnique({
-          where: { id: createBookingDto.driverId },
-        });
+      if (!route.isActive) {
+        throw new BadRequestException('Route is inactive');
+      }
+    }
 
-        if (!driver) {
-          throw new NotFoundException('Driver not found');
-        }
+    if (createBookingDto.driverId) {
+      const driver = await this.prisma.driver.findUnique({
+        where: { id: createBookingDto.driverId },
+      });
 
-        if (driver.companyId !== createBookingDto.companyId) {
-          throw new BadRequestException(
-            'Driver does not belong to this company',
-          );
-        }
-
-        if (driver.status !== DriverStatus.AVAILABLE) {
-          throw new BadRequestException('Driver is not available');
-        }
+      if (!driver) {
+        throw new NotFoundException('Driver not found');
       }
 
-      const bookingStatus =
-        createBookingDto.driverId && createBookingDto.vehicleId
-          ? BookingStatus.DRIVER_ASSIGNED
-          : createBookingDto.vehicleId
-            ? BookingStatus.VEHICLE_ASSIGNED
-            : BookingStatus.PENDING;
+      if (driver.companyId !== createBookingDto.companyId) {
+        throw new BadRequestException('Driver does not belong to this company');
+      }
 
-      const booking = await tx.booking.create({
+      if (driver.status !== DriverStatus.AVAILABLE) {
+        throw new BadRequestException('Driver is not available');
+      }
+    }
+
+    if (createBookingDto.vehicleId) {
+      const vehicle = await this.prisma.vehicle.findUnique({
+        where: { id: createBookingDto.vehicleId },
+      });
+
+      if (!vehicle) {
+        throw new NotFoundException('Vehicle not found');
+      }
+
+      if (vehicle.companyId !== createBookingDto.companyId) {
+        throw new BadRequestException('Vehicle does not belong to this company');
+      }
+
+      if (vehicle.status !== VehicleStatus.AVAILABLE) {
+        throw new BadRequestException('Vehicle is not available');
+      }
+
+      if (createBookingDto.passengers > vehicle.passengerCapacity) {
+        throw new BadRequestException(
+          `Passengers cannot exceed vehicle capacity of ${vehicle.passengerCapacity}`,
+        );
+      }
+    }
+
+    const bookingRef = await this.generateBookingRef();
+
+    const bookingStatus =
+      createBookingDto.driverId || createBookingDto.vehicleId
+        ? BookingStatus.DRIVER_ASSIGNED
+        : BookingStatus.PENDING;
+
+    const finalPrice = Number(createBookingDto.finalPrice ?? 0);
+    const depositAmount = Number(createBookingDto.depositAmount ?? 0);
+
+    const paymentStatus =
+      depositAmount > 0
+        ? depositAmount >= finalPrice
+          ? PaymentStatus.PAID
+          : PaymentStatus.PARTIALLY_PAID
+        : PaymentStatus.UNPAID;
+
+    const booking = await this.prisma.$transaction(async (tx) => {
+      const createdBooking = await tx.booking.create({
         data: {
           companyId: createBookingDto.companyId,
           customerId: createBookingDto.customerId,
           routeId: createBookingDto.routeId,
           driverId: createBookingDto.driverId,
           vehicleId: createBookingDto.vehicleId,
-          bookingRef: this.generateBookingRef(),
+
+          bookingRef,
           tripType: createBookingDto.tripType,
-          pickupLocation: createBookingDto.pickupLocation,
-          destination: createBookingDto.destination,
+          customTripType: createBookingDto.customTripType?.trim(),
+
+          pickupLocation: createBookingDto.pickupLocation.trim(),
+          destination: createBookingDto.destination.trim(),
           pickupDate,
+          dropoffDate,
+          durationHours,
+          durationDays,
           passengers: createBookingDto.passengers,
-          luggageDetails: createBookingDto.luggageDetails,
-          specialNotes: createBookingDto.specialNotes,
+
+          luggageDetails: createBookingDto.luggageDetails?.trim(),
+          specialNotes: createBookingDto.specialNotes?.trim(),
+
           estimatedPrice: createBookingDto.estimatedPrice,
           finalPrice: createBookingDto.finalPrice,
           depositAmount: createBookingDto.depositAmount,
+
           status: bookingStatus,
+          paymentStatus,
         },
+        include: this.bookingInclude(),
       });
 
       if (createBookingDto.vehicleId) {
         await tx.vehicle.update({
           where: { id: createBookingDto.vehicleId },
-          data: {
-            status: VehicleStatus.BOOKED,
-          },
+          data: { status: VehicleStatus.BOOKED },
         });
       }
 
       if (createBookingDto.driverId) {
         await tx.driver.update({
           where: { id: createBookingDto.driverId },
-          data: {
-            status: DriverStatus.ON_TRIP,
-          },
+          data: { status: DriverStatus.ON_TRIP },
         });
       }
 
-      return tx.booking.findUnique({
-        where: { id: booking.id },
-        include: {
-          company: true,
-          customer: true,
-          route: true,
-          driver: true,
-          vehicle: true,
-          payments: true,
-        },
-      });
+      return createdBooking;
     });
+
+    return booking;
   }
 
   findAll() {
     return this.prisma.booking.findMany({
-      include: {
-        company: true,
-        customer: true,
-        route: true,
-        driver: true,
-        vehicle: true,
-        payments: true,
-      },
+      include: this.bookingInclude(),
       orderBy: {
         createdAt: 'desc',
       },
     });
   }
 
-  findOne(id: string) {
-    return this.prisma.booking.findUnique({
+  async findOne(id: string) {
+    const booking = await this.prisma.booking.findUnique({
       where: { id },
-      include: {
-        company: true,
-        customer: true,
-        route: true,
-        driver: true,
-        vehicle: true,
-        payments: true,
-      },
+      include: this.bookingInclude(),
     });
+
+    if (!booking) {
+      throw new NotFoundException('Booking not found');
+    }
+
+    return booking;
   }
 
   async updateStatus(id: string, status: BookingStatus) {
-    return this.prisma.$transaction(async (tx) => {
-      const booking = await tx.booking.findUnique({
-        where: { id },
-      });
+    const booking = await this.prisma.booking.findUnique({
+      where: { id },
+    });
 
-      if (!booking) {
-        throw new NotFoundException('Booking not found');
-      }
+    if (!booking) {
+      throw new NotFoundException('Booking not found');
+    }
 
-      const updatedBooking = await tx.booking.update({
+    const updatedBooking = await this.prisma.$transaction(async (tx) => {
+      const result = await tx.booking.update({
         where: { id },
         data: { status },
+        include: this.bookingInclude(),
       });
 
       if (
@@ -236,33 +264,51 @@ export class BookingsService {
         if (booking.vehicleId) {
           await tx.vehicle.update({
             where: { id: booking.vehicleId },
-            data: {
-              status: VehicleStatus.AVAILABLE,
-            },
+            data: { status: VehicleStatus.AVAILABLE },
           });
         }
 
         if (booking.driverId) {
           await tx.driver.update({
             where: { id: booking.driverId },
-            data: {
-              status: DriverStatus.AVAILABLE,
-            },
+            data: { status: DriverStatus.AVAILABLE },
           });
         }
       }
 
-      return tx.booking.findUnique({
-        where: { id: updatedBooking.id },
-        include: {
-          company: true,
-          customer: true,
-          route: true,
-          driver: true,
-          vehicle: true,
-          payments: true,
-        },
-      });
+      return result;
     });
+
+    return updatedBooking;
+  }
+
+  private async generateBookingRef(): Promise<string> {
+    const now = new Date();
+
+    const datePart = now.toISOString().slice(0, 10).replaceAll('-', '');
+    const randomPart = Math.floor(1000 + Math.random() * 9000);
+
+    const bookingRef = `LB-${datePart}-${randomPart}`;
+
+    const existing = await this.prisma.booking.findUnique({
+      where: { bookingRef },
+    });
+
+    if (existing) {
+      return this.generateBookingRef();
+    }
+
+    return bookingRef;
+  }
+
+  private bookingInclude() {
+    return {
+      company: true,
+      customer: true,
+      route: true,
+      driver: true,
+      vehicle: true,
+      payments: true,
+    };
   }
 }

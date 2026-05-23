@@ -1,7 +1,7 @@
 import { Body, Controller, Get, Param, Patch, Post } from '@nestjs/common';
+import { BookingStatus } from '@prisma/client';
 import { BookingsService } from './bookings.service';
 import { CreateBookingDto } from './dto/create-booking.dto';
-import { UpdateBookingStatusDto } from './dto/update-booking-status.dto';
 
 @Controller('bookings')
 export class BookingsController {
@@ -25,8 +25,8 @@ export class BookingsController {
   @Patch(':id/status')
   updateStatus(
     @Param('id') id: string,
-    @Body() updateBookingStatusDto: UpdateBookingStatusDto,
+    @Body('status') status: BookingStatus,
   ) {
-    return this.bookingsService.updateStatus(id, updateBookingStatusDto.status);
+    return this.bookingsService.updateStatus(id, status);
   }
 }

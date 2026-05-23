@@ -320,10 +320,16 @@ model Booking {
 
   bookingRef     String   @unique
   tripType       TripType
+  customTripType String?
+
   pickupLocation String
   destination    String
   pickupDate     DateTime
+  dropoffDate    DateTime?
+  durationHours  Decimal?
+  durationDays   Decimal?
   passengers     Int
+
   luggageDetails String?
   specialNotes   String?
 
