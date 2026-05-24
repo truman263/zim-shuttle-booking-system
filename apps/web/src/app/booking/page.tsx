@@ -53,6 +53,23 @@ type BookingResponse = {
   };
 };
 
+type PaymentCheckoutResponse = {
+  success: boolean;
+  paynowConfigured?: boolean;
+  requiresConfiguration?: boolean;
+  message: string;
+  bookingRef: string;
+  bookingId: string;
+  paymentId: string;
+  paymentType: 'DEPOSIT' | 'FULL_PAYMENT' | 'BALANCE';
+  paynowPaymentMethod: 'WEB' | 'ECOCASH' | 'ONEMONEY';
+  amount: number;
+  currency: string;
+  paymentStatus: string;
+  redirectUrl?: string | null;
+  whatsapp?: string;
+};
+
 type TrackedBooking = {
   bookingRef: string;
   status: string;
@@ -151,6 +168,9 @@ export default function PublicBookingPage() {
   const [estimating, setEstimating] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [tracking, setTracking] = useState(false);
+  const [paymentLoading, setPaymentLoading] = useState<
+    'DEPOSIT' | 'FULL_PAYMENT' | null
+  >(null);
 
   const [errorMessage, setErrorMessage] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
@@ -518,6 +538,51 @@ export default function PublicBookingPage() {
     }
   }
 
+  async function createPaymentCheckout(
+    bookingId: string,
+    paymentType: 'DEPOSIT' | 'FULL_PAYMENT',
+  ) {
+    clearMessages();
+
+    if (!bookingId) {
+      setErrorMessage('Booking ID is missing. Please try submitting again.');
+      return;
+    }
+
+    try {
+      setPaymentLoading(paymentType);
+
+      const response = await apiPost<PaymentCheckoutResponse>(
+        '/public-payments/create-checkout',
+        {
+          bookingId,
+          paymentType,
+          paynowPaymentMethod: 'WEB',
+        },
+      );
+
+      if (response.redirectUrl) {
+        window.location.href = response.redirectUrl;
+        return;
+      }
+
+      if (response.requiresConfiguration) {
+        setErrorMessage(response.message);
+        return;
+      }
+
+      setSuccessMessage(response.message || 'Payment checkout prepared.');
+    } catch (error) {
+      setErrorMessage(
+        error instanceof Error
+          ? error.message
+          : 'Unable to start payment checkout.',
+      );
+    } finally {
+      setPaymentLoading(null);
+    }
+  }
+
   async function trackBooking(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
@@ -681,6 +746,8 @@ export default function PublicBookingPage() {
                       humanise={humanise}
                       switchMode={switchMode}
                       setTrackingRef={setTrackingRef}
+                      createPaymentCheckout={createPaymentCheckout}
+                      paymentLoading={paymentLoading}
                     />
                   )}
                 </div>
@@ -1463,6 +1530,8 @@ function SummaryPanel({
   humanise,
   switchMode,
   setTrackingRef,
+  createPaymentCheckout,
+  paymentLoading,
 }: {
   estimate: PriceCalculation | null;
   bookingResponse: BookingResponse | null;
@@ -1472,6 +1541,11 @@ function SummaryPanel({
   humanise: (value?: string | null) => string;
   switchMode: (mode: ViewMode) => void;
   setTrackingRef: (value: string) => void;
+  createPaymentCheckout: (
+    bookingId: string,
+    paymentType: 'DEPOSIT' | 'FULL_PAYMENT',
+  ) => void;
+  paymentLoading: 'DEPOSIT' | 'FULL_PAYMENT' | null;
 }) {
   if (bookingResponse) {
     return (
@@ -1499,16 +1573,42 @@ function SummaryPanel({
           <p>Price: ${formatMoney(bookingResponse.finalPrice)}</p>
         </div>
 
-        <button
-          type="button"
-          onClick={() => {
-            setTrackingRef(bookingResponse.bookingRef);
-            switchMode('TRACK');
-          }}
-          className="mt-5 rounded-full bg-white px-5 py-3 text-sm font-semibold text-black transition hover:bg-neutral-300"
-        >
-          Track This Booking
-        </button>
+        <div className="mt-5 grid gap-3 sm:grid-cols-3">
+          <button
+            type="button"
+            onClick={() =>
+              createPaymentCheckout(bookingResponse.bookingId, 'DEPOSIT')
+            }
+            disabled={paymentLoading !== null}
+            className="rounded-full bg-white px-5 py-3 text-xs font-semibold text-black transition hover:bg-neutral-300 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            {paymentLoading === 'DEPOSIT' ? 'Preparing...' : 'Pay Deposit'}
+          </button>
+
+          <button
+            type="button"
+            onClick={() =>
+              createPaymentCheckout(bookingResponse.bookingId, 'FULL_PAYMENT')
+            }
+            disabled={paymentLoading !== null}
+            className="rounded-full border border-white/15 bg-white/[0.06] px-5 py-3 text-xs font-semibold text-white transition hover:border-white/30 hover:bg-white hover:text-black disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            {paymentLoading === 'FULL_PAYMENT'
+              ? 'Preparing...'
+              : 'Pay Full Amount'}
+          </button>
+
+          <button
+            type="button"
+            onClick={() => {
+              setTrackingRef(bookingResponse.bookingRef);
+              switchMode('TRACK');
+            }}
+            className="rounded-full border border-white/15 bg-white/[0.04] px-5 py-3 text-xs font-semibold text-white transition hover:border-white/30 hover:bg-white hover:text-black"
+          >
+            Track Booking
+          </button>
+        </div>
       </div>
     );
   }
