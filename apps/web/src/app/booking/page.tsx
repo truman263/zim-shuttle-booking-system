@@ -4,6 +4,7 @@ import { FormEvent, useEffect, useMemo, useRef, useState } from 'react';
 import { apiGet, apiPost } from '@/lib/api';
 
 const COMPANY_ID = 'cmpfkzypy0000l4ew82k92cl1';
+const WHATSAPP_NUMBER = '263773615432';
 
 type ViewMode = 'BOOK' | 'TRACK';
 type TripDirection = 'ONE_WAY' | 'ROUND_TRIP';
@@ -689,6 +690,10 @@ export default function PublicBookingPage() {
         </div>
       </section>
 
+      <BookingFooter switchMode={switchMode} />
+
+      <NeedHelpButton />
+
       <style jsx global>{`
         .booking-bg {
           transform: scale(1.08);
@@ -937,6 +942,109 @@ export default function PublicBookingPage() {
         }
       `}</style>
     </main>
+  );
+}
+
+
+
+function BookingFooter({
+  switchMode,
+}: {
+  switchMode: (mode: ViewMode) => void;
+}) {
+  return (
+    <footer className="relative border-t border-white/10 px-5 py-9 md:px-8">
+      <div className="mx-auto flex max-w-6xl flex-col gap-6 text-sm text-neutral-400 md:flex-row md:items-center md:justify-between">
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-[0.35em] text-neutral-200">
+            LadyBird Shuttle Services
+          </p>
+          <p className="mt-2 max-w-2xl text-sm leading-7 text-neutral-500">
+            Premium shuttle bookings for airport transfers, city-to-city trips,
+            round trips and private hire across Zimbabwe.
+          </p>
+        </div>
+
+        <nav
+          aria-label="Public booking quick links"
+          className="flex flex-wrap items-center gap-3 text-sm font-medium text-neutral-400"
+        >
+          <a href="/" className="transition hover:text-white">
+            Home
+          </a>
+
+          <span className="text-neutral-700">/</span>
+
+          <button
+            type="button"
+            onClick={() => switchMode('BOOK')}
+            className="transition hover:text-white"
+          >
+            Book a Shuttle
+          </button>
+
+          <span className="text-neutral-700">/</span>
+
+          <button
+            type="button"
+            onClick={() => switchMode('TRACK')}
+            className="transition hover:text-white"
+          >
+            Track Booking
+          </button>
+
+          <span className="text-neutral-700">/</span>
+
+          <a
+            href={`https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(
+              'Hello LadyBird Shuttle Services, I need help with my shuttle booking.',
+            )}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="transition hover:text-white"
+          >
+            WhatsApp
+          </a>
+        </nav>
+      </div>
+
+      <div className="mx-auto mt-6 max-w-6xl border-t border-white/10 pt-5 text-xs text-neutral-600">
+        © 2026 LadyBird Shuttle Services. All rights reserved.
+      </div>
+    </footer>
+  );
+}
+
+function NeedHelpButton() {
+  const message =
+    'Hello LadyBird Shuttle Services, I need help with my shuttle booking.';
+
+  const whatsappUrl = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(
+    message,
+  )}`;
+
+  return (
+    <a
+      href={whatsappUrl}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="fixed bottom-5 right-5 z-50 inline-flex items-center gap-2.5 rounded-full border border-white/15 bg-white px-4 py-2.5 text-xs font-semibold text-black shadow-[0_18px_60px_rgba(0,0,0,0.45)] transition hover:bg-neutral-200 md:bottom-7 md:right-7"
+      aria-label="Need help on WhatsApp"
+    >
+      <svg
+        width="15"
+        height="15"
+        viewBox="0 0 24 24"
+        aria-hidden="true"
+        className="shrink-0"
+      >
+        <path
+          fill="currentColor"
+          d="M12.04 2C6.58 2 2.13 6.45 2.13 11.91c0 1.75.46 3.45 1.33 4.95L2.05 22l5.25-1.38a9.86 9.86 0 0 0 4.74 1.21h.01c5.46 0 9.91-4.45 9.91-9.91C21.96 6.45 17.51 2 12.04 2Zm0 18.15h-.01a8.2 8.2 0 0 1-4.18-1.15l-.3-.18-3.12.82.83-3.04-.2-.31a8.17 8.17 0 0 1-1.25-4.37c0-4.54 3.69-8.23 8.24-8.23a8.18 8.18 0 0 1 5.82 2.41 8.18 8.18 0 0 1 2.41 5.82c0 4.54-3.7 8.23-8.24 8.23Zm4.52-6.16c-.25-.12-1.47-.72-1.7-.8-.23-.08-.4-.12-.57.12-.17.25-.65.8-.8.96-.15.17-.29.19-.54.06-.25-.12-1.05-.39-2-1.24-.74-.66-1.24-1.47-1.38-1.72-.14-.25-.02-.38.11-.51.11-.11.25-.29.37-.43.12-.15.17-.25.25-.41.08-.17.04-.31-.02-.43-.06-.12-.57-1.37-.78-1.88-.2-.49-.41-.42-.57-.43h-.49c-.17 0-.43.06-.66.31-.23.25-.86.84-.86 2.05s.88 2.38 1 2.55c.12.17 1.73 2.64 4.2 3.7.59.25 1.05.4 1.41.52.59.19 1.12.16 1.54.1.47-.07 1.47-.6 1.68-1.18.21-.58.21-1.08.15-1.18-.06-.1-.23-.16-.48-.28Z"
+        />
+      </svg>
+      Need help?
+    </a>
   );
 }
 
