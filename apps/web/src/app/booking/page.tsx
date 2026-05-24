@@ -555,13 +555,24 @@ export default function PublicBookingPage() {
 
   return (
     <main className="relative min-h-screen overflow-hidden bg-[#030303] text-white">
-      <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(135deg,#030303_0%,#090909_45%,#111111_100%)]" />
+      <div
+        className="booking-bg pointer-events-none absolute inset-0 bg-cover bg-right-top bg-no-repeat opacity-72"
+        style={{
+          backgroundImage: "url('/booking-bg.jpg')",
+        }}
+      />
+
+      <div className="pointer-events-none absolute inset-0 bg-black/38" />
+
+      <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(135deg,rgba(0,0,0,0.76)_0%,rgba(5,5,5,0.48)_42%,rgba(0,0,0,0.9)_100%)]" />
+
+      <div className="glass-motion-layer" />
+
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(255,255,255,0.18),transparent_24%),radial-gradient(circle_at_bottom_left,rgba(255,255,255,0.06),transparent_30%)]" />
 
       <div className="animated-orb orb-one" />
       <div className="animated-orb orb-two" />
       <div className="animated-orb orb-three" />
-
-      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(255,255,255,0.08),transparent_28%),radial-gradient(circle_at_bottom_right,rgba(255,255,255,0.045),transparent_30%)]" />
 
       <section className="relative border-b border-white/10 px-5 py-8 md:px-8 md:py-10">
         <div className="mx-auto max-w-7xl">
@@ -581,7 +592,7 @@ export default function PublicBookingPage() {
               </p>
             </div>
 
-            <div className="premium-glass rounded-[28px] border border-white/10 p-3 shadow-[0_24px_80px_rgba(0,0,0,0.45)]">
+            <div className="premium-glass glass-card-motion rounded-[28px] border border-white/10 p-3 shadow-[0_24px_80px_rgba(0,0,0,0.45)]">
               <div className="grid grid-cols-2 gap-2">
                 <button
                   type="button"
@@ -612,7 +623,7 @@ export default function PublicBookingPage() {
 
       <section className="relative px-5 py-6 md:px-8">
         <div className="mx-auto max-w-7xl">
-          <section className="premium-glass overflow-visible rounded-[32px] border border-white/10 text-white shadow-[0_28px_90px_rgba(0,0,0,0.5)]">
+          <section className="premium-glass glass-card-motion overflow-visible rounded-[32px] border border-white/10 text-white shadow-[0_28px_90px_rgba(0,0,0,0.5)]">
             <div className="border-b border-white/10 px-5 py-4 md:px-6">
               <h2 className="text-xl font-semibold">
                 {viewMode === 'BOOK' ? 'Booking Details' : 'Track Booking'}
@@ -679,6 +690,35 @@ export default function PublicBookingPage() {
       </section>
 
       <style jsx>{`
+        .booking-bg {
+          transform: scale(1.08);
+          transform-origin: center;
+          animation: backgroundDrift 28s ease-in-out infinite alternate;
+          filter: saturate(0.9) contrast(1.08) brightness(0.94);
+        }
+
+        .glass-motion-layer {
+          pointer-events: none;
+          position: absolute;
+          inset: -20%;
+          background:
+            linear-gradient(
+              115deg,
+              transparent 0%,
+              rgba(255, 255, 255, 0.035) 24%,
+              transparent 42%
+            ),
+            linear-gradient(
+              65deg,
+              transparent 0%,
+              rgba(255, 255, 255, 0.025) 18%,
+              transparent 36%
+            );
+          transform: translateX(-18%) rotate(0deg);
+          animation: glassSweep 18s ease-in-out infinite alternate;
+          opacity: 0.9;
+        }
+
         .animated-orb {
           pointer-events: none;
           position: absolute;
@@ -686,33 +726,33 @@ export default function PublicBookingPage() {
           background:
             radial-gradient(
               circle at 30% 30%,
-              rgba(255, 255, 255, 0.18),
-              rgba(255, 255, 255, 0.045) 42%,
-              rgba(255, 255, 255, 0.015) 70%,
+              rgba(255, 255, 255, 0.22),
+              rgba(255, 255, 255, 0.06) 40%,
+              rgba(255, 255, 255, 0.015) 72%,
               transparent 100%
             );
-          filter: blur(2px);
-          opacity: 0.75;
+          filter: blur(3px);
+          opacity: 0.72;
           animation-timing-function: ease-in-out;
           animation-iteration-count: infinite;
           animation-direction: alternate;
         }
 
         .orb-one {
-          left: -110px;
+          left: -120px;
           top: 150px;
-          height: 310px;
-          width: 310px;
+          height: 330px;
+          width: 330px;
           animation-name: floatOne;
           animation-duration: 18s;
         }
 
         .orb-two {
-          right: 8%;
-          top: 210px;
-          height: 390px;
-          width: 390px;
-          opacity: 0.55;
+          right: 7%;
+          top: 220px;
+          height: 400px;
+          width: 400px;
+          opacity: 0.52;
           animation-name: floatTwo;
           animation-duration: 22s;
         }
@@ -720,54 +760,57 @@ export default function PublicBookingPage() {
         .orb-three {
           bottom: 5%;
           left: 44%;
-          height: 280px;
-          width: 280px;
-          opacity: 0.45;
+          height: 290px;
+          width: 290px;
+          opacity: 0.44;
           animation-name: floatThree;
           animation-duration: 20s;
         }
 
-        @keyframes floatOne {
-          from {
-            transform: translate3d(0, 0, 0) scale(1);
-          }
-          to {
-            transform: translate3d(60px, 35px, 0) scale(1.08);
-          }
-        }
-
-        @keyframes floatTwo {
-          from {
-            transform: translate3d(0, 0, 0) scale(1);
-          }
-          to {
-            transform: translate3d(-55px, 45px, 0) scale(1.05);
-          }
-        }
-
-        @keyframes floatThree {
-          from {
-            transform: translate3d(0, 0, 0) scale(1);
-          }
-          to {
-            transform: translate3d(45px, -35px, 0) scale(1.1);
-          }
-        }
-
         .premium-glass {
+          position: relative;
+          isolation: isolate;
+          overflow: hidden;
           background:
             linear-gradient(
               145deg,
-              rgba(255, 255, 255, 0.075) 0%,
-              rgba(255, 255, 255, 0.045) 42%,
-              rgba(255, 255, 255, 0.025) 100%
+              rgba(255, 255, 255, 0.11) 0%,
+              rgba(255, 255, 255, 0.062) 42%,
+              rgba(255, 255, 255, 0.036) 100%
             );
-          backdrop-filter: blur(26px) saturate(150%);
-          -webkit-backdrop-filter: blur(26px) saturate(150%);
+          backdrop-filter: blur(30px) saturate(165%);
+          -webkit-backdrop-filter: blur(30px) saturate(165%);
           box-shadow:
-            inset 0 1px 0 rgba(255, 255, 255, 0.09),
+            inset 0 1px 0 rgba(255, 255, 255, 0.12),
             inset 0 -1px 0 rgba(255, 255, 255, 0.025),
             0 28px 90px rgba(0, 0, 0, 0.55);
+        }
+
+        .premium-glass::before {
+          content: '';
+          pointer-events: none;
+          position: absolute;
+          inset: 0;
+          z-index: -1;
+          background:
+            radial-gradient(
+              circle at 20% 10%,
+              rgba(255, 255, 255, 0.13),
+              transparent 26%
+            ),
+            linear-gradient(
+              120deg,
+              transparent 0%,
+              rgba(255, 255, 255, 0.055) 22%,
+              transparent 44%
+            );
+          transform: translateX(-18%);
+          opacity: 0.8;
+          animation: cardReflection 12s ease-in-out infinite alternate;
+        }
+
+        .glass-card-motion {
+          animation: cardFloat 12s ease-in-out infinite alternate;
         }
 
         .input-glass {
@@ -814,6 +857,83 @@ export default function PublicBookingPage() {
 
         input[type='datetime-local']::-webkit-calendar-picker-indicator:hover {
           opacity: 0.95;
+        }
+
+        @keyframes backgroundDrift {
+          from {
+            transform: scale(1.08) translate3d(-1.2%, -0.8%, 0);
+            filter: saturate(0.88) contrast(1.05) brightness(0.9);
+          }
+          to {
+            transform: scale(1.14) translate3d(1.4%, 1%, 0);
+            filter: saturate(0.95) contrast(1.14) brightness(1);
+          }
+        }
+
+        @keyframes glassSweep {
+          from {
+            transform: translate3d(-18%, -4%, 0) rotate(-2deg);
+          }
+          to {
+            transform: translate3d(14%, 5%, 0) rotate(2deg);
+          }
+        }
+
+        @keyframes cardReflection {
+          from {
+            transform: translateX(-24%);
+            opacity: 0.52;
+          }
+          to {
+            transform: translateX(16%);
+            opacity: 0.82;
+          }
+        }
+
+        @keyframes cardFloat {
+          from {
+            transform: translate3d(0, 0, 0);
+          }
+          to {
+            transform: translate3d(0, -2px, 0);
+          }
+        }
+
+        @keyframes floatOne {
+          from {
+            transform: translate3d(0, 0, 0) scale(1);
+          }
+          to {
+            transform: translate3d(60px, 35px, 0) scale(1.08);
+          }
+        }
+
+        @keyframes floatTwo {
+          from {
+            transform: translate3d(0, 0, 0) scale(1);
+          }
+          to {
+            transform: translate3d(-55px, 45px, 0) scale(1.05);
+          }
+        }
+
+        @keyframes floatThree {
+          from {
+            transform: translate3d(0, 0, 0) scale(1);
+          }
+          to {
+            transform: translate3d(45px, -35px, 0) scale(1.1);
+          }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+          .booking-bg,
+          .glass-motion-layer,
+          .animated-orb,
+          .premium-glass::before,
+          .glass-card-motion {
+            animation: none;
+          }
         }
       `}</style>
     </main>
