@@ -575,7 +575,7 @@ export default function PublicBookingPage() {
       <div className="animated-orb orb-three" />
 
       <section className="relative border-b border-white/10 px-5 py-8 md:px-8 md:py-10">
-        <div className="mx-auto max-w-7xl">
+        <div className="mx-auto max-w-6xl">
           <p className="text-xs uppercase tracking-[0.4em] text-neutral-500">
             LadyBird Shuttle Services
           </p>
@@ -622,9 +622,9 @@ export default function PublicBookingPage() {
       </section>
 
       <section className="relative px-5 py-6 md:px-8">
-        <div className="mx-auto max-w-7xl">
-          <section className="premium-glass glass-card-motion overflow-visible rounded-[32px] border border-white/10 text-white shadow-[0_28px_90px_rgba(0,0,0,0.5)]">
-            <div className="border-b border-white/10 px-5 py-4 md:px-6">
+        <div className="mx-auto max-w-6xl">
+          <section className="premium-glass glass-card-motion overflow-visible rounded-[28px] border border-white/10 text-white shadow-[0_28px_90px_rgba(0,0,0,0.5)]">
+            <div className="border-b border-white/10 px-4 py-3 md:px-5">
               <h2 className="text-xl font-semibold">
                 {viewMode === 'BOOK' ? 'Booking Details' : 'Track Booking'}
               </h2>
@@ -689,7 +689,7 @@ export default function PublicBookingPage() {
         </div>
       </section>
 
-      <style jsx>{`
+      <style jsx global>{`
         .booking-bg {
           transform: scale(1.08);
           transform-origin: center;
@@ -815,12 +815,12 @@ export default function PublicBookingPage() {
 
         .input-glass {
           width: 100%;
-          height: 52px;
-          border-radius: 16px;
-          border: 1px solid rgba(255, 255, 255, 0.13);
-          background: rgba(255, 255, 255, 0.045);
-          padding: 0 16px;
-          font-size: 0.95rem;
+          height: 46px;
+          border-radius: 14px;
+          border: 1px solid rgba(255, 255, 255, 0.18);
+          background: rgba(255, 255, 255, 0.075);
+          padding: 0 14px;
+          font-size: 0.86rem;
           color: #ffffff;
           outline: none;
           transition:
@@ -832,12 +832,12 @@ export default function PublicBookingPage() {
 
         .input-glass:hover {
           border-color: rgba(255, 255, 255, 0.18);
-          background: rgba(255, 255, 255, 0.055);
+          background: rgba(255, 255, 255, 0.095);
         }
 
         .input-glass:focus {
           border-color: rgba(255, 255, 255, 0.28);
-          background: rgba(255, 255, 255, 0.07);
+          background: rgba(255, 255, 255, 0.11);
           box-shadow:
             0 0 0 3px rgba(255, 255, 255, 0.05),
             inset 0 1px 0 rgba(255, 255, 255, 0.03);
@@ -845,7 +845,7 @@ export default function PublicBookingPage() {
 
         .input-glass::placeholder {
           color: rgba(255, 255, 255, 0.32);
-          font-size: 0.84rem;
+          font-size: 0.78rem;
           letter-spacing: 0.01em;
         }
 
@@ -968,7 +968,7 @@ function BookingFormView({
   usesRoundTrip: boolean;
 }) {
   return (
-    <form noValidate onSubmit={submitBooking} className="space-y-5 p-5 md:p-6">
+    <form noValidate onSubmit={submitBooking} className="space-y-4 p-4 md:p-5">
       <section>
         <SectionTitle
           number="01"
@@ -976,7 +976,7 @@ function BookingFormView({
           subtitle="Choose route, direction and passengers."
         />
 
-        <div className="mt-4 grid gap-4 md:grid-cols-2">
+        <div className="mt-3 grid gap-3 md:grid-cols-2">
           <FormField label="Route" required>
             <RoutePicker
               routes={activeRoutes}
@@ -997,7 +997,7 @@ function BookingFormView({
           </FormField>
         </div>
 
-        <div className="mt-4 grid gap-3 sm:grid-cols-2">
+        <div className="mt-3 grid gap-3 sm:grid-cols-2">
           <button
             type="button"
             onClick={() => setTripDirection('ONE_WAY')}
@@ -1045,7 +1045,7 @@ function BookingFormView({
           subtitle="Add pickup, destination and luggage information."
         />
 
-        <div className="mt-4 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+        <div className="mt-3 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
           <FormField label="Pickup Date & Time" required>
             <input
               type="datetime-local"
@@ -1091,7 +1091,7 @@ function BookingFormView({
           <div className="mt-4 rounded-2xl border border-white/10 bg-white/[0.04] p-4 backdrop-blur-xl">
             <p className="text-sm font-semibold text-white">Return Journey</p>
 
-            <div className="mt-4 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+            <div className="mt-3 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
               <FormField label="Return Date & Time" required>
                 <input
                   type="datetime-local"
@@ -1147,7 +1147,7 @@ function BookingFormView({
           subtitle="We will use these details to confirm your booking."
         />
 
-        <div className="mt-4 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+        <div className="mt-3 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
           <FormField label="Full Name" required>
             <input
               value={form.customerName}
@@ -1199,7 +1199,7 @@ function BookingFormView({
           type="button"
           onClick={estimatePrice}
           disabled={estimating}
-          className="rounded-full border border-white/20 bg-white/[0.03] px-6 py-3 text-sm font-semibold text-white transition hover:border-white/35 hover:bg-white hover:text-black disabled:cursor-not-allowed disabled:opacity-50"
+          className="rounded-full border border-white/20 bg-white/[0.03] px-5 py-2.5 text-xs font-semibold text-white transition hover:border-white/35 hover:bg-white hover:text-black disabled:cursor-not-allowed disabled:opacity-50"
         >
           {estimating ? 'Calculating...' : 'Get Estimate'}
         </button>
@@ -1207,7 +1207,7 @@ function BookingFormView({
         <button
           type="submit"
           disabled={submitting}
-          className="rounded-full bg-white px-6 py-3 text-sm font-semibold text-black transition hover:bg-neutral-300 disabled:cursor-not-allowed disabled:opacity-50"
+          className="rounded-full bg-white px-5 py-2.5 text-xs font-semibold text-black transition hover:bg-neutral-300 disabled:cursor-not-allowed disabled:opacity-50"
         >
           {submitting ? 'Submitting...' : 'Submit Booking'}
         </button>
@@ -1251,7 +1251,7 @@ function RoutePicker({
       <button
         type="button"
         onClick={() => setOpen((current) => !current)}
-        className="flex h-[52px] w-full items-center justify-between rounded-2xl border border-white/15 bg-white/[0.055] px-4 text-left text-sm text-white transition hover:border-white/25 hover:bg-white/[0.075]"
+        className="flex h-[46px] w-full items-center justify-between rounded-2xl border border-white/15 bg-white/[0.055] px-4 text-left text-sm text-white transition hover:border-white/25 hover:bg-white/[0.075]"
       >
         <span className="truncate">
           {selectedRoute
@@ -1338,7 +1338,7 @@ function TrackFormView({
       <button
         type="submit"
         disabled={tracking}
-        className="w-full rounded-full bg-white px-6 py-3 text-sm font-semibold text-black transition hover:bg-neutral-300 disabled:cursor-not-allowed disabled:opacity-50"
+        className="w-full rounded-full bg-white px-5 py-2.5 text-xs font-semibold text-black transition hover:bg-neutral-300 disabled:cursor-not-allowed disabled:opacity-50"
       >
         {tracking ? 'Checking...' : 'Track Booking'}
       </button>
@@ -1546,13 +1546,13 @@ function SectionTitle({
 }) {
   return (
     <div className="flex items-start gap-3">
-      <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-white/12 bg-white/[0.05] text-[12px] font-semibold text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.05)]">
+      <span className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-white/12 bg-white/[0.05] text-[11px] font-semibold text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.05)]">
         {number}
       </span>
 
       <div>
-        <h3 className="text-lg font-semibold text-white">{title}</h3>
-        <p className="mt-1 text-sm text-neutral-400">{subtitle}</p>
+        <h3 className="text-base font-semibold text-white">{title}</h3>
+        <p className="mt-1 text-xs text-neutral-400">{subtitle}</p>
       </div>
     </div>
   );
@@ -1569,7 +1569,7 @@ function FormField({
 }) {
   return (
     <label className="block">
-      <span className="mb-2 block text-sm font-medium text-neutral-200">
+      <span className="mb-1.5 block text-xs font-medium text-neutral-200">
         {label}
         {required && <span className="ml-1 text-white">*</span>}
       </span>
@@ -1631,7 +1631,7 @@ function Pill({ children }: { children: React.ReactNode }) {
 }
 
 function tabButtonClass(active: boolean) {
-  return `rounded-full px-4 py-3 text-sm font-semibold transition ${
+  return `rounded-full px-4 py-2.5 text-xs font-semibold transition ${
     active
       ? 'bg-white text-black'
       : 'border border-white/10 bg-white/[0.02] text-neutral-400 hover:border-white/25 hover:text-white'
@@ -1639,7 +1639,7 @@ function tabButtonClass(active: boolean) {
 }
 
 function modeButtonClass(active: boolean) {
-  return `rounded-2xl border px-4 py-3 text-sm font-semibold transition ${
+  return `rounded-2xl border px-4 py-2.5 text-xs font-semibold transition ${
     active
       ? 'border-white bg-white text-black'
       : 'border-white/10 bg-white/[0.04] text-neutral-100 hover:border-white/25 hover:bg-white/[0.07]'
