@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { PublicPaymentsModule } from './public-payments/public-payments.module';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { BookingsModule } from './bookings/bookings.module';
@@ -17,6 +18,7 @@ import { ZonesModule } from './zones/zones.module';
 
 @Module({
   imports: [
+    PublicPaymentsModule,
     PrismaModule,
     CompaniesModule,
     RoutesModule,

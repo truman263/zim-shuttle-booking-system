@@ -701,21 +701,12 @@ export class BookingsService {
   }
 
   private calculatePaymentStatus(
-    depositAmount?: number | null,
-    finalPrice?: number | null,
+    _depositAmount?: number | null,
+    _finalPrice?: number | null,
   ) {
-    const final = Number(finalPrice ?? 0);
-    const deposit = Number(depositAmount ?? 0);
-
-    if (deposit <= 0) {
-      return PaymentStatus.UNPAID;
-    }
-
-    if (final > 0 && deposit >= final) {
-      return PaymentStatus.PAID;
-    }
-
-    return PaymentStatus.PARTIALLY_PAID;
+    // depositAmount is the requested deposit, not money received.
+    // Payment status must only change after a real successful payment record.
+    return PaymentStatus.UNPAID;
   }
 
   private async generateBookingRef(): Promise<string> {
