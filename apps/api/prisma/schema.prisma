@@ -51,6 +51,23 @@ enum PaymentMethod {
   PAYNOW
 }
 
+enum PaymentGateway {
+  MANUAL
+  PAYNOW
+}
+
+enum PaymentType {
+  DEPOSIT
+  FULL_PAYMENT
+  BALANCE
+}
+
+enum PaynowPaymentMethod {
+  WEB
+  ECOCASH
+  ONEMONEY
+}
+
 enum VehicleStatus {
   AVAILABLE
   BOOKED
@@ -315,7 +332,7 @@ model Booking {
   customer   Customer @relation(fields: [customerId], references: [id])
 
   routeId String?
-  route   Route? @relation(fields: [routeId], references: [id])
+  route   Route?  @relation(fields: [routeId], references: [id])
 
   driverId String?
   driver   Driver? @relation(fields: [driverId], references: [id])
@@ -338,10 +355,10 @@ model Booking {
   returnDestination    String?
   returnNotes          String?
 
-  durationHours Decimal?
-  durationDays  Decimal?
-  passengers    Int
+  durationHours Int?
+  durationDays  Int?
 
+  passengers     Int
   luggageDetails String?
   specialNotes   String?
 
@@ -364,11 +381,28 @@ model Payment {
   bookingId String
   booking   Booking @relation(fields: [bookingId], references: [id])
 
-  amount         Decimal
-  method         PaymentMethod
-  status         PaymentStatus @default(UNPAID)
-  transactionRef String?
-  paidAt         DateTime?
+  amount Decimal
+
+  method PaymentMethod
+  status PaymentStatus @default(UNPAID)
+
+  gateway             PaymentGateway      @default(MANUAL)
+  paymentType         PaymentType         @default(DEPOSIT)
+  paynowPaymentMethod PaynowPaymentMethod?
+
+  currency String @default("USD")
+
+  transactionRef  String?
+  gatewayReference String?
+
+  pollUrl     String?
+  redirectUrl String?
+
+  phone        String?
+  instructions String?
+  rawResponse  String?
+
+  paidAt DateTime?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
