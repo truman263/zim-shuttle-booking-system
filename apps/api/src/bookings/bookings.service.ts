@@ -168,6 +168,13 @@ export class BookingsService {
           finalPrice: createBookingDto.finalPrice,
           depositAmount: createBookingDto.depositAmount,
 
+          smartPricingMode: createBookingDto.smartPricingMode?.trim(),
+          smartDistanceKm: createBookingDto.smartDistanceKm,
+          smartDurationMinutes: createBookingDto.smartDurationMinutes,
+          matchedRouteId: createBookingDto.matchedRouteId?.trim(),
+          matchedRouteName: createBookingDto.matchedRouteName?.trim(),
+          matchedRouteDirection: createBookingDto.matchedRouteDirection?.trim(),
+
           status: bookingStatus,
           paymentStatus,
         },

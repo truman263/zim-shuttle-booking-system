@@ -109,7 +109,15 @@ export class PublicBookingsService {
     let finalPrice: number | undefined;
     let requiresManualQuote = false;
 
-    if (pricingMode === PricingMode.CUSTOM_QUOTE) {
+    const hasSmartEstimate =
+      !!createDto.smartPricingMode &&
+      createDto.estimatedPrice !== undefined &&
+      createDto.finalPrice !== undefined;
+
+    if (hasSmartEstimate) {
+      estimatedPrice = createDto.estimatedPrice;
+      finalPrice = createDto.finalPrice;
+    } else if (pricingMode === PricingMode.CUSTOM_QUOTE) {
       requiresManualQuote = true;
     } else {
       const calculatedPrice = await this.pricingCalculatorService.calculate({
@@ -157,6 +165,13 @@ export class PublicBookingsService {
       estimatedPrice,
       finalPrice,
       depositAmount: createDto.depositAmount,
+
+      smartPricingMode: createDto.smartPricingMode,
+      smartDistanceKm: createDto.smartDistanceKm,
+      smartDurationMinutes: createDto.smartDurationMinutes,
+      matchedRouteId: createDto.matchedRouteId,
+      matchedRouteName: createDto.matchedRouteName,
+      matchedRouteDirection: createDto.matchedRouteDirection,
     };
 
     const booking = await this.bookingsService.create(bookingPayload);
@@ -174,6 +189,12 @@ export class PublicBookingsService {
       estimatedPrice: booking.estimatedPrice,
       finalPrice: booking.finalPrice,
       depositAmount: booking.depositAmount,
+      smartPricingMode: booking.smartPricingMode,
+      smartDistanceKm: booking.smartDistanceKm,
+      smartDurationMinutes: booking.smartDurationMinutes,
+      matchedRouteId: booking.matchedRouteId,
+      matchedRouteName: booking.matchedRouteName,
+      matchedRouteDirection: booking.matchedRouteDirection,
       customer: {
         fullName: customer.fullName,
         phone: customer.phone,
@@ -218,6 +239,12 @@ export class PublicBookingsService {
       estimatedPrice: booking.estimatedPrice,
       finalPrice: booking.finalPrice,
       depositAmount: booking.depositAmount,
+      smartPricingMode: booking.smartPricingMode,
+      smartDistanceKm: booking.smartDistanceKm,
+      smartDurationMinutes: booking.smartDurationMinutes,
+      matchedRouteId: booking.matchedRouteId,
+      matchedRouteName: booking.matchedRouteName,
+      matchedRouteDirection: booking.matchedRouteDirection,
       customer: {
         fullName: booking.customer.fullName,
         phone: booking.customer.phone,

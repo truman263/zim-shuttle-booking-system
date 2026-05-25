@@ -366,6 +366,13 @@ model Booking {
   finalPrice     Decimal?
   depositAmount  Decimal?
 
+  smartPricingMode       String?
+  smartDistanceKm        Decimal?
+  smartDurationMinutes   Int?
+  matchedRouteId         String?
+  matchedRouteName       String?
+  matchedRouteDirection  String?
+
   status        BookingStatus @default(PENDING)
   paymentStatus PaymentStatus @default(UNPAID)
 

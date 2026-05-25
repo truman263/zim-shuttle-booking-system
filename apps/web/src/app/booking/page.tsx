@@ -35,6 +35,9 @@ type SmartRouteEstimate = {
   distanceKm?: number | null;
   durationMinutes?: number | null;
   estimatedPrice?: number | null;
+  matchedRouteId?: string | null;
+  matchedRouteName?: string | null;
+  matchedRouteDirection?: string | null;
   message?: string;
   reason?: string;
   breakdown?: {
@@ -569,8 +572,11 @@ export default function PublicBookingPage() {
         customerPhone: form.customerPhone.trim(),
         customerEmail: form.customerEmail.trim(),
 
-        routeId: form.routeId,
-        tripType: mapRouteTypeToTripType(selectedRoute?.routeType),
+        routeId: usesCustomRoute ? undefined : form.routeId,
+        tripType: usesCustomRoute
+          ? 'CUSTOM'
+          : mapRouteTypeToTripType(selectedRoute?.routeType),
+        customTripType: usesCustomRoute ? 'Smart Custom Route' : undefined,
         tripDirection: form.tripDirection,
 
         pickupLocation: form.pickupLocation.trim(),
@@ -600,6 +606,24 @@ export default function PublicBookingPage() {
           : undefined,
         finalPrice: usesCustomRoute
           ? estimate?.estimatedPrice || undefined
+          : undefined,
+        smartPricingMode: usesCustomRoute
+          ? estimate?.pricingMode || undefined
+          : undefined,
+        smartDistanceKm: usesCustomRoute
+          ? estimate?.distanceKm || undefined
+          : undefined,
+        smartDurationMinutes: usesCustomRoute
+          ? estimate?.durationMinutes || undefined
+          : undefined,
+        matchedRouteId: usesCustomRoute
+          ? estimate?.matchedRouteId || undefined
+          : undefined,
+        matchedRouteName: usesCustomRoute
+          ? estimate?.matchedRouteName || undefined
+          : undefined,
+        matchedRouteDirection: usesCustomRoute
+          ? estimate?.matchedRouteDirection || undefined
           : undefined,
         depositAmount: 0,
       });

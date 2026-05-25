@@ -109,4 +109,31 @@ export class CreateBookingDto {
   @IsNumber()
   @Min(0)
   depositAmount?: number;
+
+  @IsOptional()
+  @IsString()
+  smartPricingMode?: string;
+
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  smartDistanceKm?: number;
+
+  @IsOptional()
+  @IsInt()
+  @Min(0)
+  smartDurationMinutes?: number;
+
+  @IsOptional()
+  @IsString()
+  matchedRouteId?: string;
+
+  @IsOptional()
+  @IsString()
+  matchedRouteName?: string;
+
+  @IsOptional()
+  @IsString()
+  matchedRouteDirection?: string;
+
 }
