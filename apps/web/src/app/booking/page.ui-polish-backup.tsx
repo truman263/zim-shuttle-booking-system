@@ -7,7 +7,7 @@ const COMPANY_ID = 'cmpfkzypy0000l4ew82k92cl1';
 const WHATSAPP_NUMBER = '263773615432';
 
 type ViewMode = 'BOOK' | 'TRACK';
-type TripDirection = '' | 'ONE_WAY' | 'ROUND_TRIP';
+type TripDirection = 'ONE_WAY' | 'ROUND_TRIP';
 type RouteMode = 'SAVED_ROUTE' | 'CUSTOM_ROUTE';
 
 type RouteRecord = {
@@ -144,7 +144,6 @@ type BookingForm = {
   specialNotes: string;
 
   customerName: string;
-  customerIdNumber: string;
   customerPhone: string;
   customerEmail: string;
 };
@@ -152,7 +151,7 @@ type BookingForm = {
 const initialForm: BookingForm = {
   routeMode: 'SAVED_ROUTE',
   routeId: '',
-  tripDirection: '',
+  tripDirection: 'ONE_WAY',
 
   pickupLocation: '',
   destination: '',
@@ -168,7 +167,6 @@ const initialForm: BookingForm = {
   specialNotes: '',
 
   customerName: '',
-  customerIdNumber: '',
   customerPhone: '',
   customerEmail: '',
 };
@@ -392,10 +390,6 @@ export default function PublicBookingPage() {
       return 'Please select a route or choose Custom Route.';
     }
 
-    if (!form.tripDirection) {
-      return 'Please choose One-way Trip or Round Trip.';
-    }
-
     if (!form.pickupLocation.trim()) {
       return 'Please enter your pickup location.';
     }
@@ -453,19 +447,14 @@ export default function PublicBookingPage() {
         return 'Please enter your full name.';
       }
 
-      if (!form.customerIdNumber.trim()) {
-        return 'Please enter your ID or passport number.';
-      }
-
       if (!form.customerPhone.trim()) {
         return 'Please enter your phone or WhatsApp number.';
       }
 
-      if (!form.customerEmail.trim()) {
-        return 'Please enter your email address.';
-      }
-
-      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.customerEmail.trim())) {
+      if (
+        form.customerEmail.trim() &&
+        !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.customerEmail.trim())
+      ) {
         return 'Please enter a valid email address.';
       }
     }
@@ -565,9 +554,8 @@ export default function PublicBookingPage() {
       const response = await apiPost<BookingResponse>('/public-bookings', {
         companyId: COMPANY_ID,
         customerName: form.customerName.trim(),
-        nationalId: form.customerIdNumber.trim(),
         customerPhone: form.customerPhone.trim(),
-        customerEmail: form.customerEmail.trim(),
+        customerEmail: form.customerEmail.trim() || undefined,
 
         routeId: form.routeId,
         tripType: mapRouteTypeToTripType(selectedRoute?.routeType),
@@ -1458,17 +1446,6 @@ function BookingFormView({
             />
           </FormField>
 
-          <FormField label="ID / Passport No." required>
-            <input
-              value={form.customerIdNumber}
-              onChange={(event) =>
-                updateForm('customerIdNumber', event.target.value)
-              }
-              placeholder="ID or passport number"
-              className="input-glass"
-            />
-          </FormField>
-
           <FormField label="Phone / WhatsApp" required>
             <input
               value={form.customerPhone}
@@ -1480,9 +1457,8 @@ function BookingFormView({
             />
           </FormField>
 
-          <FormField label="Email" required>
+          <FormField label="Email Optional">
             <input
-              type="email"
               value={form.customerEmail}
               onChange={(event) =>
                 updateForm('customerEmail', event.target.value)
@@ -1491,9 +1467,7 @@ function BookingFormView({
               className="input-glass"
             />
           </FormField>
-        </div>
 
-        <div className="mt-3">
           <FormField label="Special Request">
             <input
               value={form.specialNotes}
@@ -1505,7 +1479,6 @@ function BookingFormView({
             />
           </FormField>
         </div>
-
       </section>
 
       <div className="flex flex-col gap-3 border-t border-white/10 pt-5 sm:flex-row">

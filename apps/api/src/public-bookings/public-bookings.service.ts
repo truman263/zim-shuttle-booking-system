@@ -259,15 +259,24 @@ export class PublicBookingsService {
 
   private async findOrCreateCustomer(createDto: CreatePublicBookingDto) {
     const cleanName = createDto.customerName.trim();
+    const cleanNationalId = createDto.nationalId.trim();
     const cleanPhone = createDto.customerPhone.trim();
-    const cleanEmail = createDto.customerEmail?.trim();
+    const cleanEmail = createDto.customerEmail.trim();
 
     if (!cleanName) {
       throw new BadRequestException('Customer name is required');
     }
 
+    if (!cleanNationalId) {
+      throw new BadRequestException('Customer ID or passport number is required');
+    }
+
     if (!cleanPhone) {
       throw new BadRequestException('Customer phone is required');
+    }
+
+    if (!cleanEmail) {
+      throw new BadRequestException('Customer email is required');
     }
 
     const existingCustomer = await this.prisma.customer.findFirst({
@@ -284,7 +293,8 @@ export class PublicBookingsService {
         },
         data: {
           fullName: cleanName,
-          email: cleanEmail || existingCustomer.email,
+          nationalId: cleanNationalId,
+          email: cleanEmail,
         },
       });
     }
@@ -294,8 +304,8 @@ export class PublicBookingsService {
         companyId: createDto.companyId,
         fullName: cleanName,
         phone: cleanPhone,
-        email: cleanEmail || undefined,
-        nationalId: '',
+        email: cleanEmail,
+        nationalId: cleanNationalId,
         address: '',
       },
     });

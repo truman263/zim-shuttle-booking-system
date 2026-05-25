@@ -23,12 +23,15 @@ export class CreatePublicBookingDto {
   @IsString()
   customerName: string;
 
+  
   @IsString()
+  nationalId: string;
+
+@IsString()
   customerPhone: string;
 
-  @IsOptional()
   @IsEmail()
-  customerEmail?: string;
+  customerEmail: string;
 
   @IsOptional()
   @IsString()
