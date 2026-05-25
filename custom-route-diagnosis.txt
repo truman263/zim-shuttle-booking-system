@@ -1,0 +1,959 @@
+CUSTOM ROUTE DIAGNOSIS
+
+FOUND: type BookingForm at line 108
+FOUND: const initialForm at line 130
+FOUND: const selectedRoute at line 178
+FOUND: function selectRoute at line 222
+FOUND: function validateBookingForm at line 336
+FOUND: async function estimatePrice at line 413
+FOUND: async function submitBooking at line 474
+FOUND: function BookingFormView at line 1118
+FOUND: <BookingFormView at line 705
+FOUND: <RoutePicker at line 1156
+
+--- BookingForm type ---
+  73 | type TrackedBooking = {
+  74 |   bookingRef: string;
+  75 |   status: string;
+  76 |   paymentStatus: string;
+  77 |   tripType: string;
+  78 |   tripDirection: string;
+  79 |   pickupLocation: string;
+  80 |   destination: string;
+  81 |   pickupDate: string;
+  82 |   dropoffDate?: string | null;
+  83 |   returnDate?: string | null;
+  84 |   returnPickupLocation?: string | null;
+  85 |   returnDestination?: string | null;
+  86 |   passengers: number;
+  87 |   estimatedPrice?: string | number | null;
+  88 |   finalPrice?: string | number | null;
+  89 |   depositAmount?: string | number | null;
+  90 |   customer: {
+  91 |     fullName: string;
+  92 |     phone: string;
+  93 |   };
+  94 |   route?: {
+  95 |     name: string;
+  96 |     pickupCity: string;
+  97 |     destinationCity: string;
+  98 |   } | null;
+  99 |   driver?: {
+ 100 |     fullName: string;
+ 101 |   } | null;
+ 102 |   vehicle?: {
+ 103 |     name: string;
+ 104 |     registrationNo: string;
+ 105 |   } | null;
+ 106 | };
+ 107 | 
+ 108 | type BookingForm = {
+ 109 |   routeId: string;
+ 110 |   tripDirection: TripDirection;
+ 111 | 
+ 112 |   pickupLocation: string;
+ 113 |   destination: string;
+ 114 |   pickupDate: string;
+ 115 | 
+ 116 |   returnDate: string;
+ 117 |   returnPickupLocation: string;
+ 118 |   returnDestination: string;
+ 119 |   returnNotes: string;
+ 120 | 
+ 121 |   passengers: string;
+ 122 |   luggageDetails: string;
+ 123 |   specialNotes: string;
+ 124 | 
+ 125 |   customerName: string;
+ 126 |   customerPhone: string;
+ 127 |   customerEmail: string;
+ 128 | };
+ 129 | 
+ 130 | const initialForm: BookingForm = {
+ 131 |   routeId: '',
+ 132 |   tripDirection: 'ONE_WAY',
+ 133 | 
+ 134 |   pickupLocation: '',
+ 135 |   destination: '',
+ 136 |   pickupDate: '',
+ 137 | 
+ 138 |   returnDate: '',
+ 139 |   returnPickupLocation: '',
+ 140 |   returnDestination: '',
+ 141 |   returnNotes: '',
+ 142 | 
+ 143 |   passengers: '1',
+
+--- initialForm ---
+  95 |     name: string;
+  96 |     pickupCity: string;
+  97 |     destinationCity: string;
+  98 |   } | null;
+  99 |   driver?: {
+ 100 |     fullName: string;
+ 101 |   } | null;
+ 102 |   vehicle?: {
+ 103 |     name: string;
+ 104 |     registrationNo: string;
+ 105 |   } | null;
+ 106 | };
+ 107 | 
+ 108 | type BookingForm = {
+ 109 |   routeId: string;
+ 110 |   tripDirection: TripDirection;
+ 111 | 
+ 112 |   pickupLocation: string;
+ 113 |   destination: string;
+ 114 |   pickupDate: string;
+ 115 | 
+ 116 |   returnDate: string;
+ 117 |   returnPickupLocation: string;
+ 118 |   returnDestination: string;
+ 119 |   returnNotes: string;
+ 120 | 
+ 121 |   passengers: string;
+ 122 |   luggageDetails: string;
+ 123 |   specialNotes: string;
+ 124 | 
+ 125 |   customerName: string;
+ 126 |   customerPhone: string;
+ 127 |   customerEmail: string;
+ 128 | };
+ 129 | 
+ 130 | const initialForm: BookingForm = {
+ 131 |   routeId: '',
+ 132 |   tripDirection: 'ONE_WAY',
+ 133 | 
+ 134 |   pickupLocation: '',
+ 135 |   destination: '',
+ 136 |   pickupDate: '',
+ 137 | 
+ 138 |   returnDate: '',
+ 139 |   returnPickupLocation: '',
+ 140 |   returnDestination: '',
+ 141 |   returnNotes: '',
+ 142 | 
+ 143 |   passengers: '1',
+ 144 |   luggageDetails: '',
+ 145 |   specialNotes: '',
+ 146 | 
+ 147 |   customerName: '',
+ 148 |   customerPhone: '',
+ 149 |   customerEmail: '',
+ 150 | };
+ 151 | 
+ 152 | export default function PublicBookingPage() {
+ 153 |   const [viewMode, setViewMode] = useState<ViewMode>('BOOK');
+ 154 | 
+ 155 |   const [routes, setRoutes] = useState<RouteRecord[]>([]);
+ 156 |   const [form, setForm] = useState<BookingForm>(initialForm);
+ 157 | 
+ 158 |   const [estimate, setEstimate] = useState<PriceCalculation | null>(null);
+ 159 |   const [bookingResponse, setBookingResponse] =
+ 160 |     useState<BookingResponse | null>(null);
+ 161 | 
+ 162 |   const [trackingRef, setTrackingRef] = useState('');
+ 163 |   const [trackedBooking, setTrackedBooking] = useState<TrackedBooking | null>(
+ 164 |     null,
+ 165 |   );
+
+--- selectedRoute area ---
+ 153 |   const [viewMode, setViewMode] = useState<ViewMode>('BOOK');
+ 154 | 
+ 155 |   const [routes, setRoutes] = useState<RouteRecord[]>([]);
+ 156 |   const [form, setForm] = useState<BookingForm>(initialForm);
+ 157 | 
+ 158 |   const [estimate, setEstimate] = useState<PriceCalculation | null>(null);
+ 159 |   const [bookingResponse, setBookingResponse] =
+ 160 |     useState<BookingResponse | null>(null);
+ 161 | 
+ 162 |   const [trackingRef, setTrackingRef] = useState('');
+ 163 |   const [trackedBooking, setTrackedBooking] = useState<TrackedBooking | null>(
+ 164 |     null,
+ 165 |   );
+ 166 | 
+ 167 |   const [loadingRoutes, setLoadingRoutes] = useState(true);
+ 168 |   const [estimating, setEstimating] = useState(false);
+ 169 |   const [submitting, setSubmitting] = useState(false);
+ 170 |   const [tracking, setTracking] = useState(false);
+ 171 |   const [paymentLoading, setPaymentLoading] = useState<
+ 172 |     'DEPOSIT' | 'FULL_PAYMENT' | null
+ 173 |   >(null);
+ 174 | 
+ 175 |   const [errorMessage, setErrorMessage] = useState('');
+ 176 |   const [successMessage, setSuccessMessage] = useState('');
+ 177 | 
+ 178 |   const selectedRoute = routes.find((route) => route.id === form.routeId);
+ 179 |   const usesRoundTrip = form.tripDirection === 'ROUND_TRIP';
+ 180 | 
+ 181 |   const activeRoutes = useMemo(() => {
+ 182 |     return routes.filter((route) => route.isActive);
+ 183 |   }, [routes]);
+ 184 | 
+ 185 |   useEffect(() => {
+ 186 |     async function fetchRoutes() {
+ 187 |       try {
+ 188 |         setLoadingRoutes(true);
+ 189 |         const routesData = await apiGet<RouteRecord[] | RouteRecord>('/routes');
+ 190 |         const routeList = Array.isArray(routesData) ? routesData : [routesData];
+ 191 |         setRoutes(routeList);
+ 192 |       } catch (error) {
+ 193 |         setErrorMessage(
+ 194 |           error instanceof Error
+ 195 |             ? error.message
+ 196 |             : 'Unable to load available routes.',
+ 197 |         );
+ 198 |       } finally {
+ 199 |         setLoadingRoutes(false);
+ 200 |       }
+ 201 |     }
+ 202 | 
+ 203 |     fetchRoutes();
+
+--- BookingFormView call ---
+ 665 |                   onClick={() => switchMode('BOOK')}
+ 666 |                   className={tabButtonClass(viewMode === 'BOOK')}
+ 667 |                 >
+ 668 |                   Book a Shuttle
+ 669 |                 </button>
+ 670 | 
+ 671 |                 <button
+ 672 |                   type="button"
+ 673 |                   onClick={() => switchMode('TRACK')}
+ 674 |                   className={tabButtonClass(viewMode === 'TRACK')}
+ 675 |                 >
+ 676 |                   Track Booking
+ 677 |                 </button>
+ 678 |               </div>
+ 679 | 
+ 680 |               <p className="mt-3 px-2 text-sm leading-6 text-neutral-500">
+ 681 |                 {viewMode === 'BOOK'
+ 682 |                   ? 'Submit your travel details and receive a booking reference.'
+ 683 |                   : 'Enter your booking reference to view the latest status.'}
+ 684 |               </p>
+ 685 |             </div>
+ 686 |           </div>
+ 687 |         </div>
+ 688 |       </section>
+ 689 | 
+ 690 |       <section className="relative px-5 py-6 md:px-8">
+ 691 |         <div className="mx-auto max-w-6xl">
+ 692 |           <section className="premium-glass glass-card-motion overflow-visible rounded-[28px] border border-white/10 text-white shadow-[0_28px_90px_rgba(0,0,0,0.5)]">
+ 693 |             <div className="border-b border-white/10 px-4 py-3 md:px-5">
+ 694 |               <h2 className="text-xl font-semibold">
+ 695 |                 {viewMode === 'BOOK' ? 'Booking Details' : 'Track Booking'}
+ 696 |               </h2>
+ 697 |               <p className="mt-1 text-sm text-neutral-400">
+ 698 |                 {viewMode === 'BOOK'
+ 699 |                   ? 'Complete the compact form below. Required fields are marked.'
+ 700 |                   : 'Use the booking reference you received after submitting your request.'}
+ 701 |               </p>
+ 702 |             </div>
+ 703 | 
+ 704 |             {viewMode === 'BOOK' ? (
+ 705 |               <BookingFormView
+ 706 |                 form={form}
+ 707 |                 activeRoutes={activeRoutes}
+ 708 |                 selectedRoute={selectedRoute}
+ 709 |                 loadingRoutes={loadingRoutes}
+ 710 |                 estimating={estimating}
+ 711 |                 submitting={submitting}
+ 712 |                 estimatePrice={estimatePrice}
+ 713 |                 submitBooking={submitBooking}
+ 714 |                 updateForm={updateForm}
+ 715 |                 selectRoute={selectRoute}
+ 716 |                 setTripDirection={setTripDirection}
+ 717 |                 usesRoundTrip={usesRoundTrip}
+ 718 |               />
+ 719 |             ) : (
+ 720 |               <TrackFormView
+ 721 |                 trackingRef={trackingRef}
+ 722 |                 setTrackingRef={setTrackingRef}
+ 723 |                 tracking={tracking}
+ 724 |                 trackBooking={trackBooking}
+ 725 |               />
+ 726 |             )}
+ 727 | 
+ 728 |             {(errorMessage || successMessage || hasResult) && (
+ 729 |               <div className="border-t border-white/10 p-5 md:p-6">
+ 730 |                 <div className="grid gap-4">
+ 731 |                   {errorMessage && (
+ 732 |                     <Notice type="error" message={errorMessage} />
+ 733 |                   )}
+ 734 | 
+ 735 |                   {successMessage && (
+ 736 |                     <Notice type="success" message={successMessage} />
+ 737 |                   )}
+ 738 | 
+ 739 |                   {hasResult && (
+ 740 |                     <SummaryPanel
+ 741 |                       estimate={estimate}
+ 742 |                       bookingResponse={bookingResponse}
+ 743 |                       trackedBooking={trackedBooking}
+ 744 |                       formatMoney={formatMoney}
+ 745 |                       formatDate={formatDate}
+
+--- BookingFormView signature ---
+1063 |           <span className="text-neutral-700">/</span>
+1064 | 
+1065 |           <a
+1066 |             href={`https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(
+1067 |               'Hello LadyBird Shuttle Services, I need help with my shuttle booking.',
+1068 |             )}`}
+1069 |             target="_blank"
+1070 |             rel="noopener noreferrer"
+1071 |             className="transition hover:text-white"
+1072 |           >
+1073 |             WhatsApp
+1074 |           </a>
+1075 |         </nav>
+1076 |       </div>
+1077 | 
+1078 |       <div className="mx-auto mt-6 max-w-6xl border-t border-white/10 pt-5 text-xs text-neutral-600">
+1079 |         © 2026 LadyBird Shuttle Services. All rights reserved.
+1080 |       </div>
+1081 |     </footer>
+1082 |   );
+1083 | }
+1084 | 
+1085 | function NeedHelpButton() {
+1086 |   const message =
+1087 |     'Hello LadyBird Shuttle Services, I need help with my shuttle booking.';
+1088 | 
+1089 |   const whatsappUrl = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(
+1090 |     message,
+1091 |   )}`;
+1092 | 
+1093 |   return (
+1094 |     <a
+1095 |       href={whatsappUrl}
+1096 |       target="_blank"
+1097 |       rel="noopener noreferrer"
+1098 |       className="fixed bottom-5 right-5 z-50 inline-flex items-center gap-2.5 rounded-full border border-white/15 bg-white px-4 py-2.5 text-xs font-semibold text-black shadow-[0_18px_60px_rgba(0,0,0,0.45)] transition hover:bg-neutral-200 md:bottom-7 md:right-7"
+1099 |       aria-label="Need help on WhatsApp"
+1100 |     >
+1101 |       <svg
+1102 |         width="15"
+1103 |         height="15"
+1104 |         viewBox="0 0 24 24"
+1105 |         aria-hidden="true"
+1106 |         className="shrink-0"
+1107 |       >
+1108 |         <path
+1109 |           fill="currentColor"
+1110 |           d="M12.04 2C6.58 2 2.13 6.45 2.13 11.91c0 1.75.46 3.45 1.33 4.95L2.05 22l5.25-1.38a9.86 9.86 0 0 0 4.74 1.21h.01c5.46 0 9.91-4.45 9.91-9.91C21.96 6.45 17.51 2 12.04 2Zm0 18.15h-.01a8.2 8.2 0 0 1-4.18-1.15l-.3-.18-3.12.82.83-3.04-.2-.31a8.17 8.17 0 0 1-1.25-4.37c0-4.54 3.69-8.23 8.24-8.23a8.18 8.18 0 0 1 5.82 2.41 8.18 8.18 0 0 1 2.41 5.82c0 4.54-3.7 8.23-8.24 8.23Zm4.52-6.16c-.25-.12-1.47-.72-1.7-.8-.23-.08-.4-.12-.57.12-.17.25-.65.8-.8.96-.15.17-.29.19-.54.06-.25-.12-1.05-.39-2-1.24-.74-.66-1.24-1.47-1.38-1.72-.14-.25-.02-.38.11-.51.11-.11.25-.29.37-.43.12-.15.17-.25.25-.41.08-.17.04-.31-.02-.43-.06-.12-.57-1.37-.78-1.88-.2-.49-.41-.42-.57-.43h-.49c-.17 0-.43.06-.66.31-.23.25-.86.84-.86 2.05s.88 2.38 1 2.55c.12.17 1.73 2.64 4.2 3.7.59.25 1.05.4 1.41.52.59.19 1.12.16 1.54.1.47-.07 1.47-.6 1.68-1.18.21-.58.21-1.08.15-1.18-.06-.1-.23-.16-.48-.28Z"
+1111 |         />
+1112 |       </svg>
+1113 |       Need help?
+1114 |     </a>
+1115 |   );
+1116 | }
+1117 | 
+1118 | function BookingFormView({
+1119 |   form,
+1120 |   activeRoutes,
+1121 |   selectedRoute,
+1122 |   loadingRoutes,
+1123 |   estimating,
+1124 |   submitting,
+1125 |   estimatePrice,
+1126 |   submitBooking,
+1127 |   updateForm,
+1128 |   selectRoute,
+1129 |   setTripDirection,
+1130 |   usesRoundTrip,
+1131 | }: {
+1132 |   form: BookingForm;
+1133 |   activeRoutes: RouteRecord[];
+1134 |   selectedRoute?: RouteRecord;
+1135 |   loadingRoutes: boolean;
+1136 |   estimating: boolean;
+1137 |   submitting: boolean;
+1138 |   estimatePrice: () => void;
+1139 |   submitBooking: (event: FormEvent<HTMLFormElement>) => void;
+1140 |   updateForm: (field: keyof BookingForm, value: string) => void;
+1141 |   selectRoute: (routeId: string) => void;
+1142 |   setTripDirection: (direction: TripDirection) => void;
+1143 |   usesRoundTrip: boolean;
+1144 | }) {
+1145 |   return (
+1146 |     <form noValidate onSubmit={submitBooking} className="space-y-4 p-4 md:p-5">
+1147 |       <section>
+1148 |         <SectionTitle
+1149 |           number="01"
+1150 |           title="Route and trip"
+1151 |           subtitle="Choose route, direction and passengers."
+1152 |         />
+1153 | 
+1154 |         <div className="mt-3 grid gap-3 md:grid-cols-2">
+1155 |           <FormField label="Route" required>
+1156 |             <RoutePicker
+1157 |               routes={activeRoutes}
+1158 |               selectedRoute={selectedRoute}
+1159 |               loadingRoutes={loadingRoutes}
+1160 |               onSelect={selectRoute}
+1161 |             />
+1162 |           </FormField>
+1163 | 
+1164 |           <FormField label="Passengers" required>
+1165 |             <input
+1166 |               type="number"
+1167 |               min="1"
+1168 |               value={form.passengers}
+1169 |               onChange={(event) => updateForm('passengers', event.target.value)}
+1170 |               className="input-glass"
+1171 |             />
+1172 |           </FormField>
+1173 |         </div>
+
+--- Route picker area ---
+1111 |         />
+1112 |       </svg>
+1113 |       Need help?
+1114 |     </a>
+1115 |   );
+1116 | }
+1117 | 
+1118 | function BookingFormView({
+1119 |   form,
+1120 |   activeRoutes,
+1121 |   selectedRoute,
+1122 |   loadingRoutes,
+1123 |   estimating,
+1124 |   submitting,
+1125 |   estimatePrice,
+1126 |   submitBooking,
+1127 |   updateForm,
+1128 |   selectRoute,
+1129 |   setTripDirection,
+1130 |   usesRoundTrip,
+1131 | }: {
+1132 |   form: BookingForm;
+1133 |   activeRoutes: RouteRecord[];
+1134 |   selectedRoute?: RouteRecord;
+1135 |   loadingRoutes: boolean;
+1136 |   estimating: boolean;
+1137 |   submitting: boolean;
+1138 |   estimatePrice: () => void;
+1139 |   submitBooking: (event: FormEvent<HTMLFormElement>) => void;
+1140 |   updateForm: (field: keyof BookingForm, value: string) => void;
+1141 |   selectRoute: (routeId: string) => void;
+1142 |   setTripDirection: (direction: TripDirection) => void;
+1143 |   usesRoundTrip: boolean;
+1144 | }) {
+1145 |   return (
+1146 |     <form noValidate onSubmit={submitBooking} className="space-y-4 p-4 md:p-5">
+1147 |       <section>
+1148 |         <SectionTitle
+1149 |           number="01"
+1150 |           title="Route and trip"
+1151 |           subtitle="Choose route, direction and passengers."
+1152 |         />
+1153 | 
+1154 |         <div className="mt-3 grid gap-3 md:grid-cols-2">
+1155 |           <FormField label="Route" required>
+1156 |             <RoutePicker
+1157 |               routes={activeRoutes}
+1158 |               selectedRoute={selectedRoute}
+1159 |               loadingRoutes={loadingRoutes}
+1160 |               onSelect={selectRoute}
+1161 |             />
+1162 |           </FormField>
+1163 | 
+1164 |           <FormField label="Passengers" required>
+1165 |             <input
+1166 |               type="number"
+1167 |               min="1"
+1168 |               value={form.passengers}
+1169 |               onChange={(event) => updateForm('passengers', event.target.value)}
+1170 |               className="input-glass"
+1171 |             />
+1172 |           </FormField>
+1173 |         </div>
+1174 | 
+1175 |         <div className="mt-3 grid gap-3 sm:grid-cols-2">
+1176 |           <button
+1177 |             type="button"
+1178 |             onClick={() => setTripDirection('ONE_WAY')}
+1179 |             className={modeButtonClass(form.tripDirection === 'ONE_WAY')}
+1180 |           >
+1181 |             One-way Trip
+1182 |           </button>
+1183 | 
+1184 |           <button
+1185 |             type="button"
+1186 |             onClick={() => setTripDirection('ROUND_TRIP')}
+1187 |             className={modeButtonClass(form.tripDirection === 'ROUND_TRIP')}
+1188 |           >
+1189 |             Round Trip
+1190 |           </button>
+1191 |         </div>
+1192 | 
+1193 |         {selectedRoute && (
+1194 |           <div className="mt-4 rounded-2xl border border-white/10 bg-white/[0.045] p-4 backdrop-blur-xl">
+1195 |             <div className="flex flex-col justify-between gap-3 md:flex-row md:items-center">
+1196 |               <div>
+1197 |                 <p className="font-semibold text-white">{selectedRoute.name}</p>
+1198 |                 <p className="mt-1 text-sm text-neutral-400">
+1199 |                   {selectedRoute.pickupCity} → {selectedRoute.destinationCity}
+1200 |                 </p>
+1201 |               </div>
+
+--- validateBookingForm ---
+ 271 | 
+ 272 |       return {
+ 273 |         ...currentForm,
+ 274 |         tripDirection: 'ROUND_TRIP',
+ 275 |         returnPickupLocation:
+ 276 |           currentForm.returnPickupLocation || currentForm.destination,
+ 277 |         returnDestination:
+ 278 |           currentForm.returnDestination || currentForm.pickupLocation,
+ 279 |       };
+ 280 |     });
+ 281 | 
+ 282 |     setEstimate(null);
+ 283 |     setBookingResponse(null);
+ 284 |     clearMessages();
+ 285 |   }
+ 286 | 
+ 287 |   function switchMode(mode: ViewMode) {
+ 288 |     setViewMode(mode);
+ 289 |     clearMessages();
+ 290 |     setEstimate(null);
+ 291 |     setBookingResponse(null);
+ 292 |     setTrackedBooking(null);
+ 293 |   }
+ 294 | 
+ 295 |   function formatMoney(value: string | number | null | undefined) {
+ 296 |     const parsed = Number(value ?? 0);
+ 297 |     return Number.isFinite(parsed) ? parsed.toFixed(2) : '0.00';
+ 298 |   }
+ 299 | 
+ 300 |   function formatDate(value?: string | null) {
+ 301 |     if (!value) {
+ 302 |       return 'Not set';
+ 303 |     }
+ 304 | 
+ 305 |     const date = new Date(value);
+ 306 | 
+ 307 |     if (Number.isNaN(date.getTime())) {
+ 308 |       return 'Not set';
+ 309 |     }
+ 310 | 
+ 311 |     return date.toLocaleString();
+ 312 |   }
+ 313 | 
+ 314 |   function humanise(value?: string | null) {
+ 315 |     if (!value) {
+ 316 |       return 'Not set';
+ 317 |     }
+ 318 | 
+ 319 |     return value.replaceAll('_', ' ');
+ 320 |   }
+ 321 | 
+ 322 |   function mapRouteTypeToTripType(routeType?: string) {
+ 323 |     const map: Record<string, string> = {
+ 324 |       CITY_TO_CITY: 'CITY_TO_CITY',
+ 325 |       AIRPORT_TRANSFER: 'AIRPORT_TRANSFER',
+ 326 |       LOCAL_TRANSFER: 'CUSTOM',
+ 327 |       PRIVATE_HIRE: 'PRIVATE_HIRE',
+ 328 |       TOUR_PACKAGE: 'TOURISM',
+ 329 |       CORPORATE_TRANSFER: 'CORPORATE_TRANSPORT',
+ 330 |       CUSTOM: 'CUSTOM',
+ 331 |     };
+ 332 | 
+ 333 |     return routeType ? map[routeType] ?? 'CUSTOM' : 'CITY_TO_CITY';
+ 334 |   }
+ 335 | 
+ 336 |   function validateBookingForm(requireCustomerDetails: boolean) {
+ 337 |     if (!form.routeId) {
+ 338 |       return 'Please select a route.';
+ 339 |     }
+ 340 | 
+ 341 |     if (!form.pickupLocation.trim()) {
+ 342 |       return 'Please enter your pickup location.';
+ 343 |     }
+ 344 | 
+ 345 |     if (!form.destination.trim()) {
+ 346 |       return 'Please enter your destination.';
+ 347 |     }
+ 348 | 
+ 349 |     if (!form.pickupDate) {
+ 350 |       return 'Please select pickup date and time.';
+ 351 |     }
+ 352 | 
+ 353 |     const pickupDate = new Date(form.pickupDate);
+ 354 | 
+ 355 |     if (Number.isNaN(pickupDate.getTime())) {
+ 356 |       return 'Pickup date and time is invalid.';
+ 357 |     }
+ 358 | 
+ 359 |     if (pickupDate.getTime() < Date.now()) {
+ 360 |       return 'Pickup date cannot be in the past.';
+ 361 |     }
+ 362 | 
+ 363 |     const passengers = Number(form.passengers);
+ 364 | 
+ 365 |     if (!Number.isInteger(passengers) || passengers < 1) {
+ 366 |       return 'Passengers must be at least 1.';
+ 367 |     }
+ 368 | 
+ 369 |     if (usesRoundTrip) {
+ 370 |       if (!form.returnDate) {
+ 371 |         return 'Please select return date and time.';
+ 372 |       }
+ 373 | 
+ 374 |       const returnDate = new Date(form.returnDate);
+ 375 | 
+ 376 |       if (Number.isNaN(returnDate.getTime())) {
+ 377 |         return 'Return date and time is invalid.';
+ 378 |       }
+ 379 | 
+ 380 |       if (returnDate <= pickupDate) {
+ 381 |         return 'Return date must be after pickup date.';
+ 382 |       }
+ 383 | 
+ 384 |       if (!form.returnPickupLocation.trim()) {
+ 385 |         return 'Please enter return pickup location.';
+ 386 |       }
+ 387 | 
+ 388 |       if (!form.returnDestination.trim()) {
+ 389 |         return 'Please enter return destination.';
+ 390 |       }
+ 391 |     }
+ 392 | 
+ 393 |     if (requireCustomerDetails) {
+ 394 |       if (!form.customerName.trim()) {
+ 395 |         return 'Please enter your full name.';
+ 396 |       }
+ 397 | 
+ 398 |       if (!form.customerPhone.trim()) {
+ 399 |         return 'Please enter your phone or WhatsApp number.';
+ 400 |       }
+ 401 | 
+
+--- estimatePrice ---
+ 333 |     return routeType ? map[routeType] ?? 'CUSTOM' : 'CITY_TO_CITY';
+ 334 |   }
+ 335 | 
+ 336 |   function validateBookingForm(requireCustomerDetails: boolean) {
+ 337 |     if (!form.routeId) {
+ 338 |       return 'Please select a route.';
+ 339 |     }
+ 340 | 
+ 341 |     if (!form.pickupLocation.trim()) {
+ 342 |       return 'Please enter your pickup location.';
+ 343 |     }
+ 344 | 
+ 345 |     if (!form.destination.trim()) {
+ 346 |       return 'Please enter your destination.';
+ 347 |     }
+ 348 | 
+ 349 |     if (!form.pickupDate) {
+ 350 |       return 'Please select pickup date and time.';
+ 351 |     }
+ 352 | 
+ 353 |     const pickupDate = new Date(form.pickupDate);
+ 354 | 
+ 355 |     if (Number.isNaN(pickupDate.getTime())) {
+ 356 |       return 'Pickup date and time is invalid.';
+ 357 |     }
+ 358 | 
+ 359 |     if (pickupDate.getTime() < Date.now()) {
+ 360 |       return 'Pickup date cannot be in the past.';
+ 361 |     }
+ 362 | 
+ 363 |     const passengers = Number(form.passengers);
+ 364 | 
+ 365 |     if (!Number.isInteger(passengers) || passengers < 1) {
+ 366 |       return 'Passengers must be at least 1.';
+ 367 |     }
+ 368 | 
+ 369 |     if (usesRoundTrip) {
+ 370 |       if (!form.returnDate) {
+ 371 |         return 'Please select return date and time.';
+ 372 |       }
+ 373 | 
+ 374 |       const returnDate = new Date(form.returnDate);
+ 375 | 
+ 376 |       if (Number.isNaN(returnDate.getTime())) {
+ 377 |         return 'Return date and time is invalid.';
+ 378 |       }
+ 379 | 
+ 380 |       if (returnDate <= pickupDate) {
+ 381 |         return 'Return date must be after pickup date.';
+ 382 |       }
+ 383 | 
+ 384 |       if (!form.returnPickupLocation.trim()) {
+ 385 |         return 'Please enter return pickup location.';
+ 386 |       }
+ 387 | 
+ 388 |       if (!form.returnDestination.trim()) {
+ 389 |         return 'Please enter return destination.';
+ 390 |       }
+ 391 |     }
+ 392 | 
+ 393 |     if (requireCustomerDetails) {
+ 394 |       if (!form.customerName.trim()) {
+ 395 |         return 'Please enter your full name.';
+ 396 |       }
+ 397 | 
+ 398 |       if (!form.customerPhone.trim()) {
+ 399 |         return 'Please enter your phone or WhatsApp number.';
+ 400 |       }
+ 401 | 
+ 402 |       if (
+ 403 |         form.customerEmail.trim() &&
+ 404 |         !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.customerEmail.trim())
+ 405 |       ) {
+ 406 |         return 'Please enter a valid email address.';
+ 407 |       }
+ 408 |     }
+ 409 | 
+ 410 |     return '';
+ 411 |   }
+ 412 | 
+ 413 |   async function estimatePrice() {
+ 414 |     clearMessages();
+ 415 |     setBookingResponse(null);
+ 416 | 
+ 417 |     const validationError = validateBookingForm(false);
+ 418 | 
+ 419 |     if (validationError) {
+ 420 |       setErrorMessage(validationError);
+ 421 |       return;
+ 422 |     }
+ 423 | 
+ 424 |     try {
+ 425 |       setEstimating(true);
+ 426 | 
+ 427 |       const result = await apiPost<PriceCalculation>(
+ 428 |         '/public-bookings/estimate',
+ 429 |         {
+ 430 |           companyId: COMPANY_ID,
+ 431 |           routeId: form.routeId,
+ 432 |           tripType: mapRouteTypeToTripType(selectedRoute?.routeType),
+ 433 |           tripDirection: form.tripDirection,
+ 434 |           pickupLocation: form.pickupLocation.trim(),
+ 435 |           destination: form.destination.trim(),
+ 436 |           pickupDate: new Date(form.pickupDate).toISOString(),
+ 437 |           returnDate: usesRoundTrip
+ 438 |             ? new Date(form.returnDate).toISOString()
+ 439 |             : undefined,
+ 440 |           returnPickupLocation: usesRoundTrip
+ 441 |             ? form.returnPickupLocation.trim()
+ 442 |             : undefined,
+ 443 |           returnDestination: usesRoundTrip
+ 444 |             ? form.returnDestination.trim()
+ 445 |             : undefined,
+ 446 |           passengers: Number(form.passengers),
+ 447 |           luggageDetails: form.luggageDetails.trim() || undefined,
+ 448 |           specialNotes: form.specialNotes.trim() || undefined,
+ 449 |           roundTripDiscountPercentage: 0,
+ 450 |         },
+ 451 |       );
+ 452 | 
+ 453 |       setEstimate(result);
+ 454 | 
+ 455 |       if (result.requiresManualQuote) {
+ 456 |         setSuccessMessage(
+ 457 |           result.message ||
+ 458 |             'This trip requires a manual quote. You can still submit your request.',
+ 459 |         );
+ 460 |       } else {
+ 461 |         setSuccessMessage('Estimate ready.');
+ 462 |       }
+ 463 |     } catch (error) {
+ 464 |       setErrorMessage(
+ 465 |         error instanceof Error
+ 466 |           ? error.message
+ 467 |           : 'Unable to calculate price estimate.',
+ 468 |       );
+ 469 |     } finally {
+ 470 |       setEstimating(false);
+ 471 |     }
+ 472 |   }
+ 473 | 
+ 474 |   async function submitBooking(event: FormEvent<HTMLFormElement>) {
+ 475 |     event.preventDefault();
+ 476 | 
+ 477 |     clearMessages();
+ 478 |     setBookingResponse(null);
+ 479 | 
+ 480 |     const validationError = validateBookingForm(true);
+ 481 | 
+ 482 |     if (validationError) {
+ 483 |       setErrorMessage(validationError);
+ 484 |       return;
+ 485 |     }
+ 486 | 
+ 487 |     try {
+ 488 |       setSubmitting(true);
+ 489 | 
+ 490 |       const response = await apiPost<BookingResponse>('/public-bookings', {
+ 491 |         companyId: COMPANY_ID,
+ 492 |         customerName: form.customerName.trim(),
+ 493 |         customerPhone: form.customerPhone.trim(),
+
+--- submitBooking ---
+ 394 |       if (!form.customerName.trim()) {
+ 395 |         return 'Please enter your full name.';
+ 396 |       }
+ 397 | 
+ 398 |       if (!form.customerPhone.trim()) {
+ 399 |         return 'Please enter your phone or WhatsApp number.';
+ 400 |       }
+ 401 | 
+ 402 |       if (
+ 403 |         form.customerEmail.trim() &&
+ 404 |         !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.customerEmail.trim())
+ 405 |       ) {
+ 406 |         return 'Please enter a valid email address.';
+ 407 |       }
+ 408 |     }
+ 409 | 
+ 410 |     return '';
+ 411 |   }
+ 412 | 
+ 413 |   async function estimatePrice() {
+ 414 |     clearMessages();
+ 415 |     setBookingResponse(null);
+ 416 | 
+ 417 |     const validationError = validateBookingForm(false);
+ 418 | 
+ 419 |     if (validationError) {
+ 420 |       setErrorMessage(validationError);
+ 421 |       return;
+ 422 |     }
+ 423 | 
+ 424 |     try {
+ 425 |       setEstimating(true);
+ 426 | 
+ 427 |       const result = await apiPost<PriceCalculation>(
+ 428 |         '/public-bookings/estimate',
+ 429 |         {
+ 430 |           companyId: COMPANY_ID,
+ 431 |           routeId: form.routeId,
+ 432 |           tripType: mapRouteTypeToTripType(selectedRoute?.routeType),
+ 433 |           tripDirection: form.tripDirection,
+ 434 |           pickupLocation: form.pickupLocation.trim(),
+ 435 |           destination: form.destination.trim(),
+ 436 |           pickupDate: new Date(form.pickupDate).toISOString(),
+ 437 |           returnDate: usesRoundTrip
+ 438 |             ? new Date(form.returnDate).toISOString()
+ 439 |             : undefined,
+ 440 |           returnPickupLocation: usesRoundTrip
+ 441 |             ? form.returnPickupLocation.trim()
+ 442 |             : undefined,
+ 443 |           returnDestination: usesRoundTrip
+ 444 |             ? form.returnDestination.trim()
+ 445 |             : undefined,
+ 446 |           passengers: Number(form.passengers),
+ 447 |           luggageDetails: form.luggageDetails.trim() || undefined,
+ 448 |           specialNotes: form.specialNotes.trim() || undefined,
+ 449 |           roundTripDiscountPercentage: 0,
+ 450 |         },
+ 451 |       );
+ 452 | 
+ 453 |       setEstimate(result);
+ 454 | 
+ 455 |       if (result.requiresManualQuote) {
+ 456 |         setSuccessMessage(
+ 457 |           result.message ||
+ 458 |             'This trip requires a manual quote. You can still submit your request.',
+ 459 |         );
+ 460 |       } else {
+ 461 |         setSuccessMessage('Estimate ready.');
+ 462 |       }
+ 463 |     } catch (error) {
+ 464 |       setErrorMessage(
+ 465 |         error instanceof Error
+ 466 |           ? error.message
+ 467 |           : 'Unable to calculate price estimate.',
+ 468 |       );
+ 469 |     } finally {
+ 470 |       setEstimating(false);
+ 471 |     }
+ 472 |   }
+ 473 | 
+ 474 |   async function submitBooking(event: FormEvent<HTMLFormElement>) {
+ 475 |     event.preventDefault();
+ 476 | 
+ 477 |     clearMessages();
+ 478 |     setBookingResponse(null);
+ 479 | 
+ 480 |     const validationError = validateBookingForm(true);
+ 481 | 
+ 482 |     if (validationError) {
+ 483 |       setErrorMessage(validationError);
+ 484 |       return;
+ 485 |     }
+ 486 | 
+ 487 |     try {
+ 488 |       setSubmitting(true);
+ 489 | 
+ 490 |       const response = await apiPost<BookingResponse>('/public-bookings', {
+ 491 |         companyId: COMPANY_ID,
+ 492 |         customerName: form.customerName.trim(),
+ 493 |         customerPhone: form.customerPhone.trim(),
+ 494 |         customerEmail: form.customerEmail.trim() || undefined,
+ 495 | 
+ 496 |         routeId: form.routeId,
+ 497 |         tripType: mapRouteTypeToTripType(selectedRoute?.routeType),
+ 498 |         tripDirection: form.tripDirection,
+ 499 | 
+ 500 |         pickupLocation: form.pickupLocation.trim(),
+ 501 |         destination: form.destination.trim(),
+ 502 |         pickupDate: new Date(form.pickupDate).toISOString(),
+ 503 | 
+ 504 |         returnDate: usesRoundTrip
+ 505 |           ? new Date(form.returnDate).toISOString()
+ 506 |           : undefined,
+ 507 |         returnPickupLocation: usesRoundTrip
+ 508 |           ? form.returnPickupLocation.trim()
+ 509 |           : undefined,
+ 510 |         returnDestination: usesRoundTrip
+ 511 |           ? form.returnDestination.trim()
+ 512 |           : undefined,
+ 513 |         returnNotes: usesRoundTrip
+ 514 |           ? form.returnNotes.trim() || undefined
+ 515 |           : undefined,
+ 516 | 
+ 517 |         passengers: Number(form.passengers),
+ 518 |         luggageDetails: form.luggageDetails.trim() || undefined,
+ 519 |         specialNotes: form.specialNotes.trim() || undefined,
+ 520 | 
+ 521 |         roundTripDiscountPercentage: 0,
+ 522 |         depositAmount: 0,
+ 523 |       });
+ 524 | 
+ 525 |       setBookingResponse(response);
+ 526 |       setTrackedBooking(null);
+ 527 |       setSuccessMessage(response.message || 'Booking request submitted.');
+ 528 |       setEstimate(null);
+ 529 |       setForm(initialForm);
+ 530 |     } catch (error) {
+ 531 |       setErrorMessage(
+ 532 |         error instanceof Error
+ 533 |           ? error.message
+ 534 |           : 'Unable to submit booking request.',
+ 535 |       );
+ 536 |     } finally {
+ 537 |       setSubmitting(false);
+ 538 |     }
+ 539 |   }
+ 540 | 
+ 541 |   async function createPaymentCheckout(
+ 542 |     bookingId: string,
+ 543 |     paymentType: 'DEPOSIT' | 'FULL_PAYMENT',
+ 544 |   ) {
+ 545 |     clearMessages();
+ 546 | 
+ 547 |     if (!bookingId) {
+ 548 |       setErrorMessage('Booking ID is missing. Please try submitting again.');
+ 549 |       return;
+ 550 |     }
+ 551 | 
+ 552 |     try {
+ 553 |       setPaymentLoading(paymentType);
+ 554 | 

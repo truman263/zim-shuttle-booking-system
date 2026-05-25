@@ -8,7 +8,6 @@ const WHATSAPP_NUMBER = '263773615432';
 
 type ViewMode = 'BOOK' | 'TRACK';
 type TripDirection = 'ONE_WAY' | 'ROUND_TRIP';
-type RouteMode = 'SAVED_ROUTE' | 'CUSTOM_ROUTE';
 
 type RouteRecord = {
   id: string;
@@ -22,25 +21,6 @@ type RouteRecord = {
   distanceKm?: string | number | null;
   estimatedDurationMinutes?: number | null;
   isActive: boolean;
-};
-
-type SmartRouteEstimate = {
-  requiresManualQuote: boolean;
-  pricingMode?: string;
-  companyId: string;
-  pickupLocation: string;
-  destination: string;
-  tripDirection: TripDirection;
-  passengers: number;
-  distanceKm?: number | null;
-  durationMinutes?: number | null;
-  estimatedPrice?: number | null;
-  message?: string;
-  reason?: string;
-  breakdown?: {
-    label: string;
-    amount: number;
-  }[];
 };
 
 type PriceCalculation = {
@@ -126,7 +106,6 @@ type TrackedBooking = {
 };
 
 type BookingForm = {
-  routeMode: RouteMode;
   routeId: string;
   tripDirection: TripDirection;
 
@@ -149,7 +128,6 @@ type BookingForm = {
 };
 
 const initialForm: BookingForm = {
-  routeMode: 'SAVED_ROUTE',
   routeId: '',
   tripDirection: 'ONE_WAY',
 
@@ -177,7 +155,7 @@ export default function PublicBookingPage() {
   const [routes, setRoutes] = useState<RouteRecord[]>([]);
   const [form, setForm] = useState<BookingForm>(initialForm);
 
-  const [estimate, setEstimate] = useState<PriceCalculation | SmartRouteEstimate | null>(null);
+  const [estimate, setEstimate] = useState<PriceCalculation | null>(null);
   const [bookingResponse, setBookingResponse] =
     useState<BookingResponse | null>(null);
 
@@ -199,7 +177,6 @@ export default function PublicBookingPage() {
 
   const selectedRoute = routes.find((route) => route.id === form.routeId);
   const usesRoundTrip = form.tripDirection === 'ROUND_TRIP';
-  const usesCustomRoute = form.routeMode === 'CUSTOM_ROUTE';
 
   const activeRoutes = useMemo(() => {
     return routes.filter((route) => route.isActive);
@@ -236,35 +213,6 @@ export default function PublicBookingPage() {
       ...currentForm,
       [field]: value,
     }));
-
-    setEstimate(null);
-    setBookingResponse(null);
-    clearMessages();
-  }
-
-  function setRouteMode(mode: RouteMode) {
-    setForm((currentForm) => {
-      if (mode === 'CUSTOM_ROUTE') {
-        return {
-          ...currentForm,
-          routeMode: mode,
-          routeId: '',
-          pickupLocation: '',
-          destination: '',
-          returnPickupLocation: '',
-          returnDestination: '',
-        };
-      }
-
-      return {
-        ...currentForm,
-        routeMode: mode,
-        pickupLocation: '',
-        destination: '',
-        returnPickupLocation: '',
-        returnDestination: '',
-      };
-    });
 
     setEstimate(null);
     setBookingResponse(null);
@@ -386,8 +334,8 @@ export default function PublicBookingPage() {
   }
 
   function validateBookingForm(requireCustomerDetails: boolean) {
-    if (!usesCustomRoute && !form.routeId) {
-      return 'Please select a route or choose Custom Route.';
+    if (!form.routeId) {
+      return 'Please select a route.';
     }
 
     if (!form.pickupLocation.trim()) {
@@ -476,39 +424,31 @@ export default function PublicBookingPage() {
     try {
       setEstimating(true);
 
-      const result = usesCustomRoute
-        ? await apiPost<SmartRouteEstimate>('/smart-routes/estimate', {
-            companyId: COMPANY_ID,
-            pickupLocation: form.pickupLocation.trim(),
-            destination: form.destination.trim(),
-            tripDirection: form.tripDirection,
-            passengers: Number(form.passengers),
-          })
-        : await apiPost<PriceCalculation>('/public-bookings/estimate', {
-            companyId: COMPANY_ID,
-            routeId: usesCustomRoute ? undefined : form.routeId,
-        tripType: usesCustomRoute
-          ? 'CUSTOM'
-          : mapRouteTypeToTripType(selectedRoute?.routeType),
-        customTripType: usesCustomRoute ? 'Smart Custom Route' : undefined,
-        tripDirection: form.tripDirection,
-            pickupLocation: form.pickupLocation.trim(),
-            destination: form.destination.trim(),
-            pickupDate: new Date(form.pickupDate).toISOString(),
-            returnDate: usesRoundTrip
-              ? new Date(form.returnDate).toISOString()
-              : undefined,
-            returnPickupLocation: usesRoundTrip
-              ? form.returnPickupLocation.trim()
-              : undefined,
-            returnDestination: usesRoundTrip
-              ? form.returnDestination.trim()
-              : undefined,
-            passengers: Number(form.passengers),
-            luggageDetails: form.luggageDetails.trim() || undefined,
-            specialNotes: form.specialNotes.trim() || undefined,
-            roundTripDiscountPercentage: 0,
-          });
+      const result = await apiPost<PriceCalculation>(
+        '/public-bookings/estimate',
+        {
+          companyId: COMPANY_ID,
+          routeId: form.routeId,
+          tripType: mapRouteTypeToTripType(selectedRoute?.routeType),
+          tripDirection: form.tripDirection,
+          pickupLocation: form.pickupLocation.trim(),
+          destination: form.destination.trim(),
+          pickupDate: new Date(form.pickupDate).toISOString(),
+          returnDate: usesRoundTrip
+            ? new Date(form.returnDate).toISOString()
+            : undefined,
+          returnPickupLocation: usesRoundTrip
+            ? form.returnPickupLocation.trim()
+            : undefined,
+          returnDestination: usesRoundTrip
+            ? form.returnDestination.trim()
+            : undefined,
+          passengers: Number(form.passengers),
+          luggageDetails: form.luggageDetails.trim() || undefined,
+          specialNotes: form.specialNotes.trim() || undefined,
+          roundTripDiscountPercentage: 0,
+        },
+      );
 
       setEstimate(result);
 
@@ -518,11 +458,7 @@ export default function PublicBookingPage() {
             'This trip requires a manual quote. You can still submit your request.',
         );
       } else {
-        setSuccessMessage(
-          usesCustomRoute
-            ? 'Smart route estimate ready.'
-            : 'Estimate ready.',
-        );
+        setSuccessMessage('Estimate ready.');
       }
     } catch (error) {
       setErrorMessage(
@@ -583,12 +519,6 @@ export default function PublicBookingPage() {
         specialNotes: form.specialNotes.trim() || undefined,
 
         roundTripDiscountPercentage: 0,
-        estimatedPrice: usesCustomRoute
-          ? estimate?.estimatedPrice || undefined
-          : undefined,
-        finalPrice: usesCustomRoute
-          ? estimate?.estimatedPrice || undefined
-          : undefined,
         depositAmount: 0,
       });
 
@@ -785,8 +715,6 @@ export default function PublicBookingPage() {
                 selectRoute={selectRoute}
                 setTripDirection={setTripDirection}
                 usesRoundTrip={usesRoundTrip}
-                usesCustomRoute={usesCustomRoute}
-                setRouteMode={setRouteMode}
               />
             ) : (
               <TrackFormView
@@ -1079,22 +1007,6 @@ export default function PublicBookingPage() {
             animation: none;
           }
         }
-      
-  .premium-glass,
-  .premium-glass button,
-  .premium-glass input,
-  .premium-glass select,
-  .premium-glass textarea {
-    font-family: Inter, Poppins, Montserrat, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-    letter-spacing: -0.01em;
-  }
-
-  .premium-glass button,
-  .input-glass {
-    font-size: 0.875rem;
-    font-weight: 400;
-  }
-
       `}</style>
     </main>
   );
@@ -1216,8 +1128,6 @@ function BookingFormView({
   selectRoute,
   setTripDirection,
   usesRoundTrip,
-  usesCustomRoute,
-  setRouteMode,
 }: {
   form: BookingForm;
   activeRoutes: RouteRecord[];
@@ -1231,8 +1141,6 @@ function BookingFormView({
   selectRoute: (routeId: string) => void;
   setTripDirection: (direction: TripDirection) => void;
   usesRoundTrip: boolean;
-  usesCustomRoute: boolean;
-  setRouteMode: (mode: RouteMode) => void;
 }) {
   return (
     <form noValidate onSubmit={submitBooking} className="space-y-4 p-4 md:p-5">
@@ -1240,33 +1148,31 @@ function BookingFormView({
         <SectionTitle
           number="01"
           title="Route and trip"
-          subtitle="Choose route and trip direction."
+          subtitle="Choose route, direction and passengers."
         />
 
-        <div className="mt-3 grid gap-3 md:grid-cols-4">
-          {!usesCustomRoute ? (
+        <div className="mt-3 grid gap-3 md:grid-cols-2">
+          <FormField label="Route" required>
             <RoutePicker
               routes={activeRoutes}
               selectedRoute={selectedRoute}
               loadingRoutes={loadingRoutes}
               onSelect={selectRoute}
             />
-          ) : (
-            <button
-              type="button"
-              onClick={() => setRouteMode('SAVED_ROUTE')}
-              className={modeButtonClass(false)}
-            >Popular Routes ▾</button>
-          )}
+          </FormField>
 
-          <button
-            type="button"
-            onClick={() => setRouteMode('CUSTOM_ROUTE')}
-            className={modeButtonClass(form.routeMode === 'CUSTOM_ROUTE')}
-          >
-            Custom Route
-          </button>
+          <FormField label="Passengers" required>
+            <input
+              type="number"
+              min="1"
+              value={form.passengers}
+              onChange={(event) => updateForm('passengers', event.target.value)}
+              className="input-glass"
+            />
+          </FormField>
+        </div>
 
+        <div className="mt-3 grid gap-3 sm:grid-cols-2">
           <button
             type="button"
             onClick={() => setTripDirection('ONE_WAY')}
@@ -1284,13 +1190,7 @@ function BookingFormView({
           </button>
         </div>
 
-        {usesCustomRoute && (
-          <p className="mt-3 text-xs font-medium text-neutral-400">
-            Enter your exact pickup and destination below.
-          </p>
-        )}
-
-        {!usesCustomRoute && selectedRoute && (
+        {selectedRoute && (
           <div className="mt-4 rounded-2xl border border-white/10 bg-white/[0.045] p-4 backdrop-blur-xl">
             <div className="flex flex-col justify-between gap-3 md:flex-row md:items-center">
               <div>
@@ -1320,7 +1220,7 @@ function BookingFormView({
           subtitle="Add pickup, destination and luggage information."
         />
 
-        <div className="mt-3 grid gap-3 md:grid-cols-2 xl:grid-cols-5">
+        <div className="mt-3 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
           <FormField label="Pickup Date & Time" required>
             <input
               type="datetime-local"
@@ -1349,18 +1249,6 @@ function BookingFormView({
               className="input-glass"
             />
           </FormField>
-
-          <FormField label="Passengers" required>
-            <input
-              type="number"
-              min="1"
-              value={form.passengers}
-              onChange={(event) => updateForm('passengers', event.target.value)}
-              className="input-glass"
-            />
-          </FormField>
-
-
 
           <FormField label="Luggage">
             <input
@@ -1545,7 +1433,7 @@ function RoutePicker({
             ? selectedRoute.name
             : loadingRoutes
               ? 'Loading routes...'
-              : 'Popular Routes'}
+              : 'Select route'}
         </span>
 
         <span
@@ -1645,7 +1533,7 @@ function SummaryPanel({
   createPaymentCheckout,
   paymentLoading,
 }: {
-  estimate: PriceCalculation | SmartRouteEstimate | null;
+  estimate: PriceCalculation | null;
   bookingResponse: BookingResponse | null;
   trackedBooking: TrackedBooking | null;
   formatMoney: (value: string | number | null | undefined) => string;
@@ -1813,29 +1701,25 @@ function SummaryPanel({
             </p>
 
             <p className="mt-2 text-sm leading-6 text-neutral-400">
-              Estimated fare based on your trip details.
+              Estimated fare based on selected route and trip direction.
             </p>
           </div>
-          {typeof estimate.distanceKm !== 'undefined' &&
-            estimate.distanceKm !== null &&
-            typeof estimate.durationMinutes !== 'undefined' &&
-            estimate.durationMinutes !== null && (
-              <div className="grid min-w-full gap-2 md:min-w-[360px]">
-                <div className="rounded-2xl border border-white/10 bg-black/25 px-4 py-3 text-xs">
-                  <p className="text-neutral-500">Distance</p>
-                  <p className="mt-1 font-semibold text-white">
-                    {estimate.distanceKm} km
-                  </p>
-                </div>
 
-                <div className="rounded-2xl border border-white/10 bg-black/25 px-4 py-3 text-xs">
-                  <p className="text-neutral-500">Estimated travel time</p>
-                  <p className="mt-1 font-semibold text-white">
-                    {estimate.durationMinutes} min
-                  </p>
+          {estimate.breakdown && estimate.breakdown.length > 0 && (
+            <div className="grid min-w-full gap-2 md:min-w-[420px]">
+              {estimate.breakdown.map((item, index) => (
+                <div
+                  key={`${item.label}-${index}`}
+                  className="flex items-center justify-between rounded-2xl border border-white/10 bg-black/30 px-4 py-3 text-xs"
+                >
+                  <span className="text-neutral-400">{item.label}</span>
+                  <span className="font-semibold text-white">
+                    ${formatMoney(item.amount)}
+                  </span>
                 </div>
-              </div>
-            )}
+              ))}
+            </div>
+          )}
         </div>
       </div>
     );
