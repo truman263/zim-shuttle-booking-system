@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { SmartRoutesModule } from './smart-routes/smart-routes.module';
 import { PublicPaymentsModule } from './public-payments/public-payments.module';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
@@ -18,6 +19,7 @@ import { ZonesModule } from './zones/zones.module';
 
 @Module({
   imports: [
+    SmartRoutesModule,
     PublicPaymentsModule,
     PrismaModule,
     CompaniesModule,
