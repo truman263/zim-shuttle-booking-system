@@ -176,6 +176,34 @@ const initialForm: BookingForm = {
   customerEmail: '',
 };
 
+function calculateDepositAmount(value: string | number | null | undefined) {
+  const price = Number(value ?? 0);
+
+  if (!Number.isFinite(price) || price <= 0) {
+    return 0;
+  }
+
+  return Math.min(price, Math.max(10, Number((price * 0.3).toFixed(2))));
+}
+
+function calculateBalanceAfterDeposit(
+  price: string | number | null | undefined,
+  deposit: string | number | null | undefined,
+) {
+  const parsedPrice = Number(price ?? 0);
+  const parsedDeposit = Number(deposit ?? 0);
+
+  if (!Number.isFinite(parsedPrice) || parsedPrice <= 0) {
+    return 0;
+  }
+
+  if (!Number.isFinite(parsedDeposit) || parsedDeposit <= 0) {
+    return parsedPrice;
+  }
+
+  return Math.max(0, Number((parsedPrice - parsedDeposit).toFixed(2)));
+}
+
 export default function PublicBookingPage() {
   const [viewMode, setViewMode] = useState<ViewMode>('BOOK');
 
@@ -625,7 +653,14 @@ export default function PublicBookingPage() {
         matchedRouteDirection: usesCustomRoute
           ? estimate?.matchedRouteDirection || undefined
           : undefined,
-        depositAmount: 0,
+        depositAmount: calculateDepositAmount(
+          usesCustomRoute
+            ? estimate?.estimatedPrice
+            : selectedRoute
+              ? Number(selectedRoute.basePrice) *
+                (form.tripDirection === 'ROUND_TRIP' ? 2 : 1)
+              : undefined,
+        ),
       });
 
       setBookingResponse(response);
@@ -1734,40 +1769,30 @@ function SummaryPanel({
           <p>Status: {humanise(bookingResponse.status)}</p>
           <p>Payment: {humanise(bookingResponse.paymentStatus)}</p>
           <p>Price: ${formatMoney(bookingResponse.finalPrice)}</p>
+          <p>Deposit after approval: ${formatMoney(bookingResponse.depositAmount)}</p>
+          <p>
+            Balance after deposit: $
+            {formatMoney(
+              calculateBalanceAfterDeposit(
+                bookingResponse.finalPrice,
+                bookingResponse.depositAmount,
+              ),
+            )}
+          </p>
         </div>
 
-        <div className="mt-5 grid gap-3 sm:grid-cols-3">
-          <button
-            type="button"
-            onClick={() =>
-              createPaymentCheckout(bookingResponse.bookingId, 'DEPOSIT')
-            }
-            disabled={paymentLoading !== null}
-            className="rounded-full bg-white px-5 py-3 text-xs font-semibold text-black transition hover:bg-neutral-300 disabled:cursor-not-allowed disabled:opacity-50"
-          >
-            {paymentLoading === 'DEPOSIT' ? 'Preparing...' : 'Pay Deposit'}
-          </button>
+        <div className="mt-5 rounded-2xl border border-[#C8A96A]/25 bg-[#C8A96A]/10 p-4 text-sm leading-6 text-[#C8A96A]">
+          Booking request received. Payment will be available once our team approves your booking.
+        </div>
 
-          <button
-            type="button"
-            onClick={() =>
-              createPaymentCheckout(bookingResponse.bookingId, 'FULL_PAYMENT')
-            }
-            disabled={paymentLoading !== null}
-            className="rounded-full border border-white/15 bg-white/[0.06] px-5 py-3 text-xs font-semibold text-white transition hover:border-white/30 hover:bg-white hover:text-black disabled:cursor-not-allowed disabled:opacity-50"
-          >
-            {paymentLoading === 'FULL_PAYMENT'
-              ? 'Preparing...'
-              : 'Pay Full Amount'}
-          </button>
-
+        <div className="mt-5">
           <button
             type="button"
             onClick={() => {
               setTrackingRef(bookingResponse.bookingRef);
               switchMode('TRACK');
             }}
-            className="rounded-full border border-white/15 bg-white/[0.04] px-5 py-3 text-xs font-semibold text-white transition hover:border-white/30 hover:bg-white hover:text-black"
+            className="w-full rounded-full border border-white/15 bg-white/[0.04] px-5 py-3 text-xs font-semibold text-white transition hover:border-white/30 hover:bg-white hover:text-black"
           >
             Track Booking
           </button>

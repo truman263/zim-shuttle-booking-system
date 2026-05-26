@@ -142,6 +142,17 @@ export class PublicBookingsService {
       finalPrice = calculatedPrice.estimatedPrice;
     }
 
+    const requestedDepositAmount = createDto.depositAmount ?? 0;
+    const depositAmount =
+      requestedDepositAmount > 0
+        ? requestedDepositAmount
+        : finalPrice !== undefined && finalPrice > 0
+          ? Math.min(
+              finalPrice,
+              Math.max(10, Number((finalPrice * 0.3).toFixed(2))),
+            )
+          : requestedDepositAmount;
+
     const bookingPayload: CreateBookingDto = {
       companyId: createDto.companyId,
       customerId: customer.id,
@@ -164,7 +175,7 @@ export class PublicBookingsService {
       specialNotes: this.buildCustomerSpecialNotes(createDto),
       estimatedPrice,
       finalPrice,
-      depositAmount: createDto.depositAmount,
+      depositAmount,
 
       smartPricingMode: createDto.smartPricingMode,
       smartDistanceKm: createDto.smartDistanceKm,
