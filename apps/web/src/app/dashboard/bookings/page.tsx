@@ -660,6 +660,13 @@ export default function BookingsPage() {
     setErrorMessage('');
     setSuccessMessage('');
 
+    if (editingBookingId) {
+      setErrorMessage(
+        'Price is locked for existing bookings. Assign vehicle or driver without recalculating. Edit Final Price manually if a price change is required.',
+      );
+      return;
+    }
+
     const passengers = Number(form.passengers || 1);
 
     if (!Number.isInteger(passengers) || passengers < 1) {
@@ -803,7 +810,7 @@ export default function BookingsPage() {
           durationDays: usesDaily ? duration.days : undefined,
           hourlyRate: usesHourly ? parseMoney(form.hourlyRate) : undefined,
           dailyRate: usesDaily ? parseMoney(form.dailyRate) : undefined,
-          vehicleType: selectedVehicle?.vehicleType,
+          vehicleType: editingBookingId ? undefined : selectedVehicle?.vehicleType,
           roadCondition: form.roadCondition || undefined,
           zoneType: form.pricingZone || undefined,
           passengers,
@@ -1791,14 +1798,16 @@ export default function BookingsPage() {
                   <button
                     type="button"
                     onClick={calculatePrice}
-                    disabled={calculating || usesManualQuote}
+                    disabled={calculating || usesManualQuote || !!editingBookingId}
                     className="rounded-full bg-[#C8A96A] px-5 py-3 text-sm font-semibold text-black transition hover:bg-white disabled:cursor-not-allowed disabled:opacity-50"
                   >
-                    {usesManualQuote
-                      ? 'Manual Quote'
-                      : calculating
-                        ? 'Calculating...'
-                        : 'Calculate Price'}
+                    {editingBookingId
+                      ? 'Price Locked'
+                      : usesManualQuote
+                        ? 'Manual Quote'
+                        : calculating
+                          ? 'Calculating...'
+                          : 'Calculate Price'}
                   </button>
                 </div>
 
@@ -1849,6 +1858,13 @@ export default function BookingsPage() {
                   </div>
                 )}
               </div>
+
+              {editingBookingId && (
+                <div className="mt-4 rounded-2xl border border-[#C8A96A]/20 bg-[#C8A96A]/10 p-4 text-sm text-[#C8A96A]">
+                  Approved fare is protected. Assigning a vehicle or driver will not change the customer’s price.
+                  To adjust the fare, update the Final Price manually.
+                </div>
+              )}
 
               <div className="mt-4 grid gap-4 md:grid-cols-3">
                 <FormField label="Estimated Price">
