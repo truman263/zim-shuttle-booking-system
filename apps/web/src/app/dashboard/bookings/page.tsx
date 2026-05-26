@@ -678,7 +678,7 @@ export default function BookingsPage() {
     }
 
     if (usesRoute && !form.routeId) {
-      setErrorMessage('Select a saved route or choose another booking mode.');
+      setErrorMessage('Select a popular route or choose another booking mode.');
       return;
     }
 
@@ -880,7 +880,7 @@ export default function BookingsPage() {
     setSuccessMessage('');
 
     if (usesRoute && !form.routeId) {
-      setErrorMessage('Select a saved route or choose another booking mode.');
+      setErrorMessage('Select a popular route or choose another booking mode.');
       return;
     }
 
@@ -1112,7 +1112,7 @@ export default function BookingsPage() {
             Bookings Management
           </h1>
           <p className="mt-3 max-w-2xl text-sm leading-6 text-neutral-400">
-            Create premium bookings for saved routes, custom transfers, one-way
+            Create premium bookings for popular routes, custom transfers, one-way
             trips, round trips, hourly hire, daily rental and manual quotes.
           </p>
         </div>
@@ -1160,7 +1160,7 @@ export default function BookingsPage() {
             }
           />
 
-          <div className="space-y-8 p-6">
+          <div className="space-y-6 p-5 md:p-6">
             <section>
               <SectionTitle
                 number="01"
@@ -1268,7 +1268,7 @@ export default function BookingsPage() {
 
               <div className="mt-4 grid gap-3 md:grid-cols-3 xl:grid-cols-5">
                 {[
-                  ['SAVED_ROUTE', 'Saved Route'],
+                  ['SAVED_ROUTE', 'Popular Route'],
                   ['CUSTOM_TRIP', 'Distance-Based Trip'],
                   ['HOURLY_HIRE', 'Hourly Hire'],
                   ['DAILY_HIRE', 'Daily Hire'],
@@ -1329,7 +1329,7 @@ export default function BookingsPage() {
                       }
                       className="input-field"
                     >
-                      <option value="">Select saved route</option>
+                      <option value="">Select popular route</option>
                       {routes
                         .filter(
                           (route) =>
@@ -1501,35 +1501,58 @@ export default function BookingsPage() {
 
               {selectedRoute && usesRoute && (
                 <div className="mt-4 rounded-2xl border border-[#C8A96A]/20 bg-[#C8A96A]/10 p-4 text-sm">
-                  <div className="flex flex-col justify-between gap-3 md:flex-row md:items-center">
+                  <div className="grid gap-4 lg:grid-cols-[1.4fr_0.8fr_0.8fr] lg:items-center">
                     <div>
-                      <p className="font-semibold text-[#C8A96A]">
-                        Saved Route Selected
+                      <p className="text-xs uppercase tracking-[0.25em] text-[#C8A96A]">
+                        Popular Route
                       </p>
-                      <p className="mt-1 text-neutral-400">
-                        Distance and base pricing are locked to this route.
+                      <h3 className="mt-2 text-lg font-semibold text-white">
+                        {selectedRoute.name}
+                      </h3>
+                      <p className="mt-1 text-sm text-neutral-400">
+                        {selectedRoute.pickupCity} → {selectedRoute.destinationCity}
                       </p>
                     </div>
 
-                    <div className="text-left md:text-right">
-                      <p className="font-semibold text-white">
+                    <div className="rounded-2xl border border-white/10 bg-black/20 px-4 py-3">
+                      <p className="text-xs uppercase tracking-[0.2em] text-neutral-500">
+                        Base fare
+                      </p>
+                      <p className="mt-1 text-xl font-semibold text-white">
                         ${String(selectedRoute.basePrice)}
                       </p>
-                      <p className="text-xs text-neutral-500">
+                      <p className="mt-1 text-xs text-neutral-500">
                         {selectedRoute.priceUnit?.replaceAll('_', ' ')}
+                      </p>
+                    </div>
+
+                    <div className="rounded-2xl border border-white/10 bg-black/20 px-4 py-3">
+                      <p className="text-xs uppercase tracking-[0.2em] text-neutral-500">
+                        Estimated total
+                      </p>
+                      <p className="mt-1 text-xl font-semibold text-[#C8A96A]">
+                        ${formatMoney(form.finalPrice || form.estimatedPrice || selectedRoute.basePrice)}
+                      </p>
+                      <p className="mt-1 text-xs text-neutral-500">
+                        {form.tripDirection.replaceAll('_', ' ')}
                       </p>
                     </div>
                   </div>
 
-                  <div className="mt-4 grid gap-3 text-neutral-300 md:grid-cols-4">
-                    <RouteMeta label="Route" value={selectedRoute.name} />
-                    <RouteMeta label="From" value={selectedRoute.pickupCity} />
-                    <RouteMeta label="To" value={selectedRoute.destinationCity} />
+                  <div className="mt-4 grid gap-3 text-xs text-neutral-300 md:grid-cols-4">
                     <RouteMeta
                       label="Distance"
                       value={
                         selectedRoute.distanceKm
-                          ? `${selectedRoute.distanceKm} km`
+                          ? String(selectedRoute.distanceKm) + ' km'
+                          : 'Not set'
+                      }
+                    />
+                    <RouteMeta
+                      label="Duration"
+                      value={
+                        selectedRoute.estimatedDurationMinutes
+                          ? String(selectedRoute.estimatedDurationMinutes) + ' mins'
                           : 'Not set'
                       }
                     />
@@ -1541,18 +1564,9 @@ export default function BookingsPage() {
                       label="Pricing"
                       value={selectedRoute.pricingMode?.replaceAll('_', ' ')}
                     />
-                    <RouteMeta
-                      label="Duration"
-                      value={
-                        selectedRoute.estimatedDurationMinutes
-                          ? `${selectedRoute.estimatedDurationMinutes} mins`
-                          : 'Not set'
-                      }
-                    />
                   </div>
                 </div>
               )}
-
               {duration.hours > 0 && (
                 <div className="mt-4 rounded-2xl border border-white/10 bg-white/[0.03] p-4 text-sm text-neutral-300">
                   Duration: {duration.hours} hour(s), approximately{' '}
@@ -1603,8 +1617,8 @@ export default function BookingsPage() {
             <section>
               <SectionTitle
                 number="03"
-                title="Assignment and Conditions"
-                subtitle="Assign available resources and add only the pricing conditions that apply."
+                title="Assignment"
+                subtitle="Assign vehicle, driver and only the conditions that apply."
               />
 
               <div className="mt-4 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
@@ -1754,8 +1768,8 @@ export default function BookingsPage() {
             <section>
               <SectionTitle
                 number="04"
-                title="Pricing and Payment"
-                subtitle="Calculate the fare, review the total, then enter the final price and deposit."
+                title="Pricing"
+                subtitle="Review the fare, final price and deposit."
               />
 
               <div className="mt-4 rounded-3xl border border-white/10 bg-white/[0.03] p-5">
