@@ -2292,12 +2292,12 @@ function BookingsTable({
                         disabled={
                           actionLoadingId === booking.id || isFinalStatus
                         }
-                        onClick={() => onStatusChange(booking.id, 'COMPLETED')}
+                        onClick={() => onStatusChange(booking.id, 'CONFIRMED')}
                         className="w-[96px] rounded-full border border-green-500/30 bg-green-500/10 px-3 py-1.5 text-[11px] font-medium text-green-300 transition hover:bg-green-500/20 disabled:cursor-not-allowed disabled:opacity-40"
                       >
                         {actionLoadingId === booking.id
                           ? 'Working'
-                          : 'Complete'}
+                          : 'Confirm'}
                       </button>
 
                       <button
