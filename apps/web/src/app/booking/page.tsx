@@ -1869,9 +1869,9 @@ function SummaryPanel({
             title="Price"
             lines={[
               `Passengers: ${trackedBooking.passengers}`,
-              `Final Price: ${formatMoney(trackedBooking.finalPrice)}`,
-              `Deposit Required: ${formatMoney(trackedBooking.depositAmount)}`,
-              `Balance After Deposit: ${formatMoney(
+              `Final Price: $${formatMoney(trackedBooking.finalPrice)}`,
+              `Deposit Required: $${formatMoney(trackedBooking.depositAmount)}`,
+              `Balance After Deposit: $${formatMoney(
                 calculateBalanceAfterDeposit(
                   trackedBooking.finalPrice,
                   trackedBooking.depositAmount,
