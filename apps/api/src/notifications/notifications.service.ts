@@ -3,6 +3,7 @@ import {
   NotificationChannel,
   NotificationDeliveryStatus,
   NotificationEvent,
+  Prisma,
 } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 
@@ -18,7 +19,7 @@ type LogNotificationInput = {
   message: string;
   status?: NotificationDeliveryStatus;
   errorMessage?: string | null;
-  metadata?: Record<string, unknown>;
+  metadata?: Prisma.InputJsonValue;
 };
 
 @Injectable()
@@ -55,9 +56,9 @@ export class NotificationsService {
     customerEmail?: string | null;
     subject: string;
     message: string;
-    metadata?: Record<string, unknown>;
+    metadata?: Prisma.InputJsonValue;
   }) {
-    const logs = [];
+    const logs: unknown[] = [];
 
     if (input.customerEmail) {
       logs.push(
