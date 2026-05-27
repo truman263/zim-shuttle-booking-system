@@ -7,6 +7,13 @@ const COMPANY_ID = 'cmpfkzypy0000l4ew82k92cl1';
 
 type CustomerMode = 'EXISTING' | 'QUICK' | 'WALK_IN';
 
+type BookingTab =
+  | 'ALL'
+  | 'PENDING'
+  | 'CONFIRMED'
+  | 'COMPLETED'
+  | 'CANCELLED';
+
 type BookingMode =
   | 'SAVED_ROUTE'
   | 'CUSTOM_TRIP'
@@ -221,6 +228,8 @@ const initialForm: BookingForm = {
 
 export default function BookingsPage() {
   const [bookings, setBookings] = useState<Booking[]>([]);
+  const [activeBookingTab, setActiveBookingTab] = useState<BookingTab>('ALL');
+  const [lastUpdatedAt, setLastUpdatedAt] = useState<Date | null>(null);
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [routes, setRoutes] = useState<RouteRecord[]>([]);
   const [drivers, setDrivers] = useState<Driver[]>([]);
@@ -268,6 +277,7 @@ export default function BookingsPage() {
       setDrivers(Array.isArray(driversData) ? driversData : [driversData]);
       setVehicles(Array.isArray(vehiclesData) ? vehiclesData : [vehiclesData]);
       setZones(Array.isArray(zonesData) ? zonesData : [zonesData]);
+      setLastUpdatedAt(new Date());
     } catch (error) {
       setErrorMessage(
         error instanceof Error
@@ -283,17 +293,49 @@ export default function BookingsPage() {
     fetchPageData();
   }, []);
 
+  useEffect(() => {
+    const intervalId = window.setInterval(() => {
+      // Auto-refresh booking operations every 30 seconds without touching the edit form.
+      if (!document.hidden) {
+        fetchPageData();
+      }
+    }, 30000);
+
+    return () => window.clearInterval(intervalId);
+  }, []);
+
   const bookingStats = useMemo(() => {
+    const cancelledCount = bookings.filter(
+      (booking) => booking.status === 'CANCELLED' || booking.status === 'NO_SHOW',
+    ).length;
+
     return {
       total: bookings.length,
       pending: bookings.filter((booking) => booking.status === 'PENDING')
         .length,
+      confirmed: bookings.filter((booking) => booking.status === 'CONFIRMED')
+        .length,
       completed: bookings.filter((booking) => booking.status === 'COMPLETED')
         .length,
+      cancelled: cancelledCount,
       paid: bookings.filter((booking) => booking.paymentStatus === 'PAID')
         .length,
     };
   }, [bookings]);
+
+  const filteredBookings = useMemo(() => {
+    if (activeBookingTab === 'ALL') {
+      return bookings;
+    }
+
+    if (activeBookingTab === 'CANCELLED') {
+      return bookings.filter(
+        (booking) => booking.status === 'CANCELLED' || booking.status === 'NO_SHOW',
+      );
+    }
+
+    return bookings.filter((booking) => booking.status === activeBookingTab);
+  }, [activeBookingTab, bookings]);
 
   const selectedRoute = routes.find((route) => route.id === form.routeId);
   const selectedVehicle = vehicles.find(
@@ -1144,7 +1186,9 @@ export default function BookingsPage() {
       <section className="mb-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <SummaryCard title="Total Bookings" value={bookingStats.total} />
         <SummaryCard title="Pending" value={bookingStats.pending} />
+        <SummaryCard title="Confirmed" value={bookingStats.confirmed} />
         <SummaryCard title="Completed" value={bookingStats.completed} />
+        <SummaryCard title="Cancelled" value={bookingStats.cancelled} />
         <SummaryCard title="Paid" value={bookingStats.paid} accent />
       </section>
 
@@ -1945,7 +1989,12 @@ export default function BookingsPage() {
 
       {!loading && (
         <BookingsTable
-          bookings={bookings}
+          bookings={filteredBookings}
+          allBookings={bookings}
+          activeBookingTab={activeBookingTab}
+          setActiveBookingTab={setActiveBookingTab}
+          bookingStats={bookingStats}
+          lastUpdatedAt={lastUpdatedAt}
           actionLoadingId={actionLoadingId}
           onRefresh={fetchPageData}
           onEdit={startEditBooking}
@@ -2119,34 +2168,98 @@ function modeButtonClass(active: boolean) {
 
 function BookingsTable({
   bookings,
+  allBookings,
+  activeBookingTab,
+  setActiveBookingTab,
+  bookingStats,
+  lastUpdatedAt,
   actionLoadingId,
   onRefresh,
   onEdit,
   onStatusChange,
 }: {
   bookings: Booking[];
+  allBookings: Booking[];
+  activeBookingTab: BookingTab;
+  setActiveBookingTab: (tab: BookingTab) => void;
+  bookingStats: {
+    total: number;
+    pending: number;
+    confirmed: number;
+    completed: number;
+    cancelled: number;
+    paid: number;
+  };
+  lastUpdatedAt: Date | null;
   actionLoadingId: string;
   onRefresh: () => void;
   onEdit: (booking: Booking) => void;
   onStatusChange: (bookingId: string, status: string) => void;
 }) {
+  const tabs: { key: BookingTab; label: string; count: number }[] = [
+    { key: 'ALL', label: 'All', count: bookingStats.total },
+    { key: 'PENDING', label: 'Pending', count: bookingStats.pending },
+    { key: 'CONFIRMED', label: 'Confirmed', count: bookingStats.confirmed },
+    { key: 'COMPLETED', label: 'Completed', count: bookingStats.completed },
+    { key: 'CANCELLED', label: 'Cancelled', count: bookingStats.cancelled },
+  ];
+
+  const activeTabLabel =
+    tabs.find((tab) => tab.key === activeBookingTab)?.label || 'All';
   return (
     <div className="overflow-hidden rounded-3xl border border-white/10 bg-white/[0.04]">
-      <div className="flex flex-col justify-between gap-4 border-b border-white/10 px-6 py-5 md:flex-row md:items-center">
-        <div>
-          <h2 className="text-lg font-semibold">All Bookings</h2>
-          <p className="mt-1 text-sm text-neutral-500">
-            Live records from the booking system database.
-          </p>
+      <div className="border-b border-white/10 px-6 py-5">
+        <div className="flex flex-col justify-between gap-4 md:flex-row md:items-start">
+          <div>
+            <div className="flex flex-wrap items-center gap-3">
+              <h2 className="text-lg font-semibold">{activeTabLabel} Bookings</h2>
+              {bookingStats.pending > 0 &&
+                (activeBookingTab === 'ALL' || activeBookingTab === 'PENDING') && (
+                  <span className="rounded-full border border-[#C8A96A]/30 bg-[#C8A96A]/10 px-3 py-1 text-xs font-semibold text-[#C8A96A]">
+                    {bookingStats.pending} pending approval
+                  </span>
+                )}
+            </div>
+            <p className="mt-1 text-sm text-neutral-500">
+              Live records from the booking system database.
+              {lastUpdatedAt
+                ? ` Last updated ${lastUpdatedAt.toLocaleTimeString()}.`
+                : ''}
+            </p>
+          </div>
+
+          <button
+            type="button"
+            onClick={onRefresh}
+            className="rounded-full border border-white/10 px-4 py-2 text-sm text-neutral-300 transition hover:border-[#C8A96A]/40 hover:text-white"
+          >
+            Refresh
+          </button>
         </div>
 
-        <button
-          type="button"
-          onClick={onRefresh}
-          className="rounded-full border border-white/10 px-4 py-2 text-sm text-neutral-300 transition hover:border-[#C8A96A]/40 hover:text-white"
-        >
-          Refresh
-        </button>
+        <div className="mt-5 flex gap-2 overflow-x-auto pb-1">
+          {tabs.map((tab) => {
+            const isActive = activeBookingTab === tab.key;
+
+            return (
+              <button
+                key={tab.key}
+                type="button"
+                onClick={() => setActiveBookingTab(tab.key)}
+                className={`whitespace-nowrap rounded-full border px-4 py-2 text-xs font-semibold transition ${
+                  isActive
+                    ? 'border-[#C8A96A]/50 bg-[#C8A96A]/15 text-[#C8A96A]'
+                    : 'border-white/10 bg-white/[0.03] text-neutral-400 hover:border-white/20 hover:text-white'
+                }`}
+              >
+                {tab.label}
+                <span className="ml-2 rounded-full bg-white/10 px-2 py-0.5 text-[10px]">
+                  {tab.count}
+                </span>
+              </button>
+            );
+          })}
+        </div>
       </div>
 
       <div className="overflow-x-auto">
@@ -2181,6 +2294,11 @@ function BookingsTable({
                 booking.status === 'COMPLETED' ||
                 booking.status === 'CANCELLED' ||
                 booking.status === 'NO_SHOW';
+
+              const canConfirm = booking.status === 'PENDING';
+              const canMarkCompleted = booking.status === 'CONFIRMED';
+              const canCancel =
+                booking.status === 'PENDING' || booking.status === 'CONFIRMED';
 
               const isRoundTrip = booking.tripDirection === 'ROUND_TRIP';
 
@@ -2278,38 +2396,64 @@ function BookingsTable({
 
                   <td className="px-4 py-5">
                     <div className="flex flex-col items-end gap-2">
-                      <button
-                        type="button"
-                        disabled={isFinalStatus}
-                        onClick={() => onEdit(booking)}
-                        className="w-[96px] rounded-full border border-[#C8A96A]/30 bg-[#C8A96A]/10 px-3 py-1.5 text-[11px] font-medium text-[#C8A96A] transition hover:bg-[#C8A96A]/20 disabled:cursor-not-allowed disabled:opacity-40"
-                      >
-                        Edit
-                      </button>
+                      {isFinalStatus ? (
+                        <span className="w-[110px] rounded-full border border-white/10 bg-white/[0.03] px-3 py-1.5 text-center text-[11px] font-medium text-neutral-500">
+                          View Only
+                        </span>
+                      ) : (
+                        <>
+                          <button
+                            type="button"
+                            onClick={() => onEdit(booking)}
+                            className="w-[110px] rounded-full border border-[#C8A96A]/30 bg-[#C8A96A]/10 px-3 py-1.5 text-[11px] font-medium text-[#C8A96A] transition hover:bg-[#C8A96A]/20"
+                          >
+                            Edit
+                          </button>
 
-                      <button
-                        type="button"
-                        disabled={
-                          actionLoadingId === booking.id || isFinalStatus
-                        }
-                        onClick={() => onStatusChange(booking.id, 'CONFIRMED')}
-                        className="w-[96px] rounded-full border border-green-500/30 bg-green-500/10 px-3 py-1.5 text-[11px] font-medium text-green-300 transition hover:bg-green-500/20 disabled:cursor-not-allowed disabled:opacity-40"
-                      >
-                        {actionLoadingId === booking.id
-                          ? 'Working'
-                          : 'Confirm'}
-                      </button>
+                          {canConfirm && (
+                            <button
+                              type="button"
+                              disabled={actionLoadingId === booking.id}
+                              onClick={() =>
+                                onStatusChange(booking.id, 'CONFIRMED')
+                              }
+                              className="w-[110px] rounded-full border border-green-500/30 bg-green-500/10 px-3 py-1.5 text-[11px] font-medium text-green-300 transition hover:bg-green-500/20 disabled:cursor-not-allowed disabled:opacity-40"
+                            >
+                              {actionLoadingId === booking.id
+                                ? 'Working'
+                                : 'Confirm'}
+                            </button>
+                          )}
 
-                      <button
-                        type="button"
-                        disabled={
-                          actionLoadingId === booking.id || isFinalStatus
-                        }
-                        onClick={() => onStatusChange(booking.id, 'CANCELLED')}
-                        className="w-[96px] rounded-full border border-red-500/30 bg-red-500/10 px-3 py-1.5 text-[11px] font-medium text-red-300 transition hover:bg-red-500/20 disabled:cursor-not-allowed disabled:opacity-40"
-                      >
-                        Cancel
-                      </button>
+                          {canMarkCompleted && (
+                            <button
+                              type="button"
+                              disabled={actionLoadingId === booking.id}
+                              onClick={() =>
+                                onStatusChange(booking.id, 'COMPLETED')
+                              }
+                              className="w-[110px] rounded-full border border-blue-500/30 bg-blue-500/10 px-3 py-1.5 text-[11px] font-medium text-blue-300 transition hover:bg-blue-500/20 disabled:cursor-not-allowed disabled:opacity-40"
+                            >
+                              {actionLoadingId === booking.id
+                                ? 'Working'
+                                : 'Mark Done'}
+                            </button>
+                          )}
+
+                          {canCancel && (
+                            <button
+                              type="button"
+                              disabled={actionLoadingId === booking.id}
+                              onClick={() =>
+                                onStatusChange(booking.id, 'CANCELLED')
+                              }
+                              className="w-[110px] rounded-full border border-red-500/30 bg-red-500/10 px-3 py-1.5 text-[11px] font-medium text-red-300 transition hover:bg-red-500/20 disabled:cursor-not-allowed disabled:opacity-40"
+                            >
+                              Cancel
+                            </button>
+                          )}
+                        </>
+                      )}
                     </div>
                   </td>
                 </tr>
@@ -2321,7 +2465,7 @@ function BookingsTable({
 
       {bookings.length === 0 && (
         <div className="p-8 text-center text-sm text-neutral-500">
-          No bookings found.
+          No bookings found in this view.
         </div>
       )}
     </div>
