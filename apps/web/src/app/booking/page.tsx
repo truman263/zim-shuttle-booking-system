@@ -95,6 +95,7 @@ type PaymentCheckoutResponse = {
 
 type TrackedBooking = {
   bookingRef: string;
+  bookingId: string;
   status: string;
   paymentStatus: string;
   tripType: string;
@@ -1802,6 +1803,22 @@ function SummaryPanel({
   }
 
   if (trackedBooking) {
+    const paymentAllowedStatuses = [
+      'CONFIRMED',
+      'DRIVER_ASSIGNED',
+      'VEHICLE_ASSIGNED',
+      'IN_PROGRESS',
+    ];
+
+    const paymentBlockedStatuses = ['PENDING', 'CANCELLED', 'NO_SHOW', 'COMPLETED'];
+
+    const canPay =
+      paymentAllowedStatuses.includes(trackedBooking.status) &&
+      trackedBooking.paymentStatus !== 'PAID';
+
+    const isAwaitingApproval = trackedBooking.status === 'PENDING';
+    const isInactiveBooking = paymentBlockedStatuses.includes(trackedBooking.status);
+
     return (
       <div className="rounded-3xl border border-white/10 bg-white/[0.06] text-white backdrop-blur-xl">
         <div className="border-b border-white/10 p-5">
@@ -1852,8 +1869,14 @@ function SummaryPanel({
             title="Price"
             lines={[
               `Passengers: ${trackedBooking.passengers}`,
-              `Final Price: $${formatMoney(trackedBooking.finalPrice)}`,
-              `Deposit: $${formatMoney(trackedBooking.depositAmount)}`,
+              `Final Price: ${formatMoney(trackedBooking.finalPrice)}`,
+              `Deposit Required: ${formatMoney(trackedBooking.depositAmount)}`,
+              `Balance After Deposit: ${formatMoney(
+                calculateBalanceAfterDeposit(
+                  trackedBooking.finalPrice,
+                  trackedBooking.depositAmount,
+                ),
+              )}`,
             ]}
           />
 
@@ -1870,6 +1893,57 @@ function SummaryPanel({
               }`,
             ]}
           />
+        </div>
+
+        <div className="border-t border-white/10 p-5">
+          {isAwaitingApproval && (
+            <div className="rounded-2xl border border-[#C8A96A]/25 bg-[#C8A96A]/10 p-4 text-sm leading-6 text-[#C8A96A]">
+              <p className="font-semibold text-white">Awaiting approval</p>
+              <p className="mt-1">
+                Your booking request is being reviewed. Payment will become available once LadyBird Shuttle Services confirms your booking.
+              </p>
+            </div>
+          )}
+
+          {!isAwaitingApproval && canPay && (
+            <div className="grid gap-3 sm:grid-cols-2">
+              <button
+                type="button"
+                onClick={() =>
+                  createPaymentCheckout(trackedBooking.bookingId, 'DEPOSIT')
+                }
+                disabled={paymentLoading !== null}
+                className="rounded-full bg-white px-5 py-3 text-xs font-semibold text-black transition hover:bg-neutral-300 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {paymentLoading === 'DEPOSIT' ? 'Preparing...' : 'Pay Deposit'}
+              </button>
+
+              <button
+                type="button"
+                onClick={() =>
+                  createPaymentCheckout(trackedBooking.bookingId, 'FULL_PAYMENT')
+                }
+                disabled={paymentLoading !== null}
+                className="rounded-full border border-white/15 bg-white/[0.06] px-5 py-3 text-xs font-semibold text-white transition hover:border-white/30 hover:bg-white hover:text-black disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {paymentLoading === 'FULL_PAYMENT'
+                  ? 'Preparing...'
+                  : 'Pay Full Amount'}
+              </button>
+            </div>
+          )}
+
+          {!isAwaitingApproval && !canPay && (
+            <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-4 text-sm leading-6 text-neutral-400">
+              {trackedBooking.paymentStatus === 'PAID'
+                ? 'Payment is complete for this booking.'
+                : trackedBooking.status === 'COMPLETED'
+                  ? 'This ride has been completed.'
+                  : trackedBooking.status === 'CANCELLED' || trackedBooking.status === 'NO_SHOW'
+                    ? 'This booking is no longer active.'
+                    : 'Payment is not available for the current booking status.'}
+            </div>
+          )}
         </div>
       </div>
     );

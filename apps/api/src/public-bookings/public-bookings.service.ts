@@ -235,6 +235,7 @@ export class PublicBookingsService {
 
     return {
       bookingRef: booking.bookingRef,
+      bookingId: booking.id,
       status: booking.status,
       paymentStatus: booking.paymentStatus,
       tripType: booking.tripType,
