@@ -1,4 +1,4 @@
-import {
+﻿import {
   BadRequestException,
   Injectable,
   NotFoundException,
@@ -36,6 +36,21 @@ export class DriversService {
     return this.prisma.driver.findMany({
       include: {
         company: true,
+        bookings: {
+          where: {
+            status: {
+              in: ['PENDING', 'CONFIRMED', 'IN_PROGRESS'],
+            },
+          },
+          include: {
+            customer: true,
+            vehicle: true,
+            route: true,
+          },
+          orderBy: {
+            pickupDate: 'asc',
+          },
+        },
       },
       orderBy: {
         createdAt: 'desc',
@@ -48,7 +63,21 @@ export class DriversService {
       where: { id },
       include: {
         company: true,
-        bookings: true,
+        bookings: {
+          where: {
+            status: {
+              in: ['PENDING', 'CONFIRMED', 'IN_PROGRESS'],
+            },
+          },
+          include: {
+            customer: true,
+            vehicle: true,
+            route: true,
+          },
+          orderBy: {
+            pickupDate: 'asc',
+          },
+        },
       },
     });
   }
@@ -60,13 +89,7 @@ export class DriversService {
         bookings: {
           where: {
             status: {
-              in: [
-                'PENDING',
-                'CONFIRMED',
-                'DRIVER_ASSIGNED',
-                'VEHICLE_ASSIGNED',
-                'IN_PROGRESS',
-              ],
+              in: ['IN_PROGRESS'],
             },
           },
         },
@@ -83,7 +106,7 @@ export class DriversService {
       driver.bookings.length > 0
     ) {
       throw new BadRequestException(
-        'Driver has active bookings and cannot be marked available manually',
+        'Driver has an active trip and cannot be marked available manually',
       );
     }
 
