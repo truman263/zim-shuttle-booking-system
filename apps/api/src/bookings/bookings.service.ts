@@ -582,6 +582,66 @@ export class BookingsService {
     return updatedBooking;
   }
 
+  async remove(id: string) {
+    const booking = await this.prisma.booking.findUnique({
+      where: { id },
+    });
+
+    if (!booking) {
+      throw new NotFoundException('Booking not found');
+    }
+
+    return this.prisma.$transaction(async (tx) => {
+      await tx.payment.deleteMany({
+        where: {
+          bookingId: booking.id,
+        },
+      });
+
+      const deletedBooking = await tx.booking.delete({
+        where: { id },
+      });
+
+      if (booking.vehicleId) {
+        const activeVehicleBookings = await tx.booking.count({
+          where: {
+            vehicleId: booking.vehicleId,
+            status: BookingStatus.IN_PROGRESS,
+          },
+        });
+
+        if (activeVehicleBookings === 0) {
+          await tx.vehicle.update({
+            where: { id: booking.vehicleId },
+            data: {
+              status: VehicleStatus.AVAILABLE,
+            },
+          });
+        }
+      }
+
+      if (booking.driverId) {
+        const activeDriverBookings = await tx.booking.count({
+          where: {
+            driverId: booking.driverId,
+            status: BookingStatus.IN_PROGRESS,
+          },
+        });
+
+        if (activeDriverBookings === 0) {
+          await tx.driver.update({
+            where: { id: booking.driverId },
+            data: {
+              status: DriverStatus.AVAILABLE,
+            },
+          });
+        }
+      }
+
+      return deletedBooking;
+    });
+  }
+
   private async validateRoute(routeId: string, companyId: string) {
     const route = await this.prisma.route.findUnique({
       where: { id: routeId },
