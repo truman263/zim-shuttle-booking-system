@@ -178,20 +178,6 @@ export class BookingsService {
         include: this.bookingInclude(),
       });
 
-      if (createBookingDto.vehicleId) {
-        await tx.vehicle.update({
-          where: { id: createBookingDto.vehicleId },
-          data: { status: VehicleStatus.BOOKED },
-        });
-      }
-
-      if (createBookingDto.driverId) {
-        await tx.driver.update({
-          where: { id: createBookingDto.driverId },
-          data: { status: DriverStatus.ON_TRIP },
-        });
-      }
-
       return createdBooking;
     });
 
@@ -404,28 +390,44 @@ export class BookingsService {
     const nextStatus = existingBooking.status;
 
     const updatedBooking = await this.prisma.$transaction(async (tx) => {
-      if (vehicleChanged && existingBooking.vehicleId) {
+      if (
+        existingBooking.status === BookingStatus.IN_PROGRESS &&
+        vehicleChanged &&
+        existingBooking.vehicleId
+      ) {
         await tx.vehicle.update({
           where: { id: existingBooking.vehicleId },
           data: { status: VehicleStatus.AVAILABLE },
         });
       }
 
-      if (driverChanged && existingBooking.driverId) {
+      if (
+        existingBooking.status === BookingStatus.IN_PROGRESS &&
+        driverChanged &&
+        existingBooking.driverId
+      ) {
         await tx.driver.update({
           where: { id: existingBooking.driverId },
           data: { status: DriverStatus.AVAILABLE },
         });
       }
 
-      if (vehicleChanged && nextVehicleId) {
+      if (
+        existingBooking.status === BookingStatus.IN_PROGRESS &&
+        vehicleChanged &&
+        nextVehicleId
+      ) {
         await tx.vehicle.update({
           where: { id: nextVehicleId },
           data: { status: VehicleStatus.BOOKED },
         });
       }
 
-      if (driverChanged && nextDriverId) {
+      if (
+        existingBooking.status === BookingStatus.IN_PROGRESS &&
+        driverChanged &&
+        nextDriverId
+      ) {
         await tx.driver.update({
           where: { id: nextDriverId },
           data: { status: DriverStatus.ON_TRIP },
@@ -529,6 +531,26 @@ export class BookingsService {
         },
         include: this.bookingInclude(),
       });
+
+      if (status === BookingStatus.IN_PROGRESS) {
+        if (booking.vehicleId) {
+          await tx.vehicle.update({
+            where: { id: booking.vehicleId },
+            data: {
+              status: VehicleStatus.BOOKED,
+            },
+          });
+        }
+
+        if (booking.driverId) {
+          await tx.driver.update({
+            where: { id: booking.driverId },
+            data: {
+              status: DriverStatus.ON_TRIP,
+            },
+          });
+        }
+      }
 
       if (
         status === BookingStatus.COMPLETED ||
