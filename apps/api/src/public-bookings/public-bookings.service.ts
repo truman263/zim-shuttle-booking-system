@@ -4,6 +4,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import {
+  NotificationEvent,
   PaymentStatus,
   PricingMode,
   TripDirection,
@@ -13,6 +14,7 @@ import { BookingsService } from '../bookings/bookings.service';
 import { CreateBookingDto } from '../bookings/dto/create-booking.dto';
 import { PricingCalculatorService } from '../pricing-calculator/pricing-calculator.service';
 import { PrismaService } from '../prisma/prisma.service';
+import { NotificationsService } from '../notifications/notifications.service';
 import { CreatePublicBookingDto } from './dto/create-public-booking.dto';
 import { EstimatePublicBookingDto } from './dto/estimate-public-booking.dto';
 
@@ -22,6 +24,7 @@ export class PublicBookingsService {
     private readonly prisma: PrismaService,
     private readonly bookingsService: BookingsService,
     private readonly pricingCalculatorService: PricingCalculatorService,
+    private readonly notificationsService: NotificationsService,
   ) {}
 
   async estimate(estimateDto: EstimatePublicBookingDto) {
@@ -142,16 +145,13 @@ export class PublicBookingsService {
       finalPrice = calculatedPrice.estimatedPrice;
     }
 
-    const requestedDepositAmount = createDto.depositAmount ?? 0;
     const depositAmount =
-      requestedDepositAmount > 0
-        ? requestedDepositAmount
-        : finalPrice !== undefined && finalPrice > 0
-          ? Math.min(
-              finalPrice,
-              Math.max(10, Number((finalPrice * 0.3).toFixed(2))),
-            )
-          : requestedDepositAmount;
+      finalPrice !== undefined && finalPrice > 0
+        ? Math.min(
+            finalPrice,
+            Math.max(10, Number((finalPrice * 0.3).toFixed(2))),
+          )
+        : 0;
 
     const bookingPayload: CreateBookingDto = {
       companyId: createDto.companyId,
@@ -186,6 +186,35 @@ export class PublicBookingsService {
     };
 
     const booking = await this.bookingsService.create(bookingPayload);
+
+    try {
+      const price = Number(booking.finalPrice ?? booking.estimatedPrice ?? 0);
+      const deposit = Number(booking.depositAmount ?? 0);
+      const balance = Math.max(price - deposit, 0).toFixed(2);
+
+      await this.notificationsService.logCustomerNotification({
+        companyId: booking.companyId,
+        bookingId: booking.id,
+        customerId: booking.customerId,
+        event: NotificationEvent.BOOKING_RECEIVED,
+        customerName: customer.fullName,
+        customerPhone: customer.phone,
+        customerEmail: customer.email,
+        subject: 'LadyBird booking request received',
+        message: `Hello ${customer.fullName}, your LadyBird Shuttle booking request has been received. Booking reference: ${booking.bookingRef}. Route: ${booking.pickupLocation} to ${booking.destination}. Estimated fare: $${price.toFixed(2)}. Deposit after approval: $${deposit.toFixed(2)}. Balance after deposit: $${balance}. Payment will become available after approval.`,
+        metadata: {
+          bookingRef: booking.bookingRef,
+          status: booking.status,
+          pickupLocation: booking.pickupLocation,
+          destination: booking.destination,
+          pickupDate: booking.pickupDate.toISOString(),
+          finalPrice: Number(booking.finalPrice ?? 0),
+          depositAmount: Number(booking.depositAmount ?? 0),
+        },
+      });
+    } catch (error) {
+      console.error('Failed to log booking received notification', error);
+    }
 
     return {
       success: true,
