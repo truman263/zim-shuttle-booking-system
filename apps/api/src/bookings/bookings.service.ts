@@ -114,10 +114,7 @@ export class BookingsService {
 
     const bookingRef = await this.generateBookingRef();
 
-    const bookingStatus =
-      createBookingDto.driverId || createBookingDto.vehicleId
-        ? BookingStatus.DRIVER_ASSIGNED
-        : BookingStatus.PENDING;
+    const bookingStatus = BookingStatus.PENDING;
 
     const paymentStatus = this.calculatePaymentStatus(
       createBookingDto.depositAmount,
@@ -404,10 +401,7 @@ export class BookingsService {
       finalPrice === null ? undefined : Number(finalPrice ?? 0),
     );
 
-    const nextStatus =
-      nextDriverId || nextVehicleId
-        ? BookingStatus.DRIVER_ASSIGNED
-        : existingBooking.status;
+    const nextStatus = existingBooking.status;
 
     const updatedBooking = await this.prisma.$transaction(async (tx) => {
       if (vehicleChanged && existingBooking.vehicleId) {
