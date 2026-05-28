@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { FormEvent, ReactNode, useEffect, useMemo, useState } from 'react';
 import { apiGet, apiPatch, apiPost } from '@/lib/api';
@@ -90,6 +90,16 @@ type Zone = {
   isActive: boolean;
 };
 
+type PaymentRecord = {
+  id: string;
+  amount: string | number;
+  status: string;
+  paymentType?: string | null;
+  method?: string | null;
+  transactionRef?: string | null;
+  paidAt?: string | null;
+};
+
 type Booking = {
   id: string;
   bookingRef: string;
@@ -120,6 +130,7 @@ type Booking = {
 
   status: string;
   paymentStatus: string;
+  payments?: PaymentRecord[];
 
   customer?: {
     id: string;
@@ -1164,11 +1175,37 @@ export default function BookingsPage() {
     }
   }
 
+  function getBookingTotalAmount(booking: Booking) {
+    const total = Number(booking.finalPrice ?? booking.estimatedPrice ?? 0);
+    return Number.isFinite(total) ? total : 0;
+  }
+
+  function getBookingPaidAmount(booking: Booking) {
+    return (booking.payments ?? [])
+      .filter((payment) => payment.status === 'PAID')
+      .reduce((sum, payment) => {
+        const amount = Number(payment.amount ?? 0);
+        return Number.isFinite(amount) ? sum + amount : sum;
+      }, 0);
+  }
+
+  function getBookingBalanceAmount(booking: Booking) {
+    return Math.max(getBookingTotalAmount(booking) - getBookingPaidAmount(booking), 0);
+  }
+
+  function getSuggestedPaymentAmount(booking: Booking) {
+    const balanceAmount = getBookingBalanceAmount(booking);
+    const depositAmount = Number(booking.depositAmount ?? 0);
+
+    if (booking.paymentStatus === 'UNPAID' && depositAmount > 0) {
+      return Math.min(depositAmount, balanceAmount || depositAmount);
+    }
+
+    return balanceAmount;
+  }
+
   function startRecordPayment(booking: Booking) {
-    const suggestedAmount =
-      booking.paymentStatus === 'UNPAID'
-        ? booking.depositAmount || booking.finalPrice || ''
-        : '';
+    const suggestedAmount = getSuggestedPaymentAmount(booking);
 
     setRecordingPaymentBooking(booking);
     setPaymentForm({
@@ -1667,7 +1704,7 @@ export default function BookingsPage() {
                         {selectedRoute.name}
                       </h3>
                       <p className="mt-1 text-sm text-neutral-400">
-                        {selectedRoute.pickupCity} → {selectedRoute.destinationCity}
+                        {selectedRoute.pickupCity} â†’ {selectedRoute.destinationCity}
                       </p>
                     </div>
 
@@ -2011,7 +2048,7 @@ export default function BookingsPage() {
 
               {editingBookingId && (
                 <div className="mt-4 rounded-2xl border border-[#C8A96A]/20 bg-[#C8A96A]/10 p-4 text-sm text-[#C8A96A]">
-                  Approved fare is protected. Assigning a vehicle or driver will not change the customer’s price.
+                  Approved fare is protected. Assigning a vehicle or driver will not change the customerâ€™s price.
                   To adjust the fare, update the Final Price manually.
                 </div>
               )}
@@ -2101,8 +2138,46 @@ export default function BookingsPage() {
                 Record Payment for {recordingPaymentBooking.bookingRef}
               </h2>
               <p className="mt-1 text-sm text-neutral-300">
-                Customer: {recordingPaymentBooking.customer?.fullName || 'Not set'} · Current payment: {recordingPaymentBooking.paymentStatus.replaceAll('_', ' ')}
+                Customer: {recordingPaymentBooking.customer?.fullName || 'Not set'} Â· Current payment: {recordingPaymentBooking.paymentStatus.replaceAll('_', ' ')}
               </p>
+
+              <div className="mt-4 grid gap-3 text-sm sm:grid-cols-2 lg:grid-cols-4">
+                <div className="rounded-2xl border border-white/10 bg-black/20 p-3">
+                  <p className="text-[10px] uppercase tracking-[0.2em] text-neutral-500">
+                    Final Price
+                  </p>
+                  <p className="mt-1 font-semibold text-white">
+                    {'$'}{formatMoney(getBookingTotalAmount(recordingPaymentBooking))}
+                  </p>
+                </div>
+
+                <div className="rounded-2xl border border-white/10 bg-black/20 p-3">
+                  <p className="text-[10px] uppercase tracking-[0.2em] text-neutral-500">
+                    Deposit Required
+                  </p>
+                  <p className="mt-1 font-semibold text-white">
+                    {'$'}{formatMoney(recordingPaymentBooking.depositAmount)}
+                  </p>
+                </div>
+
+                <div className="rounded-2xl border border-white/10 bg-black/20 p-3">
+                  <p className="text-[10px] uppercase tracking-[0.2em] text-neutral-500">
+                    Amount Paid
+                  </p>
+                  <p className="mt-1 font-semibold text-green-300">
+                    {'$'}{formatMoney(getBookingPaidAmount(recordingPaymentBooking))}
+                  </p>
+                </div>
+
+                <div className="rounded-2xl border border-white/10 bg-black/20 p-3">
+                  <p className="text-[10px] uppercase tracking-[0.2em] text-neutral-500">
+                    Balance Remaining
+                  </p>
+                  <p className="mt-1 font-semibold text-[#C8A96A]">
+                    {'$'}{formatMoney(getBookingBalanceAmount(recordingPaymentBooking))}
+                  </p>
+                </div>
+              </div>
             </div>
 
             <button
@@ -2481,12 +2556,12 @@ function BookingsTable({
                 Status
               </th>
               <th className="w-[8%] px-2 py-4 text-center font-medium">
+                Pay Status
+              </th>
+              <th className="w-[10%] px-5 py-4 text-right font-medium">
                 Payment
               </th>
-              <th className="w-[8%] px-5 py-4 text-right font-medium">
-                Amount
-              </th>
-              <th className="w-[10%] px-4 py-4 text-right font-medium">
+              <th className="w-[9%] px-4 py-4 text-right font-medium">
                 Actions
               </th>
             </tr>
@@ -2547,7 +2622,7 @@ function BookingsTable({
                     </div>
 
                     <p className="mt-3 leading-5 text-neutral-500">
-                      {booking.pickupLocation} → {booking.destination}
+                      {booking.pickupLocation} â†’ {booking.destination}
                     </p>
                   </td>
 
@@ -2597,8 +2672,18 @@ function BookingsTable({
                     <PaymentBadge status={booking.paymentStatus} />
                   </td>
 
-                  <td className="px-5 py-5 text-right font-semibold text-[#C8A96A]">
-                    ${booking.finalPrice ?? 0}
+                  <td className="px-5 py-5 text-right">
+                    <div className="space-y-1">
+                      <p className="font-semibold text-[#C8A96A]">
+                        Total: {'$'}{formatMoney(getBookingTotalAmount(booking))}
+                      </p>
+                      <p className="text-[11px] text-green-300">
+                        Paid: {'$'}{formatMoney(getBookingPaidAmount(booking))}
+                      </p>
+                      <p className="text-[11px] text-neutral-300">
+                        Balance: {'$'}{formatMoney(getBookingBalanceAmount(booking))}
+                      </p>
+                    </div>
                   </td>
 
                   <td className="px-4 py-5">
@@ -2744,7 +2829,7 @@ function ScheduleBlock({ booking }: { booking: Booking }) {
               : 'Return not set'}
           </p>
           <p className="mt-1 leading-5 text-neutral-500">
-            {booking.returnPickupLocation || 'Return pickup'} →{' '}
+            {booking.returnPickupLocation || 'Return pickup'} â†’{' '}
             {booking.returnDestination || 'Return destination'}
           </p>
         </div>
