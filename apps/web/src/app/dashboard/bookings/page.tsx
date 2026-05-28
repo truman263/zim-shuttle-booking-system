@@ -1704,7 +1704,7 @@ export default function BookingsPage() {
                         {selectedRoute.name}
                       </h3>
                       <p className="mt-1 text-sm text-neutral-400">
-                        {selectedRoute.pickupCity} â†’ {selectedRoute.destinationCity}
+                        {selectedRoute.pickupCity} → {selectedRoute.destinationCity}
                       </p>
                     </div>
 
@@ -2048,7 +2048,7 @@ export default function BookingsPage() {
 
               {editingBookingId && (
                 <div className="mt-4 rounded-2xl border border-[#C8A96A]/20 bg-[#C8A96A]/10 p-4 text-sm text-[#C8A96A]">
-                  Approved fare is protected. Assigning a vehicle or driver will not change the customerâ€™s price.
+                  Approved fare is protected. Assigning a vehicle or driver will not change the customer’s price.
                   To adjust the fare, update the Final Price manually.
                 </div>
               )}
@@ -2138,7 +2138,7 @@ export default function BookingsPage() {
                 Record Payment for {recordingPaymentBooking.bookingRef}
               </h2>
               <p className="mt-1 text-sm text-neutral-300">
-                Customer: {recordingPaymentBooking.customer?.fullName || 'Not set'} Â· Current payment: {recordingPaymentBooking.paymentStatus.replaceAll('_', ' ')}
+                Customer: {recordingPaymentBooking.customer?.fullName || 'Not set'} · Current payment: {recordingPaymentBooking.paymentStatus.replaceAll('_', ' ')}
               </p>
 
               <div className="mt-4 grid gap-3 text-sm sm:grid-cols-2 lg:grid-cols-4">
@@ -2470,6 +2470,37 @@ function BookingsTable({
   onRecordPayment: (booking: Booking) => void;
   onStatusChange: (bookingId: string, status: string) => void;
 }) {
+  function formatTableMoney(value: string | number | null | undefined) {
+    const amount = Number(value ?? 0);
+
+    if (!Number.isFinite(amount)) {
+      return '0.00';
+    }
+
+    return amount.toFixed(2);
+  }
+
+  function getTableBookingTotalAmount(booking: Booking) {
+    const total = Number(booking.finalPrice ?? booking.estimatedPrice ?? 0);
+    return Number.isFinite(total) ? total : 0;
+  }
+
+  function getTableBookingPaidAmount(booking: Booking) {
+    return (booking.payments ?? [])
+      .filter((payment) => payment.status === 'PAID')
+      .reduce((sum, payment) => {
+        const amount = Number(payment.amount ?? 0);
+        return Number.isFinite(amount) ? sum + amount : sum;
+      }, 0);
+  }
+
+  function getTableBookingBalanceAmount(booking: Booking) {
+    return Math.max(
+      getTableBookingTotalAmount(booking) - getTableBookingPaidAmount(booking),
+      0,
+    );
+  }
+
   const tabs: { key: BookingTab; label: string; count: number }[] = [
     { key: 'ALL', label: 'All', count: bookingStats.total },
     { key: 'PENDING', label: 'Pending', count: bookingStats.pending },
@@ -2542,26 +2573,27 @@ function BookingsTable({
       </div>
 
       <div className="overflow-x-auto">
-        <table className="w-full min-w-[1120px] table-fixed border-collapse text-left text-[12px]">
+        <table className="w-full min-w-[1080px] table-fixed border-collapse text-left text-[12px]">
           <thead className="border-b border-white/10 bg-white/[0.03] text-neutral-400">
             <tr>
               <th className="w-[14%] px-4 py-4 font-medium">Customer</th>
               <th className="w-[21%] px-4 py-4 font-medium">Trip</th>
-              <th className="w-[18%] px-4 py-4 font-medium">Schedule</th>
-              <th className="w-[17%] px-4 py-4 font-medium">Assignment</th>
-              <th className="w-[5%] px-2 py-4 text-center font-medium">
+              <th className="w-[12%] px-3 py-4 font-medium">
+                Schedule
+              </th>
+              <th className="w-[12%] px-3 py-4 font-medium">
+                Assignment
+              </th>
+              <th className="w-[4%] px-1 py-4 text-center font-medium">
                 Pax
               </th>
-              <th className="w-[8%] px-2 py-4 text-center font-medium">
+              <th className="w-[12%] px-2 py-4 text-center font-medium">
                 Status
               </th>
-              <th className="w-[8%] px-2 py-4 text-center font-medium">
-                Pay Status
+              <th className="w-[12%] px-2 py-4 text-center font-medium">
+                Payment Status
               </th>
-              <th className="w-[10%] px-5 py-4 text-right font-medium">
-                Payment
-              </th>
-              <th className="w-[9%] px-4 py-4 text-right font-medium">
+              <th className="w-[12%] px-2 py-4 text-center font-medium">
                 Actions
               </th>
             </tr>
@@ -2622,7 +2654,7 @@ function BookingsTable({
                     </div>
 
                     <p className="mt-3 leading-5 text-neutral-500">
-                      {booking.pickupLocation} â†’ {booking.destination}
+                      {booking.pickupLocation} → {booking.destination}
                     </p>
                   </td>
 
@@ -2668,26 +2700,26 @@ function BookingsTable({
                     <StatusBadge status={booking.status} />
                   </td>
 
-                  <td className="px-2 py-5 text-center">
-                    <PaymentBadge status={booking.paymentStatus} />
-                  </td>
+                                    <td className="px-2 py-5 text-center">
+                    <div className="mx-auto flex max-w-[124px] flex-col items-center gap-1.5">
+                      <PaymentBadge status={booking.paymentStatus} />
 
-                  <td className="px-5 py-5 text-right">
-                    <div className="space-y-1">
-                      <p className="font-semibold text-[#C8A96A]">
-                        Total: {'$'}{formatMoney(getBookingTotalAmount(booking))}
-                      </p>
-                      <p className="text-[11px] text-green-300">
-                        Paid: {'$'}{formatMoney(getBookingPaidAmount(booking))}
-                      </p>
-                      <p className="text-[11px] text-neutral-300">
-                        Balance: {'$'}{formatMoney(getBookingBalanceAmount(booking))}
-                      </p>
+                      <div className="mt-1 space-y-0.5 text-center leading-tight">
+                        <p className="text-[10px] font-semibold text-[#C8A96A]">
+                          {'Total: ' + String.fromCharCode(36) + formatTableMoney(getTableBookingTotalAmount(booking))}
+                        </p>
+                        <p className="text-[10px] text-green-300">
+                          {'Paid: ' + String.fromCharCode(36) + formatTableMoney(getTableBookingPaidAmount(booking))}
+                        </p>
+                        <p className="text-[10px] text-neutral-300">
+                          {'Balance: ' + String.fromCharCode(36) + formatTableMoney(getTableBookingBalanceAmount(booking))}
+                        </p>
+                      </div>
                     </div>
                   </td>
 
-                  <td className="px-4 py-5">
-                    <div className="flex flex-col items-end gap-2">
+                  <td className="px-2 py-5 text-center">
+                    <div className="flex flex-col items-center gap-2">
                       {isFinalStatus &&
                         booking.paymentStatus !== 'PAID' &&
                         booking.status !== 'CANCELLED' &&
@@ -2829,7 +2861,7 @@ function ScheduleBlock({ booking }: { booking: Booking }) {
               : 'Return not set'}
           </p>
           <p className="mt-1 leading-5 text-neutral-500">
-            {booking.returnPickupLocation || 'Return pickup'} â†’{' '}
+            {booking.returnPickupLocation || 'Return pickup'} →{' '}
             {booking.returnDestination || 'Return destination'}
           </p>
         </div>
