@@ -30,6 +30,7 @@ type BookingTab =
   | 'ALL'
   | 'PENDING'
   | 'CONFIRMED'
+  | 'IN_PROGRESS'
   | 'COMPLETED'
   | 'CANCELLED';
 
@@ -345,6 +346,8 @@ export default function BookingsPage() {
       pending: bookings.filter((booking) => booking.status === 'PENDING')
         .length,
       confirmed: bookings.filter((booking) => booking.status === 'CONFIRMED')
+        .length,
+      inProgress: bookings.filter((booking) => booking.status === 'IN_PROGRESS')
         .length,
       completed: bookings.filter((booking) => booking.status === 'COMPLETED')
         .length,
@@ -1289,6 +1292,7 @@ export default function BookingsPage() {
         <SummaryCard title="Total Bookings" value={bookingStats.total} />
         <SummaryCard title="Pending" value={bookingStats.pending} />
         <SummaryCard title="Confirmed" value={bookingStats.confirmed} />
+        <SummaryCard title="In Progress" value={bookingStats.inProgress} />
         <SummaryCard title="Completed" value={bookingStats.completed} />
         <SummaryCard title="Cancelled" value={bookingStats.cancelled} />
         <SummaryCard title="Paid" value={bookingStats.paid} accent />
@@ -2379,6 +2383,7 @@ function BookingsTable({
     total: number;
     pending: number;
     confirmed: number;
+    inProgress: number;
     completed: number;
     cancelled: number;
     paid: number;
@@ -2394,6 +2399,11 @@ function BookingsTable({
     { key: 'ALL', label: 'All', count: bookingStats.total },
     { key: 'PENDING', label: 'Pending', count: bookingStats.pending },
     { key: 'CONFIRMED', label: 'Confirmed', count: bookingStats.confirmed },
+    {
+      key: 'IN_PROGRESS',
+      label: 'In Progress',
+      count: bookingStats.inProgress,
+    },
     { key: 'COMPLETED', label: 'Completed', count: bookingStats.completed },
     { key: 'CANCELLED', label: 'Cancelled', count: bookingStats.cancelled },
   ];
@@ -2490,9 +2500,12 @@ function BookingsTable({
                 booking.status === 'NO_SHOW';
 
               const canConfirm = booking.status === 'PENDING';
-              const canMarkCompleted = booking.status === 'CONFIRMED';
+              const canStartTrip = booking.status === 'CONFIRMED';
+              const canMarkCompleted = booking.status === 'IN_PROGRESS';
               const canCancel =
-                booking.status === 'PENDING' || booking.status === 'CONFIRMED';
+                booking.status === 'PENDING' ||
+                booking.status === 'CONFIRMED' ||
+                booking.status === 'IN_PROGRESS';
 
               const isRoundTrip = booking.tripDirection === 'ROUND_TRIP';
 
@@ -2630,6 +2643,21 @@ function BookingsTable({
                               {actionLoadingId === booking.id
                                 ? 'Working'
                                 : 'Confirm'}
+                            </button>
+                          )}
+
+                          {canStartTrip && (
+                            <button
+                              type="button"
+                              disabled={actionLoadingId === booking.id}
+                              onClick={() =>
+                                onStatusChange(booking.id, 'IN_PROGRESS')
+                              }
+                              className="w-[96px] rounded-full border border-purple-500/30 bg-purple-500/10 px-3 py-1.5 text-[11px] font-medium text-purple-300 transition hover:bg-purple-500/20 disabled:cursor-not-allowed disabled:opacity-40"
+                            >
+                              {actionLoadingId === booking.id
+                                ? 'Working'
+                                : 'Start Trip'}
                             </button>
                           )}
 
@@ -2778,7 +2806,7 @@ function StatusBadge({ status }: { status: string }) {
   const labels: Record<string, string> = {
     DRIVER_ASSIGNED: 'ASSIGNED',
     VEHICLE_ASSIGNED: 'ASSIGNED',
-    IN_PROGRESS: 'ACTIVE',
+    IN_PROGRESS: 'IN PROGRESS',
     NO_SHOW: 'NO SHOW',
   };
 
