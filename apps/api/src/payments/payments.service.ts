@@ -3,7 +3,7 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { PaymentStatus } from '@prisma/client';
+import { PaymentStatus, PaymentType } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreatePaymentDto } from './dto/create-payment.dto';
 
@@ -49,6 +49,7 @@ export class PaymentsService {
           bookingId: createPaymentDto.bookingId,
           amount: createPaymentDto.amount,
           method: createPaymentDto.method,
+          paymentType: createPaymentDto.paymentType ?? PaymentType.DEPOSIT,
           status: PaymentStatus.PAID,
           transactionRef: createPaymentDto.transactionRef,
           paidAt: new Date(),

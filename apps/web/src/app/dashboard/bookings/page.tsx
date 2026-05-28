@@ -7,6 +7,25 @@ const COMPANY_ID = 'cmpfkzypy0000l4ew82k92cl1';
 
 type CustomerMode = 'EXISTING' | 'QUICK' | 'WALK_IN';
 
+type PaymentMethod =
+  | 'CASH'
+  | 'BANK_TRANSFER'
+  | 'ECOCASH'
+  | 'ONEMONEY'
+  | 'INNBUCKS'
+  | 'VISA'
+  | 'MASTERCARD'
+  | 'PAYNOW';
+
+type PaymentType = 'DEPOSIT' | 'FULL_PAYMENT' | 'BALANCE';
+
+type PaymentForm = {
+  amount: string;
+  method: PaymentMethod;
+  paymentType: PaymentType;
+  transactionRef: string;
+};
+
 type BookingTab =
   | 'ALL'
   | 'PENDING'
@@ -181,6 +200,13 @@ type BookingForm = {
   depositAmount: string;
 };
 
+const initialPaymentForm: PaymentForm = {
+  amount: '',
+  method: 'CASH',
+  paymentType: 'DEPOSIT',
+  transactionRef: '',
+};
+
 const initialForm: BookingForm = {
   customerMode: 'EXISTING',
   bookingMode: 'SAVED_ROUTE',
@@ -238,6 +264,11 @@ export default function BookingsPage() {
 
   const [form, setForm] = useState<BookingForm>(initialForm);
   const [showForm, setShowForm] = useState(false);
+  const [recordingPaymentBooking, setRecordingPaymentBooking] =
+    useState<Booking | null>(null);
+  const [paymentForm, setPaymentForm] =
+    useState<PaymentForm>(initialPaymentForm);
+  const [recordingPayment, setRecordingPayment] = useState(false);
   const [editingBookingId, setEditingBookingId] = useState('');
   const [calculation, setCalculation] = useState<PriceCalculation | null>(null);
   const [showBreakdown, setShowBreakdown] = useState(false);
@@ -1130,6 +1161,77 @@ export default function BookingsPage() {
     }
   }
 
+  function startRecordPayment(booking: Booking) {
+    const suggestedAmount =
+      booking.paymentStatus === 'UNPAID'
+        ? booking.depositAmount || booking.finalPrice || ''
+        : '';
+
+    setRecordingPaymentBooking(booking);
+    setPaymentForm({
+      amount: suggestedAmount ? formatMoney(suggestedAmount) : '',
+      method: 'CASH',
+      paymentType: booking.paymentStatus === 'UNPAID' ? 'DEPOSIT' : 'BALANCE',
+      transactionRef: '',
+    });
+    setErrorMessage('');
+    setSuccessMessage('');
+  }
+
+  function cancelRecordPayment() {
+    setRecordingPaymentBooking(null);
+    setPaymentForm(initialPaymentForm);
+    setRecordingPayment(false);
+  }
+
+  function updatePaymentForm(field: keyof PaymentForm, value: string) {
+    setPaymentForm((currentForm) => ({
+      ...currentForm,
+      [field]: value,
+    }));
+  }
+
+  async function submitRecordedPayment(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    if (!recordingPaymentBooking) {
+      return;
+    }
+
+    const amount = parseMoney(paymentForm.amount);
+
+    if (!Number.isFinite(amount) || amount <= 0) {
+      setErrorMessage('Enter a valid payment amount above 0.');
+      return;
+    }
+
+    try {
+      setRecordingPayment(true);
+      setErrorMessage('');
+      setSuccessMessage('');
+
+      await apiPost('/payments', {
+        bookingId: recordingPaymentBooking.id,
+        amount,
+        method: paymentForm.method,
+        paymentType: paymentForm.paymentType,
+        transactionRef: paymentForm.transactionRef.trim() || undefined,
+      });
+
+      setSuccessMessage('Payment recorded successfully.');
+      cancelRecordPayment();
+      await fetchPageData();
+    } catch (error) {
+      setErrorMessage(
+        error instanceof Error
+          ? error.message
+          : 'Something went wrong while recording payment',
+      );
+    } finally {
+      setRecordingPayment(false);
+    }
+  }
+
   async function updateBookingStatus(bookingId: string, status: string) {
     try {
       setActionLoadingId(bookingId);
@@ -1981,6 +2083,95 @@ export default function BookingsPage() {
         </form>
       )}
 
+      {recordingPaymentBooking && (
+        <form
+          onSubmit={submitRecordedPayment}
+          className="mb-6 rounded-3xl border border-[#C8A96A]/25 bg-[#C8A96A]/10 p-5 text-white"
+        >
+          <div className="flex flex-col justify-between gap-4 md:flex-row md:items-start">
+            <div>
+              <p className="text-xs uppercase tracking-[0.3em] text-[#C8A96A]">
+                Record Payment
+              </p>
+              <h2 className="mt-2 text-xl font-semibold">
+                Record Payment for {recordingPaymentBooking.bookingRef}
+              </h2>
+              <p className="mt-1 text-sm text-neutral-300">
+                Customer: {recordingPaymentBooking.customer?.fullName || 'Not set'} · Current payment: {recordingPaymentBooking.paymentStatus.replaceAll('_', ' ')}
+              </p>
+            </div>
+
+            <button
+              type="button"
+              onClick={cancelRecordPayment}
+              className="rounded-full border border-white/10 px-4 py-2 text-sm text-neutral-300 transition hover:text-white"
+            >
+              Close
+            </button>
+          </div>
+
+          <div className="mt-5 grid gap-4 md:grid-cols-4">
+            <FormField label="Amount Received" required>
+              <input
+                value={paymentForm.amount}
+                onChange={(event) => updatePaymentForm('amount', event.target.value)}
+                inputMode="decimal"
+                placeholder="0.00"
+                className="input-field"
+              />
+            </FormField>
+
+            <FormField label="Payment Method">
+              <select
+                value={paymentForm.method}
+                onChange={(event) => updatePaymentForm('method', event.target.value)}
+                className="input-field"
+              >
+                <option value="CASH">Cash</option>
+                <option value="ECOCASH">EcoCash</option>
+                <option value="ONEMONEY">OneMoney</option>
+                <option value="INNBUCKS">InnBucks</option>
+                <option value="BANK_TRANSFER">Bank Transfer</option>
+                <option value="PAYNOW">Paynow</option>
+                <option value="VISA">Visa</option>
+                <option value="MASTERCARD">Mastercard</option>
+              </select>
+            </FormField>
+
+            <FormField label="Payment Type">
+              <select
+                value={paymentForm.paymentType}
+                onChange={(event) => updatePaymentForm('paymentType', event.target.value)}
+                className="input-field"
+              >
+                <option value="DEPOSIT">Deposit</option>
+                <option value="BALANCE">Balance</option>
+                <option value="FULL_PAYMENT">Full Payment</option>
+              </select>
+            </FormField>
+
+            <FormField label="Reference / Receipt">
+              <input
+                value={paymentForm.transactionRef}
+                onChange={(event) => updatePaymentForm('transactionRef', event.target.value)}
+                placeholder="Optional for cash"
+                className="input-field"
+              />
+            </FormField>
+          </div>
+
+          <div className="mt-5 flex justify-end">
+            <button
+              type="submit"
+              disabled={recordingPayment}
+              className="rounded-full bg-[#C8A96A] px-6 py-3 text-sm font-semibold text-black transition hover:bg-[#d9bd82] disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {recordingPayment ? 'Recording Payment...' : 'Save Payment'}
+            </button>
+          </div>
+        </form>
+      )}
+
       {loading && (
         <div className="rounded-3xl border border-white/10 bg-white/[0.04] p-6 text-sm text-neutral-400">
           Loading bookings...
@@ -1998,6 +2189,7 @@ export default function BookingsPage() {
           actionLoadingId={actionLoadingId}
           onRefresh={fetchPageData}
           onEdit={startEditBooking}
+          onRecordPayment={startRecordPayment}
           onStatusChange={updateBookingStatus}
         />
       )}
@@ -2176,6 +2368,7 @@ function BookingsTable({
   actionLoadingId,
   onRefresh,
   onEdit,
+  onRecordPayment,
   onStatusChange,
 }: {
   bookings: Booking[];
@@ -2194,6 +2387,7 @@ function BookingsTable({
   actionLoadingId: string;
   onRefresh: () => void;
   onEdit: (booking: Booking) => void;
+  onRecordPayment: (booking: Booking) => void;
   onStatusChange: (bookingId: string, status: string) => void;
 }) {
   const tabs: { key: BookingTab; label: string; count: number }[] = [
@@ -2279,10 +2473,10 @@ function BookingsTable({
               <th className="w-[8%] px-2 py-4 text-center font-medium">
                 Payment
               </th>
-              <th className="w-[6%] px-2 py-4 text-right font-medium">
+              <th className="w-[8%] px-5 py-4 text-right font-medium">
                 Amount
               </th>
-              <th className="w-[11%] px-4 py-4 text-right font-medium">
+              <th className="w-[10%] px-4 py-4 text-right font-medium">
                 Actions
               </th>
             </tr>
@@ -2390,14 +2584,28 @@ function BookingsTable({
                     <PaymentBadge status={booking.paymentStatus} />
                   </td>
 
-                  <td className="px-2 py-5 text-right font-semibold text-[#C8A96A]">
+                  <td className="px-5 py-5 text-right font-semibold text-[#C8A96A]">
                     ${booking.finalPrice ?? 0}
                   </td>
 
                   <td className="px-4 py-5">
                     <div className="flex flex-col items-end gap-2">
+                      {isFinalStatus &&
+                        booking.paymentStatus !== 'PAID' &&
+                        booking.status !== 'CANCELLED' &&
+                        booking.status !== 'NO_SHOW' && (
+                          <button
+                            type="button"
+                            data-action="record-payment-final"
+                            onClick={() => onRecordPayment(booking)}
+                            className="w-[96px] rounded-full border border-[#C8A96A]/30 bg-[#C8A96A]/10 px-3 py-1.5 text-[11px] font-medium text-[#C8A96A] transition hover:bg-[#C8A96A]/20"
+                          >
+                            Record Pay
+                          </button>
+                        )}
+
                       {isFinalStatus ? (
-                        <span className="w-[110px] rounded-full border border-white/10 bg-white/[0.03] px-3 py-1.5 text-center text-[11px] font-medium text-neutral-500">
+                        <span className="w-[96px] rounded-full border border-white/10 bg-white/[0.03] px-3 py-1.5 text-center text-[11px] font-medium text-neutral-500">
                           View Only
                         </span>
                       ) : (
@@ -2405,7 +2613,7 @@ function BookingsTable({
                           <button
                             type="button"
                             onClick={() => onEdit(booking)}
-                            className="w-[110px] rounded-full border border-[#C8A96A]/30 bg-[#C8A96A]/10 px-3 py-1.5 text-[11px] font-medium text-[#C8A96A] transition hover:bg-[#C8A96A]/20"
+                            className="w-[96px] rounded-full border border-[#C8A96A]/30 bg-[#C8A96A]/10 px-3 py-1.5 text-[11px] font-medium text-[#C8A96A] transition hover:bg-[#C8A96A]/20"
                           >
                             Edit
                           </button>
@@ -2417,7 +2625,7 @@ function BookingsTable({
                               onClick={() =>
                                 onStatusChange(booking.id, 'CONFIRMED')
                               }
-                              className="w-[110px] rounded-full border border-green-500/30 bg-green-500/10 px-3 py-1.5 text-[11px] font-medium text-green-300 transition hover:bg-green-500/20 disabled:cursor-not-allowed disabled:opacity-40"
+                              className="w-[96px] rounded-full border border-green-500/30 bg-green-500/10 px-3 py-1.5 text-[11px] font-medium text-green-300 transition hover:bg-green-500/20 disabled:cursor-not-allowed disabled:opacity-40"
                             >
                               {actionLoadingId === booking.id
                                 ? 'Working'
@@ -2432,11 +2640,22 @@ function BookingsTable({
                               onClick={() =>
                                 onStatusChange(booking.id, 'COMPLETED')
                               }
-                              className="w-[110px] rounded-full border border-blue-500/30 bg-blue-500/10 px-3 py-1.5 text-[11px] font-medium text-blue-300 transition hover:bg-blue-500/20 disabled:cursor-not-allowed disabled:opacity-40"
+                              className="w-[96px] rounded-full border border-blue-500/30 bg-blue-500/10 px-3 py-1.5 text-[11px] font-medium text-blue-300 transition hover:bg-blue-500/20 disabled:cursor-not-allowed disabled:opacity-40"
                             >
                               {actionLoadingId === booking.id
                                 ? 'Working'
                                 : 'Mark Done'}
+                            </button>
+                          )}
+
+                          {booking.paymentStatus !== 'PAID' && (
+                            <button
+                              type="button"
+                              data-action="record-payment"
+                              onClick={() => onRecordPayment(booking)}
+                              className="w-[96px] rounded-full border border-[#C8A96A]/30 bg-[#C8A96A]/10 px-3 py-1.5 text-[11px] font-medium text-[#C8A96A] transition hover:bg-[#C8A96A]/20"
+                            >
+                              Record Pay
                             </button>
                           )}
 
@@ -2447,7 +2666,7 @@ function BookingsTable({
                               onClick={() =>
                                 onStatusChange(booking.id, 'CANCELLED')
                               }
-                              className="w-[110px] rounded-full border border-red-500/30 bg-red-500/10 px-3 py-1.5 text-[11px] font-medium text-red-300 transition hover:bg-red-500/20 disabled:cursor-not-allowed disabled:opacity-40"
+                              className="w-[96px] rounded-full border border-red-500/30 bg-red-500/10 px-3 py-1.5 text-[11px] font-medium text-red-300 transition hover:bg-red-500/20 disabled:cursor-not-allowed disabled:opacity-40"
                             >
                               Cancel
                             </button>
