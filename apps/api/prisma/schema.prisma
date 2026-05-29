@@ -285,7 +285,9 @@ model Route {
   pickupCity      String
   destinationCity String
   basePrice       Decimal
-  isActive        Boolean @default(true)
+  isActive        Boolean  @default(true)
+  isDeleted       Boolean  @default(false)
+  deletedAt       DateTime?
 
   routeType                RouteType     @default(CITY_TO_CITY)
   pricingMode              PricingMode   @default(FIXED_ROUTE)
@@ -298,6 +300,8 @@ model Route {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  @@index([companyId, isDeleted, isActive])
 }
 
 model Zone {

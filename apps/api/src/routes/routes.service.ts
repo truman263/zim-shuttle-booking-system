@@ -51,6 +51,9 @@ export class RoutesService {
 
   findAll() {
     return this.prisma.route.findMany({
+      where: {
+        isDeleted: false,
+      },
       include: {
         company: true,
         bookings: {
@@ -82,8 +85,8 @@ export class RoutesService {
   }
 
   async findOne(id: string) {
-    const route = await this.prisma.route.findUnique({
-      where: { id },
+    const route = await this.prisma.route.findFirst({
+      where: { id, isDeleted: false },
       include: {
         company: true,
         bookings: true,
@@ -141,6 +144,28 @@ export class RoutesService {
     });
   }
 
+  async remove(id: string) {
+    const route = await this.prisma.route.findUnique({
+      where: { id },
+    });
+
+    if (!route || route.isDeleted) {
+      throw new NotFoundException('Route not found');
+    }
+
+    return this.prisma.route.update({
+      where: { id },
+      data: {
+        isDeleted: true,
+        deletedAt: new Date(),
+        isActive: false,
+      },
+      include: {
+        company: true,
+      },
+    });
+  }
+
   private normalizeRouteLocation(value: string) {
     return value.trim().toLowerCase().replace(/\s+/g, ' ');
   }
@@ -164,6 +189,7 @@ export class RoutesService {
       where: {
         companyId,
         isActive: true,
+        isDeleted: false,
         ...(excludeRouteId ? { NOT: { id: excludeRouteId } } : {}),
       },
       select: {

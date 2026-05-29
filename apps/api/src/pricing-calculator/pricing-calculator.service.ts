@@ -54,6 +54,10 @@ export class PricingCalculatorService {
         throw new NotFoundException('Route not found');
       }
 
+      if (route.isDeleted) {
+        throw new BadRequestException('Route is archived');
+      }
+
       if (!route.isActive) {
         throw new BadRequestException('Route is inactive');
       }

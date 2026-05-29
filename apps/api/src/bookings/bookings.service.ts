@@ -655,6 +655,10 @@ export class BookingsService {
       throw new BadRequestException('Route does not belong to this company');
     }
 
+    if (route.isDeleted) {
+      throw new BadRequestException('Route is archived');
+    }
+
     if (!route.isActive) {
       throw new BadRequestException('Route is inactive');
     }

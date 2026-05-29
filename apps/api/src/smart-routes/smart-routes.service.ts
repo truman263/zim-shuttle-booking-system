@@ -225,6 +225,7 @@ export class SmartRoutesService {
       where: {
         companyId,
         isActive: true,
+        isDeleted: false,
       },
       select: {
         id: true,
