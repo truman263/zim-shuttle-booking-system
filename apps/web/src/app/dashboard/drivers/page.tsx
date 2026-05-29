@@ -5,6 +5,27 @@ import { apiGet, apiPatch, apiPost } from '@/lib/api';
 
 const COMPANY_ID = 'cmpfkzypy0000l4ew82k92cl1';
 
+type DriverBooking = {
+  id: string;
+  bookingRef: string;
+  status: string;
+  pickupLocation: string;
+  destination: string;
+  pickupDate: string;
+  passengers: number;
+  customer?: {
+    fullName: string;
+    phone?: string | null;
+  } | null;
+  vehicle?: {
+    name: string;
+    registrationNo: string;
+  } | null;
+  route?: {
+    name?: string | null;
+  } | null;
+};
+
 type Driver = {
   id: string;
   companyId: string;
@@ -15,6 +36,7 @@ type Driver = {
   status: string;
   createdAt: string;
   updatedAt: string;
+  bookings?: DriverBooking[];
   company?: {
     id: string;
     name: string;
@@ -34,6 +56,78 @@ const initialForm: DriverForm = {
   email: '',
   licenseNumber: '',
 };
+
+function getDriverOperationalBooking(driver: Driver) {
+  const bookings = [...(driver.bookings ?? [])];
+
+  return (
+    bookings.find((booking) => booking.status === 'IN_PROGRESS') ??
+    bookings.find((booking) => booking.status === 'CONFIRMED') ??
+    bookings.find((booking) => booking.status === 'PENDING') ??
+    bookings[0] ??
+    null
+  );
+}
+
+function formatBookingDate(value?: string | null) {
+  if (!value) {
+    return 'Date not set';
+  }
+
+  const date = new Date(value);
+
+  if (Number.isNaN(date.getTime())) {
+    return 'Date not set';
+  }
+
+  return date.toLocaleString(undefined, {
+    weekday: 'short',
+    month: 'short',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+}
+
+function getDriverOperationalLabel(driver: Driver) {
+  const booking = getDriverOperationalBooking(driver);
+
+  if (!booking) {
+    return 'No assigned active or upcoming booking';
+  }
+
+  if (booking.status === 'IN_PROGRESS') {
+    return 'Driver is currently on trip';
+  }
+
+  if (booking.status === 'CONFIRMED') {
+    return 'Driver is reserved for a confirmed booking';
+  }
+
+  return 'Driver is assigned to a pending booking';
+}
+
+function getDriverDisplayStatus(driver: Driver) {
+  const booking = getDriverOperationalBooking(driver);
+
+  if (driver.status === 'OFF_DUTY' || driver.status === 'INACTIVE') {
+    return driver.status;
+  }
+
+  if (booking?.status === 'IN_PROGRESS') {
+    return 'ON_TRIP';
+  }
+
+  if (booking?.status === 'CONFIRMED') {
+    return 'RESERVED';
+  }
+
+  if (booking?.status === 'PENDING') {
+    return 'ASSIGNED';
+  }
+
+  return driver.status;
+}
 
 export default function DriversPage() {
   const [drivers, setDrivers] = useState<Driver[]>([]);
@@ -71,7 +165,12 @@ export default function DriversPage() {
       total: drivers.length,
       available: drivers.filter((driver) => driver.status === 'AVAILABLE')
         .length,
-      onTrip: drivers.filter((driver) => driver.status === 'ON_TRIP').length,
+      assigned: drivers.filter((driver) =>
+        Boolean(getDriverOperationalBooking(driver)),
+      ).length,
+      onTrip: drivers.filter(
+        (driver) => getDriverDisplayStatus(driver) === 'ON_TRIP',
+      ).length,
       offDuty: drivers.filter((driver) => driver.status === 'OFF_DUTY').length,
       inactive: drivers.filter((driver) => driver.status === 'INACTIVE').length,
     };
@@ -200,7 +299,7 @@ export default function DriversPage() {
 
           <p className="mt-3 max-w-2xl text-sm leading-6 text-neutral-400">
             Add, edit and manage driver profiles, availability, contact details
-            and licence records for premium shuttle operations.
+            and ID/passport records for premium shuttle operations.
           </p>
         </div>
 
@@ -222,9 +321,10 @@ export default function DriversPage() {
         </button>
       </div>
 
-      <section className="mb-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
+      <section className="mb-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-6">
         <SummaryCard title="Total Drivers" value={driverStats.total} />
         <SummaryCard title="Available" value={driverStats.available} accent />
+        <SummaryCard title="Assigned Trips" value={driverStats.assigned} />
         <SummaryCard title="On Trip" value={driverStats.onTrip} />
         <SummaryCard title="Off Duty" value={driverStats.offDuty} />
         <SummaryCard title="Inactive" value={driverStats.inactive} />
@@ -292,13 +392,13 @@ export default function DriversPage() {
                 />
               </FormField>
 
-              <FormField label="Licence Number">
+              <FormField label="ID/Passport No.">
                 <input
                   value={form.licenseNumber}
                   onChange={(event) =>
                     updateForm('licenseNumber', event.target.value)
                   }
-                  placeholder="DL-789101"
+                  placeholder="ID / Passport number"
                   className="input-field uppercase"
                 />
               </FormField>
@@ -361,102 +461,156 @@ export default function DriversPage() {
           </div>
 
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[950px] table-fixed border-collapse text-left text-xs">
+            <table className="w-full min-w-[1120px] table-fixed border-collapse text-left text-xs">
               <thead className="border-b border-white/10 bg-white/[0.03] text-neutral-400">
                 <tr>
-                  <th className="w-[18%] px-3 py-4 font-medium">Driver</th>
-                  <th className="w-[14%] px-3 py-4 font-medium">Phone</th>
-                  <th className="w-[18%] px-3 py-4 font-medium">Email</th>
-                  <th className="w-[14%] px-3 py-4 font-medium">Licence</th>
-                  <th className="w-[12%] px-3 py-4 font-medium">Status</th>
-                  <th className="w-[14%] px-3 py-4 font-medium">Company</th>
-                  <th className="w-[18%] px-3 py-4 font-medium">Actions</th>
+                  <th className="w-[20%] px-4 py-4 font-medium">Driver</th>
+                  <th className="w-[16%] px-3 py-4 font-medium">Contact</th>
+                  <th className="w-[38%] px-3 py-4 font-medium">
+                    Assignment & Trip Context
+                  </th>
+                  <th className="w-[13%] px-3 py-4 font-medium">Company</th>
+                  <th className="w-[13%] px-3 py-4 text-center font-medium">
+                    Actions
+                  </th>
                 </tr>
               </thead>
 
               <tbody>
-                {drivers.map((driver) => (
-                  <tr
-                    key={driver.id}
-                    className="border-b border-white/5 align-top transition hover:bg-white/[0.03]"
-                  >
-                    <td className="px-3 py-4">
-                      <p className="font-semibold text-white">
-                        {driver.fullName}
-                      </p>
-                      <p className="mt-1 text-neutral-500">
-                        ID: {driver.id.slice(0, 8)}
-                      </p>
-                    </td>
+                {drivers.map((driver) => {
+                  const operationalBooking = getDriverOperationalBooking(driver);
 
-                    <td className="px-3 py-4 font-semibold text-white">
-                      {driver.phone}
-                    </td>
+                  return (
+                    <tr
+                      key={driver.id}
+                      className="border-b border-white/5 align-top transition hover:bg-white/[0.03]"
+                    >
+                      <td className="px-4 py-4">
+                        <div className="space-y-1">
+                          <p className="font-semibold text-white">
+                            {driver.fullName}
+                          </p>
+                          <p className="text-[11px] font-medium text-[#C8A96A]">
+                            {driver.licenseNumber || 'ID/Passport not specified'}
+                          </p>
+                          <p className="text-[11px] text-neutral-500">
+                            ID: {driver.id.slice(0, 8)}
+                          </p>
+                        </div>
+                      </td>
 
-                    <td className="px-3 py-4 text-neutral-300">
-                      {driver.email || 'Not specified'}
-                    </td>
+                      <td className="px-3 py-4">
+                        <p className="font-semibold text-white">{driver.phone}</p>
+                        <p className="mt-1 text-[11px] leading-5 text-neutral-500">
+                          {driver.email || 'Email not specified'}
+                        </p>
+                      </td>
 
-                    <td className="px-3 py-4 text-neutral-300">
-                      {driver.licenseNumber || 'Not specified'}
-                    </td>
+                      <td className="px-3 py-4">
+                        {operationalBooking ? (
+                          <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-3">
+                            <div className="flex flex-wrap items-center gap-2">
+                              <DriverStatusBadge status={getDriverDisplayStatus(driver)} />
+                              <BookingStatusPill status={operationalBooking.status} />
+                              <span className="text-[11px] font-semibold text-white">
+                                {operationalBooking.bookingRef}
+                              </span>
+                            </div>
 
-                    <td className="px-3 py-4">
-                      <DriverStatusBadge status={driver.status} />
-                    </td>
+                            <p className="mt-2 font-medium text-white">
+                              {operationalBooking.customer?.fullName ?? 'Customer not set'}
+                            </p>
 
-                    <td className="px-3 py-4 text-neutral-300">
-                      {driver.company?.name ?? 'Unknown company'}
-                    </td>
+                            <p className="mt-1 text-[11px] leading-5 text-neutral-400">
+                              {operationalBooking.pickupLocation} → {operationalBooking.destination}
+                            </p>
 
-                    <td className="px-3 py-4">
-                      <div className="flex flex-wrap gap-2">
-                        <button
-                          onClick={() => startEdit(driver)}
-                          className="rounded-full border border-white/10 px-3 py-1.5 text-[11px] font-medium text-white transition hover:border-[#C8A96A]/40 hover:text-[#C8A96A]"
-                        >
-                          Edit
-                        </button>
+                            <div className="mt-2 grid gap-2 text-[11px] text-neutral-500 sm:grid-cols-2">
+                              <p>
+                                Pickup:{' '}
+                                <span className="text-neutral-300">
+                                  {formatBookingDate(operationalBooking.pickupDate)}
+                                </span>
+                              </p>
+                              <p>
+                                Vehicle:{' '}
+                                <span className="text-neutral-300">
+                                  {operationalBooking.vehicle
+                                    ? `${operationalBooking.vehicle.name} · ${operationalBooking.vehicle.registrationNo}`
+                                    : 'Not assigned'}
+                                </span>
+                              </p>
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="rounded-2xl border border-dashed border-white/10 bg-white/[0.02] p-3">
+                            <div className="flex flex-wrap items-center gap-2">
+                              <DriverStatusBadge status={getDriverDisplayStatus(driver)} />
+                              <span className="text-[11px] font-semibold text-neutral-300">
+                                No active or upcoming assignment
+                              </span>
+                            </div>
 
-                        {driver.status !== 'OFF_DUTY' && (
-                          <button
-                            disabled={actionLoadingId === driver.id}
-                            onClick={() =>
-                              updateDriverStatus(driver.id, 'OFF_DUTY')
-                            }
-                            className="rounded-full border border-yellow-500/30 bg-yellow-500/10 px-3 py-1.5 text-[11px] font-medium text-yellow-300 transition hover:bg-yellow-500/20 disabled:cursor-not-allowed disabled:opacity-40"
-                          >
-                            Off Duty
-                          </button>
+                            <p className="mt-2 text-[11px] leading-5 text-neutral-500">
+                              {getDriverOperationalLabel(driver)}
+                            </p>
+                          </div>
                         )}
+                      </td>
 
-                        {driver.status !== 'INACTIVE' && (
-                          <button
-                            disabled={actionLoadingId === driver.id}
-                            onClick={() =>
-                              updateDriverStatus(driver.id, 'INACTIVE')
-                            }
-                            className="rounded-full border border-red-500/30 bg-red-500/10 px-3 py-1.5 text-[11px] font-medium text-red-300 transition hover:bg-red-500/20 disabled:cursor-not-allowed disabled:opacity-40"
-                          >
-                            Deactivate
-                          </button>
-                        )}
+                      <td className="px-3 py-4 text-neutral-300">
+                        {driver.company?.name ?? 'Unknown company'}
+                      </td>
 
-                        {driver.status !== 'AVAILABLE' && (
+                      <td className="px-3 py-4 text-center">
+                        <div className="flex flex-col items-center gap-2">
                           <button
-                            disabled={actionLoadingId === driver.id}
-                            onClick={() =>
-                              updateDriverStatus(driver.id, 'AVAILABLE')
-                            }
-                            className="rounded-full border border-[#C8A96A]/30 bg-[#C8A96A]/10 px-3 py-1.5 text-[11px] font-medium text-[#C8A96A] transition hover:bg-[#C8A96A]/20 disabled:cursor-not-allowed disabled:opacity-40"
+                            onClick={() => startEdit(driver)}
+                            className="w-[104px] rounded-full border border-white/10 px-3 py-1.5 text-[11px] font-medium text-white transition hover:border-[#C8A96A]/40 hover:text-[#C8A96A]"
                           >
-                            Reactivate
+                            Edit
                           </button>
-                        )}
-                      </div>
-                    </td>
-                  </tr>
-                ))}
+
+                          {driver.status !== 'OFF_DUTY' && (
+                            <button
+                              disabled={actionLoadingId === driver.id}
+                              onClick={() =>
+                                updateDriverStatus(driver.id, 'OFF_DUTY')
+                              }
+                              className="w-[104px] rounded-full border border-yellow-500/30 bg-yellow-500/10 px-3 py-1.5 text-[11px] font-medium text-yellow-300 transition hover:bg-yellow-500/20 disabled:cursor-not-allowed disabled:opacity-40"
+                            >
+                              Off Duty
+                            </button>
+                          )}
+
+                          {driver.status !== 'INACTIVE' && (
+                            <button
+                              disabled={actionLoadingId === driver.id}
+                              onClick={() =>
+                                updateDriverStatus(driver.id, 'INACTIVE')
+                              }
+                              className="w-[104px] rounded-full border border-red-500/30 bg-red-500/10 px-3 py-1.5 text-[11px] font-medium text-red-300 transition hover:bg-red-500/20 disabled:cursor-not-allowed disabled:opacity-40"
+                            >
+                              Deactivate
+                            </button>
+                          )}
+
+                          {driver.status !== 'AVAILABLE' && (
+                            <button
+                              disabled={actionLoadingId === driver.id}
+                              onClick={() =>
+                                updateDriverStatus(driver.id, 'AVAILABLE')
+                              }
+                              className="w-[104px] rounded-full border border-[#C8A96A]/30 bg-[#C8A96A]/10 px-3 py-1.5 text-[11px] font-medium text-[#C8A96A] transition hover:bg-[#C8A96A]/20 disabled:cursor-not-allowed disabled:opacity-40"
+                            >
+                              Reactivate
+                            </button>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>
@@ -540,10 +694,31 @@ function SummaryCard({
   );
 }
 
+function BookingStatusPill({ status }: { status: string }) {
+  const styles: Record<string, string> = {
+    PENDING: 'border-yellow-500/30 bg-yellow-500/10 text-yellow-300',
+    CONFIRMED: 'border-green-500/30 bg-green-500/10 text-green-300',
+    IN_PROGRESS: 'border-blue-500/30 bg-blue-500/10 text-blue-300',
+  };
+
+  return (
+    <span
+      className={
+        'inline-flex whitespace-nowrap rounded-full border px-2.5 py-1 text-[10px] font-semibold ' +
+        (styles[status] ?? 'border-white/10 bg-white/5 text-neutral-300')
+      }
+    >
+      {status.replaceAll('_', ' ')}
+    </span>
+  );
+}
+
 function DriverStatusBadge({ status }: { status: string }) {
   const styles: Record<string, string> = {
     AVAILABLE: 'border-[#C8A96A]/30 bg-[#C8A96A]/10 text-[#C8A96A]',
-    ON_TRIP: 'border-white/20 bg-white/10 text-white',
+    ASSIGNED: 'border-yellow-500/30 bg-yellow-500/10 text-yellow-300',
+    RESERVED: 'border-green-500/30 bg-green-500/10 text-green-300',
+    ON_TRIP: 'border-blue-500/30 bg-blue-500/10 text-blue-300',
     OFF_DUTY: 'border-yellow-500/30 bg-yellow-500/10 text-yellow-300',
     INACTIVE: 'border-red-500/30 bg-red-500/10 text-red-300',
   };
