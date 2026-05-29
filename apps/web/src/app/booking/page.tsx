@@ -58,6 +58,27 @@ type PriceCalculation = {
   }[];
 };
 
+function getSmartEstimateDistanceKm(
+  estimate: PriceCalculation | SmartRouteEstimate | null,
+) {
+  if (!estimate || !('distanceKm' in estimate)) {
+    return undefined;
+  }
+
+  return estimate.distanceKm;
+}
+
+function getSmartEstimateDurationMinutes(
+  estimate: PriceCalculation | SmartRouteEstimate | null,
+) {
+  if (!estimate || !('durationMinutes' in estimate)) {
+    return undefined;
+  }
+
+  return estimate.durationMinutes;
+}
+
+
 type BookingResponse = {
   success: boolean;
   requiresManualQuote: boolean;
@@ -636,24 +657,30 @@ export default function PublicBookingPage() {
         finalPrice: usesCustomRoute
           ? estimate?.estimatedPrice || undefined
           : undefined,
-        smartPricingMode: usesCustomRoute
-          ? estimate?.pricingMode || undefined
-          : undefined,
-        smartDistanceKm: usesCustomRoute
-          ? estimate?.distanceKm || undefined
-          : undefined,
-        smartDurationMinutes: usesCustomRoute
-          ? estimate?.durationMinutes || undefined
-          : undefined,
-        matchedRouteId: usesCustomRoute
-          ? estimate?.matchedRouteId || undefined
-          : undefined,
-        matchedRouteName: usesCustomRoute
-          ? estimate?.matchedRouteName || undefined
-          : undefined,
-        matchedRouteDirection: usesCustomRoute
-          ? estimate?.matchedRouteDirection || undefined
-          : undefined,
+        smartPricingMode:
+          usesCustomRoute && estimate && 'pricingMode' in estimate
+            ? estimate.pricingMode || undefined
+            : undefined,
+        smartDistanceKm:
+          usesCustomRoute && estimate && 'distanceKm' in estimate
+            ? getSmartEstimateDistanceKm(estimate) || undefined
+            : undefined,
+        smartDurationMinutes:
+          usesCustomRoute && estimate && 'durationMinutes' in estimate
+            ? getSmartEstimateDurationMinutes(estimate) || undefined
+            : undefined,
+        matchedRouteId:
+          usesCustomRoute && estimate && 'matchedRouteId' in estimate
+            ? estimate.matchedRouteId || undefined
+            : undefined,
+        matchedRouteName:
+          usesCustomRoute && estimate && 'matchedRouteName' in estimate
+            ? estimate.matchedRouteName || undefined
+            : undefined,
+        matchedRouteDirection:
+          usesCustomRoute && estimate && 'matchedRouteDirection' in estimate
+            ? estimate.matchedRouteDirection || undefined
+            : undefined,
         depositAmount: calculateDepositAmount(
           usesCustomRoute
             ? estimate?.estimatedPrice
@@ -1966,22 +1993,22 @@ function SummaryPanel({
               Estimated fare based on your trip details.
             </p>
           </div>
-          {typeof estimate.distanceKm !== 'undefined' &&
-            estimate.distanceKm !== null &&
-            typeof estimate.durationMinutes !== 'undefined' &&
-            estimate.durationMinutes !== null && (
+          {typeof getSmartEstimateDistanceKm(estimate) !== 'undefined' &&
+            getSmartEstimateDistanceKm(estimate) !== null &&
+            typeof getSmartEstimateDurationMinutes(estimate) !== 'undefined' &&
+            getSmartEstimateDurationMinutes(estimate) !== null && (
               <div className="grid min-w-full gap-2 md:min-w-[360px]">
                 <div className="rounded-2xl border border-white/10 bg-black/25 px-4 py-3 text-xs">
                   <p className="text-neutral-500">Distance</p>
                   <p className="mt-1 font-semibold text-white">
-                    {estimate.distanceKm} km
+                    {getSmartEstimateDistanceKm(estimate)} km
                   </p>
                 </div>
 
                 <div className="rounded-2xl border border-white/10 bg-black/25 px-4 py-3 text-xs">
                   <p className="text-neutral-500">Estimated travel time</p>
                   <p className="mt-1 font-semibold text-white">
-                    {estimate.durationMinutes} min
+                    {getSmartEstimateDurationMinutes(estimate)} min
                   </p>
                 </div>
               </div>
