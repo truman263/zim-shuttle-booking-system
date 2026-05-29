@@ -105,6 +105,40 @@ function getPaymentReference(payment: Payment) {
   );
 }
 
+function getPaymentTime(payment: Payment) {
+  const value = payment.paidAt ?? payment.createdAt;
+  const date = new Date(value);
+
+  if (Number.isNaN(date.getTime())) {
+    return 0;
+  }
+
+  return date.getTime();
+}
+
+function getBookingPaidTotalUpToPayment(
+  currentPayment: Payment,
+  allPayments: Payment[],
+) {
+  const currentPaymentTime = getPaymentTime(currentPayment);
+
+  return allPayments
+    .filter((payment) => payment.bookingId === currentPayment.bookingId)
+    .filter((payment) => payment.status === 'PAID')
+    .filter((payment) => getPaymentTime(payment) <= currentPaymentTime)
+    .reduce((sum, payment) => sum + Number(payment.amount ?? 0), 0);
+}
+
+function getCurrentBookingPaidTotal(
+  currentPayment: Payment,
+  allPayments: Payment[],
+) {
+  return allPayments
+    .filter((payment) => payment.bookingId === currentPayment.bookingId)
+    .filter((payment) => payment.status === 'PAID')
+    .reduce((sum, payment) => sum + Number(payment.amount ?? 0), 0);
+}
+
 export default function PaymentsPage() {
   const [payments, setPayments] = useState<Payment[]>([]);
   const [loading, setLoading] = useState(true);
@@ -241,8 +275,24 @@ export default function PaymentsPage() {
               <tbody>
                 {payments.map((payment) => {
                   const bookingTotal = getBookingTotal(payment);
-                  const amountPaid = Number(payment.amount ?? 0);
-                  const remaining = Math.max(bookingTotal - amountPaid, 0);
+                  const paidUpToThisPayment = getBookingPaidTotalUpToPayment(
+                    payment,
+                    payments,
+                  );
+                  const currentBookingPaidTotal = getCurrentBookingPaidTotal(
+                    payment,
+                    payments,
+                  );
+                  const balanceAfterThisPayment = Math.max(
+                    bookingTotal - paidUpToThisPayment,
+                    0,
+                  );
+                  const currentBookingBalance = Math.max(
+                    bookingTotal - currentBookingPaidTotal,
+                    0,
+                  );
+                  const isPaidTransaction = payment.status === 'PAID';
+                  const isBookingSettled = currentBookingBalance <= 0;
 
                   return (
                     <tr
@@ -275,9 +325,11 @@ export default function PaymentsPage() {
                             <BookingStatusBadge
                               status={payment.booking?.status ?? 'UNKNOWN'}
                             />
-                            <PaymentStatusBadge
-                              status={payment.booking?.paymentStatus ?? 'UNKNOWN'}
-                            />
+                            {isPaidTransaction && (
+                              <PaymentStatusBadge
+                                status={payment.booking?.paymentStatus ?? 'UNKNOWN'}
+                              />
+                            )}
                           </div>
                         </div>
                       </td>
@@ -301,11 +353,45 @@ export default function PaymentsPage() {
                           {'$' + money(payment.amount)}
                         </p>
                         <p className="mt-1 text-[11px] text-neutral-500">
-                          Total: {'$' + money(bookingTotal)}
+                          Booking total: {'$' + money(bookingTotal)}
                         </p>
-                        <p className="mt-1 text-[11px] text-neutral-500">
-                          Remaining: {'$' + money(remaining)}
-                        </p>
+
+                        {isPaidTransaction ? (
+                          <>
+                            <p className="mt-1 text-[11px] text-neutral-500">
+                              Paid after this: {'$' + money(paidUpToThisPayment)}
+                            </p>
+                            <p
+                              className={
+                                'mt-1 text-[11px] font-medium text-green-300'
+                              }
+                            >
+                              Balance after this:{' '}
+                              {'$' + money(balanceAfterThisPayment)}
+                            </p>
+                          </>
+                        ) : (
+                          <>
+                            <p className="mt-1 text-[11px] text-neutral-500">
+                              Received: $0.00
+                            </p>
+                            <p className="mt-1 text-[11px] text-neutral-500">
+                              This online attempt did not receive money.
+                            </p>
+                            <p
+                              className={
+                                'mt-1 text-[11px] font-medium ' +
+                                (isBookingSettled
+                                  ? 'text-green-300'
+                                  : 'text-neutral-400')
+                              }
+                            >
+                              {isBookingSettled
+                                ? 'Booking already settled'
+                                : 'Booking balance: ' + '$' + money(currentBookingBalance)}
+                            </p>
+                          </>
+                        )}
                       </td>
 
                       <td className="px-3 py-4">
@@ -370,7 +456,7 @@ function PaymentStatusBadge({ status }: { status: string }) {
     UNPAID: 'border-neutral-500/30 bg-neutral-500/10 text-neutral-300',
     PENDING: 'border-yellow-500/30 bg-yellow-500/10 text-yellow-300',
     PARTIALLY_PAID: 'border-blue-500/30 bg-blue-500/10 text-blue-300',
-    PAID: 'border-[#C8A96A]/30 bg-[#C8A96A]/10 text-[#C8A96A]',
+    PAID: 'border-green-500/30 bg-green-500/10 text-green-300',
     FAILED: 'border-red-500/30 bg-red-500/10 text-red-300',
     REFUNDED: 'border-purple-500/30 bg-purple-500/10 text-purple-300',
     UNKNOWN: 'border-white/10 bg-white/5 text-neutral-300',
