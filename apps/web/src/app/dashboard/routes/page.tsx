@@ -371,14 +371,14 @@ export default function RoutesPage() {
       {showForm && (
         <form
           onSubmit={handleSubmit}
-          className="mb-8 rounded-3xl border border-white/10 bg-white/[0.04] p-6"
+          className="mb-6 rounded-3xl border border-white/10 bg-white/[0.035] p-5"
         >
           <div className="mb-6">
             <p className="text-xs uppercase tracking-[0.3em] text-[#C8A96A]">
               {editingRouteId ? 'Edit Route Fare' : 'Add Route Fare'}
             </p>
-            <h2 className="mt-2 text-xl font-semibold">{editingRouteId ? 'Update Saved Route' : 'Create Saved Route'}</h2>
-            <p className="mt-1 text-sm text-neutral-400">
+            <h2 className="mt-1.5 text-lg font-semibold">{editingRouteId ? 'Update Saved Route' : 'Create Saved Route'}</h2>
+            <p className="mt-1 text-xs leading-5 text-neutral-500">
               Use this for fixed pricing, airport transfers and common
               city-to-city routes.
             </p>
@@ -391,88 +391,118 @@ export default function RoutesPage() {
             </div>
           )}
 
-          <div className="grid gap-4 md:grid-cols-3">
-            <InputField
-              label="Route Name"
-              value={form.name}
-              onChange={(value) => updateForm('name', value)}
-              placeholder="Harare to Masvingo"
-            />
-            <InputField
-              label="Pickup City / Location"
-              value={form.pickupCity}
-              onChange={(value) => updateForm('pickupCity', value)}
-              placeholder="Harare"
-            />
-            <InputField
-              label="Destination City / Location"
-              value={form.destinationCity}
-              onChange={(value) => updateForm('destinationCity', value)}
-              placeholder="Masvingo"
-            />
-            <InputField
-              label="Fare / Base Price USD"
-              value={form.basePrice}
-              onChange={(value) => updateForm('basePrice', value)}
-              placeholder="35"
-              type="number"
-            />
-            <SelectField
-              label="Route Type"
-              value={form.routeType}
-              options={routeTypes}
-              onChange={(value) => updateForm('routeType', value)}
-            />
-            <SelectField
-              label="Price Unit"
-              value={form.priceUnit}
-              options={priceUnits}
-              onChange={(value) => updateForm('priceUnit', value)}
-            />
-            <SelectField
-              label="Pricing Mode"
-              value={form.pricingMode}
-              options={pricingModes}
-              onChange={(value) => updateForm('pricingMode', value)}
-            />
-            <InputField
-              label="Distance KM"
-              value={form.distanceKm}
-              onChange={(value) => updateForm('distanceKm', value)}
-              placeholder="297"
-              type="number"
-            />
-            <InputField
-              label="Duration Minutes"
-              value={form.estimatedDurationMinutes}
-              onChange={(value) =>
-                updateForm('estimatedDurationMinutes', value)
-              }
-              placeholder="240"
-              type="number"
-            />
-            <SelectField
-              label="Road Condition"
-              value={form.roadCondition}
-              options={roadConditions}
-              onChange={(value) => updateForm('roadCondition', value)}
-            />
-            <label className="flex items-center gap-3 rounded-2xl border border-white/10 bg-black/20 px-4 py-3 text-sm text-neutral-300">
-              <input
-                type="checkbox"
-                checked={form.isActive}
-                onChange={(event) => updateForm('isActive', event.target.checked)}
-                className="h-4 w-4 accent-[#C8A96A]"
+          <div className="space-y-4">
+            <div className="grid gap-3 lg:grid-cols-[1.1fr_1fr_1fr_0.7fr]">
+              <InputField
+                label="Route Name"
+                value={form.name}
+                onChange={(value) => updateForm('name', value)}
+                placeholder="Harare to Masvingo"
               />
-              Active route
-            </label>
+              <InputField
+                label="Pickup"
+                value={form.pickupCity}
+                onChange={(value) => updateForm('pickupCity', value)}
+                placeholder="Harare"
+              />
+              <InputField
+                label="Destination"
+                value={form.destinationCity}
+                onChange={(value) => updateForm('destinationCity', value)}
+                placeholder="Masvingo"
+              />
+              <InputField
+                label="Fare USD"
+                value={form.basePrice}
+                onChange={(value) => updateForm('basePrice', value)}
+                placeholder="35"
+                type="number"
+              />
+            </div>
+
+            <div className="grid gap-3 lg:grid-cols-4">
+              <SelectField
+                label="Route Type"
+                value={form.routeType}
+                options={routeTypes}
+                onChange={(value) => updateForm('routeType', value)}
+              />
+              <SelectField
+                label="Price Unit"
+                value={form.priceUnit}
+                options={priceUnits}
+                onChange={(value) => updateForm('priceUnit', value)}
+              />
+              <SelectField
+                label="Pricing Mode"
+                value={form.pricingMode}
+                options={pricingModes}
+                onChange={(value) => updateForm('pricingMode', value)}
+              />
+              <SelectField
+                label="Road"
+                value={form.roadCondition}
+                options={roadConditions}
+                onChange={(value) => updateForm('roadCondition', value)}
+              />
+            </div>
+
+            <div className="grid gap-3 lg:grid-cols-[0.8fr_0.8fr_1fr]">
+              <InputField
+                label="Distance KM"
+                value={form.distanceKm}
+                onChange={(value) => updateForm('distanceKm', value)}
+                placeholder="297"
+                type="number"
+              />
+              <InputField
+                label="Duration Min"
+                value={form.estimatedDurationMinutes}
+                onChange={(value) =>
+                  updateForm('estimatedDurationMinutes', value)
+                }
+                placeholder="240"
+                type="number"
+              />
+              <button
+                type="button"
+                onClick={() => updateForm('isActive', !form.isActive)}
+                className="flex h-[44px] items-center justify-between self-end rounded-xl border border-white/10 bg-black/20 px-3.5 text-left text-[13px] transition hover:border-[#C8A96A]/30"
+              >
+                <span>
+                  <span className="block text-[12px] font-semibold text-white">
+                    Active route
+                  </span>
+                  <span className="text-[11px] text-neutral-500">
+                    {form.isActive ? 'Visible to customers' : 'Hidden from booking'}
+                  </span>
+                </span>
+                <span
+                  className={
+                    'flex h-6 w-11 items-center rounded-full border px-1 transition ' +
+                    (form.isActive
+                      ? 'border-[#C8A96A]/50 bg-[#C8A96A]/20'
+                      : 'border-white/10 bg-white/5')
+                  }
+                >
+                  <span
+                    className={
+                      'h-4 w-4 rounded-full transition ' +
+                      (form.isActive
+                        ? 'translate-x-5 bg-[#C8A96A]'
+                        : 'translate-x-0 bg-neutral-500')
+                    }
+                  />
+                </span>
+              </button>
+            </div>
           </div>
 
-          <div className="mt-6 flex flex-wrap gap-3">
+          <div className="mt-4 flex flex-wrap gap-2.5">
             <button
               type="submit"
               disabled={saving}
-              className="rounded-full bg-[#C8A96A] px-6 py-3 text-sm font-semibold text-black transition hover:bg-[#d9bd7a] disabled:cursor-not-allowed disabled:opacity-50"
+              className="rounded-full bg-[#C8A96A] px-4 py-2 text-[12px] font-semibold text-black transition hover:bg-[#d9bd7a] disabled:cursor-not-allowed disabled:opacity-50"
             >
               {saving ? 'Saving...' : editingRouteId ? 'Save Changes' : 'Save Route & Fare'}
             </button>
@@ -480,7 +510,7 @@ export default function RoutesPage() {
             <button
               type="button"
               onClick={resetForm}
-              className="rounded-full border border-white/10 px-6 py-3 text-sm font-semibold text-neutral-300 transition hover:border-white/20 hover:text-white"
+              className="rounded-full border border-white/10 px-4 py-2 text-[12px] font-medium text-neutral-300 transition hover:border-white/20 hover:text-white"
             >
               {editingRouteId ? 'Cancel Edit' : 'Clear'}
             </button>
@@ -680,7 +710,7 @@ function InputField({
         step={type === 'number' ? '0.01' : undefined}
         onChange={(event) => onChange(event.target.value)}
         placeholder={placeholder}
-        className="w-full rounded-2xl border border-white/10 bg-black/30 px-4 py-3 text-sm text-white outline-none transition placeholder:text-neutral-600 focus:border-[#C8A96A]/50"
+        className="w-full rounded-xl border border-white/10 bg-black/30 px-3.5 py-2 text-[13px] font-medium text-neutral-100 outline-none transition placeholder:text-neutral-600 focus:border-[#C8A96A]/50"
       />
     </label>
   );
@@ -705,7 +735,7 @@ function SelectField({
       <select
         value={value}
         onChange={(event) => onChange(event.target.value)}
-        className="w-full rounded-2xl border border-white/10 bg-black/30 px-4 py-3 text-sm text-white outline-none transition focus:border-[#C8A96A]/50"
+        className="w-full rounded-xl border border-white/10 bg-black/30 px-3.5 py-2 text-[13px] font-medium text-neutral-100 outline-none transition focus:border-[#C8A96A]/50"
       >
         {options.map((option) => (
           <option key={option} value={option} className="bg-black">
