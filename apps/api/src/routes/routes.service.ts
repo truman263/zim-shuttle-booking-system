@@ -41,6 +41,27 @@ export class RoutesService {
     return this.prisma.route.findMany({
       include: {
         company: true,
+        bookings: {
+          select: {
+            id: true,
+            bookingRef: true,
+            status: true,
+            paymentStatus: true,
+            passengers: true,
+            pickupDate: true,
+            finalPrice: true,
+            estimatedPrice: true,
+            customer: {
+              select: {
+                fullName: true,
+                phone: true,
+              },
+            },
+          },
+          orderBy: {
+            createdAt: 'desc',
+          },
+        },
       },
       orderBy: {
         createdAt: 'desc',
