@@ -9,7 +9,6 @@ const navigationItems = [
   { name: 'Customers', href: '/dashboard/customers' },
   { name: 'Routes', href: '/dashboard/routes' },
   { name: 'Payments', href: '/dashboard/payments' },
-  { name: 'Settings', href: '/dashboard/settings' },
 ];
 
 export default function DashboardLayout({
