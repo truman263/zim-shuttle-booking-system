@@ -141,6 +141,7 @@ export default function RoutesPage() {
   const [errorMessage, setErrorMessage] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
   const [showForm, setShowForm] = useState(true);
+  const [editingRouteId, setEditingRouteId] = useState('');
 
   async function fetchRoutes() {
     try {
@@ -162,6 +163,9 @@ export default function RoutesPage() {
     fetchRoutes();
   }, []);
 
+  const editingRoute =
+    routes.find((route) => route.id === editingRouteId) ?? null;
+
   const routeStats = useMemo(() => {
     return {
       total: routes.length,
@@ -182,6 +186,41 @@ export default function RoutesPage() {
       ...current,
       [field]: value,
     }));
+  }
+
+  function resetForm() {
+    setForm(initialForm);
+    setEditingRouteId('');
+    setErrorMessage('');
+    setSuccessMessage('');
+  }
+
+  function startEdit(route: RouteRecord) {
+    setEditingRouteId(route.id);
+    setShowForm(true);
+    setErrorMessage('');
+    setSuccessMessage('');
+
+    setForm({
+      name: route.name,
+      pickupCity: route.pickupCity,
+      destinationCity: route.destinationCity,
+      basePrice: String(route.basePrice ?? ''),
+      routeType: route.routeType || 'CITY_TO_CITY',
+      pricingMode: route.pricingMode || 'FIXED_ROUTE',
+      priceUnit: route.priceUnit || 'PER_PASSENGER',
+      distanceKm:
+        route.distanceKm === null || route.distanceKm === undefined
+          ? ''
+          : String(route.distanceKm),
+      estimatedDurationMinutes:
+        route.estimatedDurationMinutes === null ||
+        route.estimatedDurationMinutes === undefined
+          ? ''
+          : String(route.estimatedDurationMinutes),
+      roadCondition: route.roadCondition || 'GOOD',
+      isActive: route.isActive,
+    });
   }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -213,8 +252,7 @@ export default function RoutesPage() {
       setErrorMessage('');
       setSuccessMessage('');
 
-      await apiPost('/routes', {
-        companyId: routes[0]?.companyId ?? DEFAULT_COMPANY_ID,
+      const routePayload = {
         name: form.name.trim(),
         pickupCity: form.pickupCity.trim(),
         destinationCity: form.destinationCity.trim(),
@@ -226,10 +264,21 @@ export default function RoutesPage() {
         estimatedDurationMinutes,
         roadCondition: form.roadCondition,
         isActive: form.isActive,
-      });
+      };
+
+      if (editingRouteId) {
+        await apiPatch(`/routes/${editingRouteId}`, routePayload);
+        setSuccessMessage('Route updated successfully.');
+      } else {
+        await apiPost('/routes', {
+          companyId: routes[0]?.companyId ?? DEFAULT_COMPANY_ID,
+          ...routePayload,
+        });
+        setSuccessMessage('Route and fare saved successfully.');
+      }
 
       setForm(initialForm);
-      setSuccessMessage('Route and fare saved successfully.');
+      setEditingRouteId('');
       await fetchRoutes();
     } catch (error) {
       setErrorMessage(
@@ -318,14 +367,21 @@ export default function RoutesPage() {
         >
           <div className="mb-6">
             <p className="text-xs uppercase tracking-[0.3em] text-[#C8A96A]">
-              Add Route Fare
+              {editingRouteId ? 'Edit Route Fare' : 'Add Route Fare'}
             </p>
-            <h2 className="mt-2 text-xl font-semibold">Create Saved Route</h2>
+            <h2 className="mt-2 text-xl font-semibold">{editingRouteId ? 'Update Saved Route' : 'Create Saved Route'}</h2>
             <p className="mt-1 text-sm text-neutral-400">
               Use this for fixed pricing, airport transfers and common
               city-to-city routes.
             </p>
           </div>
+
+          {editingRoute && (editingRoute.bookings?.length ?? 0) > 0 && (
+            <div className="mb-5 rounded-2xl border border-[#C8A96A]/25 bg-[#C8A96A]/10 p-4 text-sm leading-6 text-[#C8A96A]">
+              Existing bookings keep their saved fare. Future estimates will use
+              the updated route fare.
+            </div>
+          )}
 
           <div className="grid gap-4 md:grid-cols-3">
             <InputField
@@ -410,15 +466,15 @@ export default function RoutesPage() {
               disabled={saving}
               className="rounded-full bg-[#C8A96A] px-6 py-3 text-sm font-semibold text-black transition hover:bg-[#d9bd7a] disabled:cursor-not-allowed disabled:opacity-50"
             >
-              {saving ? 'Saving...' : 'Save Route & Fare'}
+              {saving ? 'Saving...' : editingRouteId ? 'Save Changes' : 'Save Route & Fare'}
             </button>
 
             <button
               type="button"
-              onClick={() => setForm(initialForm)}
+              onClick={resetForm}
               className="rounded-full border border-white/10 px-6 py-3 text-sm font-semibold text-neutral-300 transition hover:border-white/20 hover:text-white"
             >
-              Clear
+              {editingRouteId ? 'Cancel Edit' : 'Clear'}
             </button>
           </div>
         </form>
@@ -557,23 +613,33 @@ export default function RoutesPage() {
                       </td>
 
                       <td className="px-3 py-4 text-center">
-                        {route.isActive ? (
+                        <div className="flex flex-col items-center gap-2">
                           <button
-                            disabled={actionLoadingId === route.id}
-                            onClick={() => updateRouteStatus(route, false)}
-                            className="w-[104px] rounded-full border border-red-500/30 bg-red-500/10 px-3 py-1.5 text-[11px] font-medium text-red-300 transition hover:bg-red-500/20 disabled:cursor-not-allowed disabled:opacity-40"
+                            type="button"
+                            onClick={() => startEdit(route)}
+                            className="w-[104px] rounded-full border border-white/10 px-3 py-1.5 text-[11px] font-medium text-neutral-300 transition hover:border-[#C8A96A]/40 hover:text-[#C8A96A]"
                           >
-                            Deactivate
+                            Edit
                           </button>
-                        ) : (
-                          <button
-                            disabled={actionLoadingId === route.id}
-                            onClick={() => updateRouteStatus(route, true)}
-                            className="w-[104px] rounded-full border border-[#C8A96A]/30 bg-[#C8A96A]/10 px-3 py-1.5 text-[11px] font-medium text-[#C8A96A] transition hover:bg-[#C8A96A]/20 disabled:cursor-not-allowed disabled:opacity-40"
-                          >
-                            Reactivate
-                          </button>
-                        )}
+
+                          {route.isActive ? (
+                            <button
+                              disabled={actionLoadingId === route.id}
+                              onClick={() => updateRouteStatus(route, false)}
+                              className="w-[104px] rounded-full border border-red-500/30 bg-red-500/10 px-3 py-1.5 text-[11px] font-medium text-red-300 transition hover:bg-red-500/20 disabled:cursor-not-allowed disabled:opacity-40"
+                            >
+                              Deactivate
+                            </button>
+                          ) : (
+                            <button
+                              disabled={actionLoadingId === route.id}
+                              onClick={() => updateRouteStatus(route, true)}
+                              className="w-[104px] rounded-full border border-[#C8A96A]/30 bg-[#C8A96A]/10 px-3 py-1.5 text-[11px] font-medium text-[#C8A96A] transition hover:bg-[#C8A96A]/20 disabled:cursor-not-allowed disabled:opacity-40"
+                            >
+                              Reactivate
+                            </button>
+                          )}
+                        </div>
                       </td>
                     </tr>
                   );
