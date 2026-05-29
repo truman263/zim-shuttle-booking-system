@@ -2,6 +2,7 @@ import Link from 'next/link';
 
 const navigationItems = [
   { name: 'Overview', href: '/dashboard' },
+  { name: 'Reports', href: '/dashboard/reports' },
   { name: 'Bookings', href: '/dashboard/bookings' },
   { name: 'Vehicles', href: '/dashboard/vehicles' },
   { name: 'Drivers', href: '/dashboard/drivers' },
