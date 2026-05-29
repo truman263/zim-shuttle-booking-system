@@ -431,6 +431,10 @@ export default function ReportsPage() {
             Reports Dashboard
           </h1>
 
+          <p className="mt-3 inline-flex rounded-full border border-[#C8A96A]/30 bg-[#C8A96A]/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-[#C8A96A]">
+            All-time report
+          </p>
+
           <p className="mt-3 max-w-2xl text-sm leading-6 text-neutral-400">
             Revenue, route performance and operational health from live booking
             and payment records.
@@ -465,6 +469,10 @@ export default function ReportsPage() {
         </div>
       )}
 
+      <div className="mb-3 rounded-2xl border border-white/10 bg-white/[0.04] px-4 py-3 text-xs text-neutral-400">
+        Revenue includes PAID payments only.
+      </div>
+
       <section className="mb-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
         <SummaryCard
           title="Total Revenue Received"
@@ -476,9 +484,9 @@ export default function ReportsPage() {
           value={money(report.outstandingBalance)}
         />
         <SummaryCard title="Total Bookings" value={report.totalBookings} />
-        <SummaryCard title="Paid Bookings" value={report.paidBookings} />
+        <SummaryCard title="Fully Paid Bookings" value={report.paidBookings} />
         <SummaryCard
-          title="Unpaid/Partial"
+          title="Unpaid / Partial"
           value={report.unpaidPartialBookings}
         />
       </section>
@@ -585,7 +593,7 @@ export default function ReportsPage() {
             accent
           />
           <OperationCard
-            title="Cancelled/No-show"
+            title="Cancelled / No-show"
             value={report.operations.cancelledNoShow}
           />
           <OperationCard
