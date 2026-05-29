@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  ConflictException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateRouteDto } from './dto/create-route.dto';
 import { UpdateRouteDto } from './dto/update-route.dto';
@@ -14,6 +18,14 @@ export class RoutesService {
 
     if (!company) {
       throw new NotFoundException('Company not found');
+    }
+
+    if (createRouteDto.isActive ?? true) {
+      await this.validateNoActiveDuplicateRoute({
+        companyId: createRouteDto.companyId,
+        pickupCity: createRouteDto.pickupCity,
+        destinationCity: createRouteDto.destinationCity,
+      });
     }
 
     return this.prisma.route.create({
@@ -94,6 +106,20 @@ export class RoutesService {
       throw new NotFoundException('Route not found');
     }
 
+    const nextIsActive = updateRouteDto.isActive ?? route.isActive;
+    const nextPickupCity = updateRouteDto.pickupCity ?? route.pickupCity;
+    const nextDestinationCity =
+      updateRouteDto.destinationCity ?? route.destinationCity;
+
+    if (nextIsActive) {
+      await this.validateNoActiveDuplicateRoute({
+        companyId: route.companyId,
+        pickupCity: nextPickupCity,
+        destinationCity: nextDestinationCity,
+        excludeRouteId: route.id,
+      });
+    }
+
     return this.prisma.route.update({
       where: { id },
       data: {
@@ -113,5 +139,52 @@ export class RoutesService {
         company: true,
       },
     });
+  }
+
+  private normalizeRouteLocation(value: string) {
+    return value.trim().toLowerCase().replace(/\s+/g, ' ');
+  }
+
+  private async validateNoActiveDuplicateRoute({
+    companyId,
+    pickupCity,
+    destinationCity,
+    excludeRouteId,
+  }: {
+    companyId: string;
+    pickupCity: string;
+    destinationCity: string;
+    excludeRouteId?: string;
+  }) {
+    const normalizedPickupCity = this.normalizeRouteLocation(pickupCity);
+    const normalizedDestinationCity =
+      this.normalizeRouteLocation(destinationCity);
+
+    const activeRoutes = await this.prisma.route.findMany({
+      where: {
+        companyId,
+        isActive: true,
+        ...(excludeRouteId ? { NOT: { id: excludeRouteId } } : {}),
+      },
+      select: {
+        pickupCity: true,
+        destinationCity: true,
+      },
+    });
+
+    const duplicateRoute = activeRoutes.find((route) => {
+      return (
+        this.normalizeRouteLocation(route.pickupCity) ===
+          normalizedPickupCity &&
+        this.normalizeRouteLocation(route.destinationCity) ===
+          normalizedDestinationCity
+      );
+    });
+
+    if (duplicateRoute) {
+      throw new ConflictException(
+        'An active route already exists for this pickup and destination.',
+      );
+    }
   }
 }
