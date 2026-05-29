@@ -355,7 +355,7 @@ export default function VehiclesPage() {
         </button>
       </div>
 
-      <section className="mb-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-6">
+      <section className="mb-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-6">
         <SummaryCard title="Total Vehicles" value={vehicleStats.total} />
         <SummaryCard title="Available" value={vehicleStats.available} accent />
         <SummaryCard title="Booked" value={vehicleStats.booked} />
@@ -381,7 +381,7 @@ export default function VehiclesPage() {
           onSubmit={handleSubmit}
           className="mb-8 overflow-hidden rounded-3xl border border-white/10 bg-[#050505]"
         >
-          <div className="border-b border-white/10 bg-white/[0.03] px-6 py-5">
+          <div className="border-b border-white/10 bg-white/[0.03] px-5 py-4">
             <p className="text-xs uppercase tracking-[0.3em] text-[#C8A96A]">
               {editingVehicleId ? 'Edit Fleet Asset' : 'New Fleet Asset'}
             </p>
@@ -395,7 +395,7 @@ export default function VehiclesPage() {
             </p>
           </div>
 
-          <div className="p-6">
+          <div className="p-5">
             <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
               <FormField label="Vehicle Name" required>
                 <input
@@ -758,10 +758,10 @@ function SummaryCard({
   accent?: boolean;
 }) {
   return (
-    <div className="rounded-3xl border border-white/10 bg-white/[0.04] p-5 transition hover:border-[#C8A96A]/30">
-      <p className="text-sm text-neutral-400">{title}</p>
+    <div className="rounded-2xl border border-white/10 bg-white/[0.035] px-4 py-3.5 transition hover:border-[#C8A96A]/25">
+      <p className="text-xs font-medium text-neutral-400">{title}</p>
       <p
-        className={`mt-3 text-3xl font-semibold ${
+        className={`mt-2 text-2xl font-semibold ${
           accent ? 'text-[#C8A96A]' : 'text-white'
         }`}
       >
