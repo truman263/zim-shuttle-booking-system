@@ -111,26 +111,6 @@ function nice(value?: string | null) {
   return value.replaceAll('_', ' ');
 }
 
-function routeRevenue(route: RouteRecord) {
-  return (route.bookings ?? []).reduce((sum, booking) => {
-    return sum + Number(booking.finalPrice ?? booking.estimatedPrice ?? 0);
-  }, 0);
-}
-
-function activeBookingCount(route: RouteRecord) {
-  return (route.bookings ?? []).filter(
-    (booking) =>
-      booking.status === 'PENDING' ||
-      booking.status === 'CONFIRMED' ||
-      booking.status === 'DRIVER_ASSIGNED' ||
-      booking.status === 'VEHICLE_ASSIGNED' ||
-      booking.status === 'IN_PROGRESS',
-  ).length;
-}
-
-function latestBooking(route: RouteRecord) {
-  return route.bookings?.[0] ?? null;
-}
 
 export default function RoutesPage() {
   const [routes, setRoutes] = useState<RouteRecord[]>([]);
@@ -174,10 +154,6 @@ export default function RoutesPage() {
       airport: routes.filter((route) => route.routeType === 'AIRPORT_TRANSFER')
         .length,
       city: routes.filter((route) => route.routeType === 'CITY_TO_CITY').length,
-      bookings: routes.reduce(
-        (sum, route) => sum + (route.bookings?.length ?? 0),
-        0,
-      ),
     };
   }, [routes]);
 
@@ -378,7 +354,6 @@ export default function RoutesPage() {
         <SummaryCard title="Inactive" value={routeStats.inactive} />
         <SummaryCard title="Airport" value={routeStats.airport} />
         <SummaryCard title="City Routes" value={routeStats.city} />
-        <SummaryCard title="Bookings" value={routeStats.bookings} />
       </section>
 
       {errorMessage && (
@@ -528,25 +503,22 @@ export default function RoutesPage() {
               </p>
               <h2 className="mt-2 text-lg font-semibold">Saved Route Fares</h2>
               <p className="mt-1 text-sm text-neutral-500">
-                Pricing, journey context and booking usage for each saved route.
+                Pricing setup and operational route controls for each saved route.
               </p>
             </div>
           </div>
 
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[1180px] table-fixed border-collapse text-left text-xs">
+            <table className="w-full min-w-[980px] table-fixed border-collapse text-left text-xs">
               <thead className="border-b border-white/10 bg-white/[0.03] text-neutral-400">
                 <tr>
-                  <th className="w-[24%] px-4 py-4 font-medium">Route</th>
-                  <th className="w-[17%] px-3 py-4 font-medium">Fare</th>
-                  <th className="w-[19%] px-3 py-4 font-medium">
-                    Journey Context
+                  <th className="w-[30%] px-4 py-4 font-medium">Route</th>
+                  <th className="w-[20%] px-3 py-4 font-medium">Fare Setup</th>
+                  <th className="w-[24%] px-3 py-4 font-medium">
+                    Route Details
                   </th>
-                  <th className="w-[21%] px-3 py-4 font-medium">
-                    Booking Usage
-                  </th>
-                  <th className="w-[9%] px-3 py-4 font-medium">Status</th>
-                  <th className="w-[10%] px-3 py-4 text-center font-medium">
+                  <th className="w-[10%] px-3 py-4 font-medium">Status</th>
+                  <th className="w-[16%] px-3 py-4 text-center font-medium">
                     Actions
                   </th>
                 </tr>
@@ -554,10 +526,6 @@ export default function RoutesPage() {
 
               <tbody>
                 {routes.map((route) => {
-                  const recentBooking = latestBooking(route);
-                  const bookingsCount = route.bookings?.length ?? 0;
-                  const activeCount = activeBookingCount(route);
-
                   return (
                     <tr
                       key={route.id}
@@ -569,10 +537,7 @@ export default function RoutesPage() {
                           <p className="text-[11px] leading-5 text-neutral-400">
                             {route.pickupCity} → {route.destinationCity}
                           </p>
-                          <div className="flex flex-wrap gap-2">
-                            <RouteTypeBadge status={route.routeType} />
-                            <PricingModeBadge status={route.pricingMode} />
-                          </div>
+
                         </div>
                       </td>
 
@@ -584,70 +549,26 @@ export default function RoutesPage() {
                           Unit: {nice(route.priceUnit)}
                         </p>
                         <p className="mt-1 text-[11px] text-neutral-500">
-                          Revenue linked: {'$' + money(routeRevenue(route))}
+                          Pricing: {nice(route.pricingMode)}
                         </p>
                       </td>
 
                       <td className="px-3 py-4">
-                        <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-3">
-                          <p className="font-medium text-white">
-                            {route.distanceKm
-                              ? `${route.distanceKm} km`
-                              : 'Distance not set'}
-                          </p>
-                          <p className="mt-1 text-[11px] text-neutral-500">
-                            {route.estimatedDurationMinutes
-                              ? `${route.estimatedDurationMinutes} min`
-                              : 'Duration not set'}
-                          </p>
-                          <p className="mt-1 text-[11px] text-neutral-500">
-                            Road: {nice(route.roadCondition)}
-                          </p>
-                        </div>
-                      </td>
-
-                      <td className="px-3 py-4">
-                        <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-3">
-                          <div className="flex flex-wrap gap-2">
-                            <span className="rounded-full border border-white/10 bg-white/5 px-2.5 py-1 text-[10px] font-semibold text-neutral-300">
-                              {bookingsCount} bookings
-                            </span>
-                            <span className="rounded-full border border-green-500/30 bg-green-500/10 px-2.5 py-1 text-[10px] font-semibold text-green-300">
-                              {activeCount} active
-                            </span>
-                          </div>
-
-                          {recentBooking ? (
-                            <>
-                              <p className="mt-2 font-medium text-white">
-                                {recentBooking.bookingRef}
-                              </p>
-                              <p className="mt-1 text-[11px] text-neutral-500">
-                                {recentBooking.customer?.fullName ??
-                                  'Customer not available'}
-                              </p>
-                              <div className="mt-2 flex flex-wrap gap-2">
-                                <BookingStatusBadge status={recentBooking.status} />
-                                <PaymentStatusBadge
-                                  status={recentBooking.paymentStatus}
-                                />
-                              </div>
-                            </>
-                          ) : (
-                            <p className="mt-2 text-[11px] leading-5 text-neutral-500">
-                              No bookings linked yet.
-                            </p>
-                          )}
-
-                          <button
-                            type="button"
-                            disabled={actionLoadingId === route.id}
-                            onClick={() => archiveRoute(route)}
-                            className="w-[104px] rounded-full border border-red-500/30 bg-red-500/10 px-3 py-1.5 text-[11px] font-medium text-red-300 transition hover:bg-red-500/20 disabled:cursor-not-allowed disabled:opacity-40"
-                          >
-                            Archive
-                          </button>
-                        </div>
+                        <p className="font-medium text-white">
+                          {route.distanceKm
+                            ? `${route.distanceKm} km`
+                            : 'Distance not set'}
+                          {' · '}
+                          {route.estimatedDurationMinutes
+                            ? `${route.estimatedDurationMinutes} min`
+                            : 'Duration not set'}
+                        </p>
+                        <p className="mt-1 text-[11px] text-neutral-500">
+                          Road: {nice(route.roadCondition)}
+                        </p>
+                        <p className="mt-1 text-[11px] text-neutral-500">
+                          Type: {nice(route.routeType)}
+                        </p>
                       </td>
 
                       <td className="px-3 py-4">
@@ -681,6 +602,15 @@ export default function RoutesPage() {
                               Reactivate
                             </button>
                           )}
+
+                          <button
+                            type="button"
+                            disabled={actionLoadingId === route.id}
+                            onClick={() => archiveRoute(route)}
+                            className="w-[104px] rounded-full border border-red-500/30 bg-red-500/10 px-3 py-1.5 text-[11px] font-medium text-red-300 transition hover:bg-red-500/20 disabled:cursor-not-allowed disabled:opacity-40"
+                          >
+                            Archive
+                          </button>
                         </div>
                       </td>
                     </tr>
@@ -802,75 +732,4 @@ function RouteStatusBadge({ isActive }: { isActive: boolean }) {
   );
 }
 
-function RouteTypeBadge({ status }: { status: string }) {
-  const styles: Record<string, string> = {
-    CITY_TO_CITY: 'border-[#C8A96A]/30 bg-[#C8A96A]/10 text-[#C8A96A]',
-    AIRPORT_TRANSFER: 'border-blue-500/30 bg-blue-500/10 text-blue-300',
-    LOCAL_TRANSFER: 'border-purple-500/30 bg-purple-500/10 text-purple-300',
-    CUSTOM: 'border-white/10 bg-white/5 text-neutral-300',
-  };
 
-  return (
-    <span
-      className={
-        'inline-flex whitespace-nowrap rounded-full border px-2.5 py-1 text-[10px] font-semibold ' +
-        (styles[status] ?? 'border-white/10 bg-white/5 text-neutral-300')
-      }
-    >
-      {nice(status)}
-    </span>
-  );
-}
-
-function PricingModeBadge({ status }: { status: string }) {
-  return (
-    <span className="inline-flex whitespace-nowrap rounded-full border border-white/10 bg-white/5 px-2.5 py-1 text-[10px] font-semibold text-neutral-300">
-      {nice(status)}
-    </span>
-  );
-}
-
-function BookingStatusBadge({ status }: { status: string }) {
-  const styles: Record<string, string> = {
-    PENDING: 'border-yellow-500/30 bg-yellow-500/10 text-yellow-300',
-    CONFIRMED: 'border-green-500/30 bg-green-500/10 text-green-300',
-    DRIVER_ASSIGNED: 'border-blue-500/30 bg-blue-500/10 text-blue-300',
-    VEHICLE_ASSIGNED: 'border-blue-500/30 bg-blue-500/10 text-blue-300',
-    IN_PROGRESS: 'border-blue-500/30 bg-blue-500/10 text-blue-300',
-    COMPLETED: 'border-[#C8A96A]/30 bg-[#C8A96A]/10 text-[#C8A96A]',
-    CANCELLED: 'border-red-500/30 bg-red-500/10 text-red-300',
-    NO_SHOW: 'border-red-500/30 bg-red-500/10 text-red-300',
-  };
-
-  return (
-    <span
-      className={
-        'inline-flex whitespace-nowrap rounded-full border px-2.5 py-1 text-[10px] font-semibold ' +
-        (styles[status] ?? 'border-white/10 bg-white/5 text-neutral-300')
-      }
-    >
-      {nice(status)}
-    </span>
-  );
-}
-
-function PaymentStatusBadge({ status }: { status: string }) {
-  const styles: Record<string, string> = {
-    UNPAID: 'border-neutral-500/30 bg-neutral-500/10 text-neutral-300',
-    PARTIALLY_PAID: 'border-blue-500/30 bg-blue-500/10 text-blue-300',
-    PAID: 'border-green-500/30 bg-green-500/10 text-green-300',
-    FAILED: 'border-red-500/30 bg-red-500/10 text-red-300',
-    REFUNDED: 'border-purple-500/30 bg-purple-500/10 text-purple-300',
-  };
-
-  return (
-    <span
-      className={
-        'inline-flex whitespace-nowrap rounded-full border px-2.5 py-1 text-[10px] font-semibold ' +
-        (styles[status] ?? 'border-white/10 bg-white/5 text-neutral-300')
-      }
-    >
-      {nice(status)}
-    </span>
-  );
-}
