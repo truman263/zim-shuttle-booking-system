@@ -295,10 +295,10 @@ function SummaryCard({
   accent?: boolean;
 }) {
   return (
-    <div className="rounded-3xl border border-white/10 bg-white/[0.04] p-5">
-      <p className="text-sm text-neutral-400">{title}</p>
+    <div className="rounded-2xl border border-white/10 bg-white/[0.035] px-4 py-3.5 transition hover:border-[#C8A96A]/25">
+      <p className="text-xs font-medium text-neutral-400">{title}</p>
       <p
-        className={`mt-3 text-3xl font-semibold ${
+        className={`mt-2 text-2xl font-semibold ${
           accent ? 'text-[#C8A96A]' : 'text-white'
         }`}
       >
