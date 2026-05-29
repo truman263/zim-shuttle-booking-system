@@ -1,7 +1,7 @@
 ﻿'use client';
 
 import { FormEvent, useEffect, useMemo, useState } from 'react';
-import { apiGet, apiPatch, apiPost } from '@/lib/api';
+import { apiDelete, apiGet, apiPatch, apiPost } from '@/lib/api';
 
 const DEFAULT_COMPANY_ID = 'cmpfkzypy0000l4ew82k92cl1';
 
@@ -312,6 +312,39 @@ export default function RoutesPage() {
     }
   }
 
+  async function archiveRoute(route: RouteRecord) {
+    const confirmed = window.confirm(
+      `Archive "${route.name}"? This removes it from route management and public booking, but keeps historical booking records safe.`,
+    );
+
+    if (!confirmed) {
+      return;
+    }
+
+    try {
+      setActionLoadingId(route.id);
+      setErrorMessage('');
+      setSuccessMessage('');
+
+      await apiDelete(`/routes/${route.id}`);
+
+      if (editingRouteId === route.id) {
+        resetForm();
+      }
+
+      await fetchRoutes();
+      setSuccessMessage('Route archived successfully.');
+    } catch (error) {
+      setErrorMessage(
+        error instanceof Error
+          ? error.message
+          : 'Something went wrong while archiving the route',
+      );
+    } finally {
+      setActionLoadingId('');
+    }
+  }
+
   return (
     <section>
       <div className="mb-8 flex flex-col justify-between gap-4 border-b border-white/10 pb-6 md:flex-row md:items-end">
@@ -605,6 +638,15 @@ export default function RoutesPage() {
                               No bookings linked yet.
                             </p>
                           )}
+
+                          <button
+                            type="button"
+                            disabled={actionLoadingId === route.id}
+                            onClick={() => archiveRoute(route)}
+                            className="w-[104px] rounded-full border border-red-500/30 bg-red-500/10 px-3 py-1.5 text-[11px] font-medium text-red-300 transition hover:bg-red-500/20 disabled:cursor-not-allowed disabled:opacity-40"
+                          >
+                            Archive
+                          </button>
                         </div>
                       </td>
 

@@ -50,3 +50,17 @@ export async function apiPatch<T>(
 
   return response.json();
 }
+
+export async function apiDelete<T>(path: string): Promise<T> {
+  const response = await fetch(`${API_BASE_URL}${path}`, {
+    method: 'DELETE',
+  });
+
+  if (!response.ok) {
+    const error = await response.json().catch(() => null);
+    throw new Error(error?.message || `Failed to delete ${path}`);
+  }
+
+  return response.json();
+}
+
