@@ -114,14 +114,36 @@ function getVehicleOperationalLabel(vehicle: Vehicle) {
   }
 
   if (booking.status === 'IN_PROGRESS') {
-    return 'Currently on trip';
+    return 'Vehicle is currently on trip';
   }
 
   if (booking.status === 'CONFIRMED') {
-    return 'Confirmed upcoming trip';
+    return 'Vehicle is reserved for a confirmed booking';
   }
 
-  return 'Pending operational assignment';
+  return 'Vehicle is assigned to a pending booking';
+}
+
+function getVehicleDisplayStatus(vehicle: Vehicle) {
+  const booking = getVehicleOperationalBooking(vehicle);
+
+  if (vehicle.status === 'MAINTENANCE' || vehicle.status === 'INACTIVE') {
+    return vehicle.status;
+  }
+
+  if (booking?.status === 'IN_PROGRESS') {
+    return 'ON_TRIP';
+  }
+
+  if (booking?.status === 'CONFIRMED') {
+    return 'RESERVED';
+  }
+
+  if (booking?.status === 'PENDING') {
+    return 'ASSIGNED';
+  }
+
+  return vehicle.status;
 }
 
 export default function VehiclesPage() {
@@ -518,17 +540,16 @@ export default function VehiclesPage() {
           </div>
 
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[1180px] table-fixed border-collapse text-left text-xs">
+            <table className="w-full min-w-[1120px] table-fixed border-collapse text-left text-xs">
               <thead className="border-b border-white/10 bg-white/[0.03] text-neutral-400">
                 <tr>
-                  <th className="w-[20%] px-4 py-4 font-medium">Vehicle</th>
-                  <th className="w-[13%] px-3 py-4 font-medium">Capacity</th>
-                  <th className="w-[31%] px-3 py-4 font-medium">
-                    Operational Context
+                  <th className="w-[18%] px-4 py-4 font-medium">Vehicle</th>
+                  <th className="w-[12%] px-3 py-4 font-medium">Capacity</th>
+                  <th className="w-[42%] px-3 py-4 font-medium">
+                    Assignment & Trip Context
                   </th>
-                  <th className="w-[12%] px-3 py-4 font-medium">Status</th>
-                  <th className="w-[11%] px-3 py-4 font-medium">Company</th>
-                  <th className="w-[13%] px-3 py-4 text-center font-medium">
+                  <th className="w-[13%] px-3 py-4 font-medium">Company</th>
+                  <th className="w-[15%] px-3 py-4 text-center font-medium">
                     Actions
                   </th>
                 </tr>
@@ -568,6 +589,7 @@ export default function VehiclesPage() {
                         {operationalBooking ? (
                           <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-3">
                             <div className="flex flex-wrap items-center gap-2">
+                              <VehicleStatusBadge status={getVehicleDisplayStatus(vehicle)} />
                               <BookingStatusPill status={operationalBooking.status} />
                               <span className="text-[11px] font-semibold text-white">
                                 {operationalBooking.bookingRef}
@@ -599,21 +621,18 @@ export default function VehiclesPage() {
                           </div>
                         ) : (
                           <div className="rounded-2xl border border-dashed border-white/10 bg-white/[0.02] p-3">
-                            <p className="font-medium text-neutral-300">
-                              No active or upcoming assignment
-                            </p>
-                            <p className="mt-1 text-[11px] leading-5 text-neutral-500">
-                              This vehicle is clear for future bookings unless manually placed under maintenance or inactive.
+                            <div className="flex flex-wrap items-center gap-2">
+                              <VehicleStatusBadge status={getVehicleDisplayStatus(vehicle)} />
+                              <span className="text-[11px] font-semibold text-neutral-300">
+                                No active or upcoming assignment
+                              </span>
+                            </div>
+
+                            <p className="mt-2 text-[11px] leading-5 text-neutral-500">
+                              {getVehicleOperationalLabel(vehicle)}
                             </p>
                           </div>
                         )}
-                      </td>
-
-                      <td className="px-3 py-4">
-                        <VehicleStatusBadge status={vehicle.status} />
-                        <p className="mt-2 text-[11px] leading-5 text-neutral-500">
-                          {getVehicleOperationalLabel(vehicle)}
-                        </p>
                       </td>
 
                       <td className="px-3 py-4 text-neutral-300">
@@ -774,7 +793,10 @@ function BookingStatusPill({ status }: { status: string }) {
 function VehicleStatusBadge({ status }: { status: string }) {
   const styles: Record<string, string> = {
     AVAILABLE: 'border-[#C8A96A]/30 bg-[#C8A96A]/10 text-[#C8A96A]',
-    BOOKED: 'border-white/20 bg-white/10 text-white',
+    ASSIGNED: 'border-yellow-500/30 bg-yellow-500/10 text-yellow-300',
+    RESERVED: 'border-green-500/30 bg-green-500/10 text-green-300',
+    ON_TRIP: 'border-blue-500/30 bg-blue-500/10 text-blue-300',
+    BOOKED: 'border-blue-500/30 bg-blue-500/10 text-blue-300',
     IN_SERVICE: 'border-blue-500/30 bg-blue-500/10 text-blue-300',
     MAINTENANCE: 'border-yellow-500/30 bg-yellow-500/10 text-yellow-300',
     INACTIVE: 'border-red-500/30 bg-red-500/10 text-red-300',
