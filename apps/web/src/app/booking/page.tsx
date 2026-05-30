@@ -1,5 +1,5 @@
-﻿import PublicBookingExperience from "@/components/public-booking/PublicBookingExperience";
+import PublicBookingExperience from "@/components/public-booking/PublicBookingExperience";
 
 export default function BookingPage() {
-  return <PublicBookingExperience />;
+  return <PublicBookingExperience variant="full" />;
 }

@@ -6,6 +6,12 @@ import { apiGet, apiPost } from '@/lib/api';
 const COMPANY_ID = 'cmpfkzypy0000l4ew82k92cl1';
 const WHATSAPP_NUMBER = '263773615432';
 
+type PublicBookingExperienceVariant = 'full' | 'compactHero';
+
+type PublicBookingExperienceProps = {
+  variant?: PublicBookingExperienceVariant;
+};
+
 type ViewMode = 'BOOK' | 'TRACK';
 type TripDirection = '' | 'ONE_WAY' | 'ROUND_TRIP';
 type RouteMode = 'SAVED_ROUTE' | 'CUSTOM_ROUTE';
@@ -226,7 +232,9 @@ function calculateBalanceAfterDeposit(
   return Math.max(0, Number((parsedPrice - parsedDeposit).toFixed(2)));
 }
 
-export default function PublicBookingPage() {
+export default function PublicBookingExperience({
+  variant = 'full',
+}: PublicBookingExperienceProps) {
   const [viewMode, setViewMode] = useState<ViewMode>('BOOK');
 
   const [routes, setRoutes] = useState<RouteRecord[]>([]);
@@ -789,7 +797,7 @@ export default function PublicBookingPage() {
   const hasResult = estimate || bookingResponse || trackedBooking;
 
   return (
-    <main className="relative min-h-screen overflow-hidden bg-[#030303] text-white">
+    <main data-view-variant={variant} className="relative min-h-screen overflow-hidden bg-[#030303] text-white">
       <div
         className="booking-bg pointer-events-none absolute inset-0 bg-cover bg-right-top bg-no-repeat opacity-72"
         style={{
