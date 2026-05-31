@@ -1,6 +1,9 @@
 'use client';
 
-import { FormEvent, useState } from 'react';
+import Link from 'next/link';
+import { FormEvent, useCallback, useEffect, useState } from 'react';
+import { PublicFooter } from '../../(public)/components/PublicFooter';
+import { PublicHeader } from '../../(public)/components/PublicHeader';
 import { apiGet } from '@/lib/api';
 
 type TrackedBooking = {
@@ -71,11 +74,10 @@ export default function TrackBookingPage() {
     return value.replaceAll('_', ' ');
   }
 
-  async function trackBooking(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
+  const trackBookingByReference = useCallback(async (reference: string) => {
+    const cleanRef = reference.trim().toUpperCase();
 
-    const cleanRef = bookingRef.trim().toUpperCase();
-
+    setBookingRef(cleanRef);
     setBooking(null);
     setErrorMessage('');
 
@@ -101,198 +103,237 @@ export default function TrackBookingPage() {
     } finally {
       setLoading(false);
     }
+  }, []);
+
+  useEffect(() => {
+    const reference = new URLSearchParams(window.location.search).get(
+      'reference',
+    );
+
+    if (reference) {
+      void trackBookingByReference(reference);
+    }
+  }, [trackBookingByReference]);
+
+  async function trackBooking(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    await trackBookingByReference(bookingRef);
   }
 
   return (
-    <main className="min-h-screen bg-[#050505] text-white">
-      <section className="border-b border-white/10 bg-[radial-gradient(circle_at_top,#1f1a10_0%,#050505_45%)] px-6 py-12 md:px-10">
-        <div className="mx-auto max-w-5xl">
-          <p className="text-xs uppercase tracking-[0.35em] text-[#C8A96A]">
-            LadyBird Shuttle Services
-          </p>
+    <div
+      className="min-h-screen bg-[#030303] text-white"
+      style={{
+        fontFamily:
+          "Inter, Montserrat, Poppins, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
+      }}
+    >
+      <PublicHeader />
 
-          <h1 className="mt-5 max-w-3xl text-4xl font-semibold tracking-tight md:text-6xl">
-            Track your booking.
-          </h1>
+      <main className="relative overflow-hidden">
+        <div
+          className="pointer-events-none absolute inset-x-0 top-0 h-[520px] bg-cover bg-center opacity-35"
+          style={{
+            backgroundImage: "url('/images/public-site/lb-hero-shuttle.jpg')",
+          }}
+        />
+        <div className="pointer-events-none absolute inset-x-0 top-0 h-[560px] bg-[linear-gradient(180deg,rgba(0,0,0,0.70)_0%,rgba(0,0,0,0.42)_44%,#030303_100%)]" />
+        <div className="pointer-events-none absolute left-1/2 top-28 h-72 w-72 -translate-x-1/2 rounded-full bg-white/[0.055] blur-3xl" />
 
-          <p className="mt-5 max-w-2xl text-sm leading-7 text-neutral-400 md:text-base">
-            Enter your booking reference to check the latest status of your
-            shuttle request, payment state, trip details and assignment updates.
-          </p>
-        </div>
-      </section>
-
-      <section className="px-6 py-10 md:px-10">
-        <div className="mx-auto grid max-w-5xl gap-8 lg:grid-cols-[420px_1fr]">
-          <form
-            noValidate
-            onSubmit={trackBooking}
-            className="h-fit rounded-3xl border border-white/10 bg-white/[0.04] p-6"
-          >
-            <p className="text-xs uppercase tracking-[0.3em] text-neutral-500">
-              Booking Reference
+        <section className="relative px-5 pb-12 pt-16 sm:px-6 lg:pb-16 lg:pt-20">
+          <div className="mx-auto max-w-7xl">
+            <p className="text-[11px] font-light uppercase tracking-[0.42em] text-neutral-500">
+              Booking tracking
             </p>
 
-            <h2 className="mt-3 text-2xl font-semibold">Find your booking</h2>
+            <h1 className="mt-5 max-w-4xl text-4xl font-semibold leading-[1.02] tracking-[-0.052em] text-white sm:text-5xl lg:text-6xl">
+              Track your shuttle booking.
+            </h1>
 
-            <p className="mt-2 text-sm leading-6 text-neutral-500">
-              Your booking reference looks like LB-20260523-3899.
+            <p className="mt-5 max-w-2xl text-sm font-light leading-8 text-neutral-300/85 sm:text-base">
+              Enter your booking reference to view trip status, payment state,
+              passenger details and assignment updates from LadyBird Shuttle
+              Services.
             </p>
+          </div>
+        </section>
 
-            <label className="mt-6 block">
-              <span className="mb-2 block text-sm font-medium text-neutral-300">
-                Booking Reference <span className="text-[#C8A96A]">*</span>
-              </span>
-
-              <input
-                value={bookingRef}
-                onChange={(event) => setBookingRef(event.target.value)}
-                placeholder="Example: LB-20260523-3899"
-                className="input-field uppercase"
-              />
-            </label>
-
-            {errorMessage && (
-              <div className="mt-4 rounded-2xl border border-red-500/20 bg-red-500/10 p-4 text-sm text-red-300">
-                {errorMessage}
-              </div>
-            )}
-
-            <button
-              type="submit"
-              disabled={loading}
-              className="mt-6 w-full rounded-full bg-white px-6 py-3 text-sm font-semibold text-black transition hover:bg-[#C8A96A] disabled:cursor-not-allowed disabled:opacity-50"
+        <section className="relative px-5 pb-20 sm:px-6">
+          <div className="mx-auto grid max-w-7xl gap-6 lg:grid-cols-[420px_1fr]">
+            <form
+              noValidate
+              onSubmit={trackBooking}
+              className="h-fit rounded-[30px] border border-white/10 bg-white/[0.045] p-5 shadow-[0_28px_90px_rgba(0,0,0,0.45)] backdrop-blur-2xl sm:p-6"
             >
-              {loading ? 'Checking...' : 'Track Booking'}
-            </button>
+              <p className="text-[11px] font-light uppercase tracking-[0.34em] text-neutral-500">
+                Booking Reference
+              </p>
 
-            <a
-              href="/booking"
-              className="mt-3 block rounded-full border border-white/10 px-6 py-3 text-center text-sm font-medium text-neutral-300 transition hover:border-[#C8A96A]/40 hover:text-white"
-            >
-              Make a New Booking
-            </a>
-          </form>
+              <h2 className="mt-3 text-2xl font-semibold tracking-[-0.02em]">
+                Find your booking
+              </h2>
 
-          <section className="rounded-3xl border border-white/10 bg-white/[0.04]">
-            {!booking && (
-              <div className="p-8">
-                <p className="text-xs uppercase tracking-[0.3em] text-neutral-500">
-                  Status
-                </p>
+              <p className="mt-2 text-sm font-light leading-6 text-neutral-500">
+                Your booking reference looks like LB-20260523-3899.
+              </p>
 
-                <h2 className="mt-3 text-2xl font-semibold">
-                  Booking details will appear here.
-                </h2>
+              <label className="mt-6 block">
+                <span className="mb-2 block text-sm font-medium text-neutral-300">
+                  Booking Reference <span className="text-white">*</span>
+                </span>
 
-                <p className="mt-3 max-w-xl text-sm leading-6 text-neutral-500">
-                  After entering your booking reference, you will see your trip
-                  details, payment status and assignment information.
-                </p>
-              </div>
-            )}
+                <input
+                  value={bookingRef}
+                  onChange={(event) => setBookingRef(event.target.value)}
+                  placeholder="Example: LB-20260523-3899"
+                  className="track-input uppercase"
+                />
+              </label>
 
-            {booking && (
-              <div>
-                <div className="border-b border-white/10 p-6">
-                  <div className="flex flex-col justify-between gap-4 md:flex-row md:items-start">
-                    <div>
-                      <p className="text-xs uppercase tracking-[0.3em] text-[#C8A96A]">
-                        Booking Found
-                      </p>
+              {errorMessage && (
+                <div className="mt-4 rounded-2xl border border-white/10 bg-white/[0.045] p-4 text-sm leading-6 text-neutral-200">
+                  {errorMessage}
+                </div>
+              )}
 
-                      <h2 className="mt-3 text-3xl font-semibold">
-                        {booking.bookingRef}
-                      </h2>
+              <button
+                type="submit"
+                disabled={loading}
+                className="mt-6 w-full rounded-full bg-white px-6 py-3 text-sm font-semibold text-black transition hover:bg-neutral-200 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {loading ? 'Checking...' : 'Track Booking'}
+              </button>
 
-                      <p className="mt-2 text-sm text-neutral-500">
-                        {booking.customer.fullName} • {booking.customer.phone}
-                      </p>
+              <Link
+                href="/booking"
+                className="mt-3 block rounded-full border border-white/10 px-6 py-3 text-center text-sm font-medium text-neutral-300 transition hover:border-white/25 hover:text-white"
+              >
+                Make a New Booking
+              </Link>
+            </form>
+
+            <section className="overflow-hidden rounded-[30px] border border-white/10 bg-white/[0.045] shadow-[0_28px_90px_rgba(0,0,0,0.45)] backdrop-blur-2xl">
+              {loading && !booking && (
+                <EmptyState
+                  eyebrow="Checking"
+                  title="Looking up your booking."
+                  description="Please wait while we check the latest status for this reference."
+                />
+              )}
+
+              {!loading && !booking && (
+                <EmptyState
+                  eyebrow="Status"
+                  title="Booking details will appear here."
+                  description="After entering your booking reference, you will see trip details, payment status and assignment information."
+                />
+              )}
+
+              {booking && (
+                <div>
+                  <div className="border-b border-white/10 p-5 sm:p-6">
+                    <div className="flex flex-col justify-between gap-4 md:flex-row md:items-start">
+                      <div>
+                        <p className="text-[11px] font-light uppercase tracking-[0.34em] text-neutral-500">
+                          Booking Found
+                        </p>
+
+                        <h2 className="mt-3 text-3xl font-semibold tracking-[-0.035em] text-white sm:text-4xl">
+                          {booking.bookingRef}
+                        </h2>
+
+                        <p className="mt-2 text-sm text-neutral-500">
+                          {booking.customer.fullName} / {booking.customer.phone}
+                        </p>
+                      </div>
+
+                      <div className="flex flex-wrap gap-2 md:justify-end">
+                        <StatusBadge label={booking.status} />
+                        <PaymentBadge label={booking.paymentStatus} />
+                      </div>
                     </div>
+                  </div>
 
-                    <div className="flex flex-wrap gap-2 md:justify-end">
-                      <StatusBadge label={booking.status} />
-                      <PaymentBadge label={booking.paymentStatus} />
+                  <div className="grid gap-4 p-5 sm:p-6 md:grid-cols-2">
+                    <InfoCard
+                      title="Trip"
+                      lines={[
+                        booking.route?.name || 'Custom trip',
+                        humanise(booking.tripType),
+                        humanise(booking.tripDirection),
+                        `${booking.pickupLocation} -> ${booking.destination}`,
+                      ]}
+                    />
+
+                    <InfoCard
+                      title="Schedule"
+                      lines={[
+                        `Pickup: ${formatDate(booking.pickupDate)}`,
+                        booking.tripDirection === 'ROUND_TRIP'
+                          ? `Return: ${formatDate(booking.returnDate)}`
+                          : `Drop-off: ${formatDate(booking.dropoffDate)}`,
+                        booking.tripDirection === 'ROUND_TRIP'
+                          ? `${booking.returnPickupLocation || 'Return pickup'} -> ${
+                              booking.returnDestination || 'Return destination'
+                            }`
+                          : '',
+                      ].filter(Boolean)}
+                    />
+
+                    <InfoCard
+                      title="Passengers and Price"
+                      lines={[
+                        `Passengers: ${booking.passengers}`,
+                        `Estimated Price: $${formatMoney(
+                          booking.estimatedPrice,
+                        )}`,
+                        `Final Price: $${formatMoney(booking.finalPrice)}`,
+                        `Deposit: $${formatMoney(booking.depositAmount)}`,
+                      ]}
+                    />
+
+                    <InfoCard
+                      title="Assignment"
+                      lines={[
+                        `Driver: ${
+                          booking.driver?.fullName || 'Not assigned yet'
+                        }`,
+                        `Vehicle: ${
+                          booking.vehicle
+                            ? `${booking.vehicle.name} (${booking.vehicle.registrationNo})`
+                            : 'Not assigned yet'
+                        }`,
+                      ]}
+                    />
+                  </div>
+
+                  <div className="border-t border-white/10 p-5 sm:p-6">
+                    <div className="rounded-[26px] border border-white/10 bg-black/25 p-5">
+                      <p className="text-sm font-semibold text-white">
+                        What happens next?
+                      </p>
+                      <p className="mt-2 text-sm font-light leading-6 text-neutral-400">
+                        The operations team will continue updating this booking
+                        as availability, payment and assignment details change.
+                      </p>
                     </div>
                   </div>
                 </div>
+              )}
+            </section>
+          </div>
+        </section>
+      </main>
 
-                <div className="grid gap-4 p-6 md:grid-cols-2">
-                  <InfoCard
-                    title="Trip"
-                    lines={[
-                      booking.route?.name || 'Custom trip',
-                      humanise(booking.tripType),
-                      humanise(booking.tripDirection),
-                      `${booking.pickupLocation} → ${booking.destination}`,
-                    ]}
-                  />
-
-                  <InfoCard
-                    title="Schedule"
-                    lines={[
-                      `Pickup: ${formatDate(booking.pickupDate)}`,
-                      booking.tripDirection === 'ROUND_TRIP'
-                        ? `Return: ${formatDate(booking.returnDate)}`
-                        : `Drop-off: ${formatDate(booking.dropoffDate)}`,
-                      booking.tripDirection === 'ROUND_TRIP'
-                        ? `${booking.returnPickupLocation || 'Return pickup'} → ${
-                            booking.returnDestination || 'Return destination'
-                          }`
-                        : '',
-                    ].filter(Boolean)}
-                  />
-
-                  <InfoCard
-                    title="Passengers and Price"
-                    lines={[
-                      `Passengers: ${booking.passengers}`,
-                      `Estimated Price: $${formatMoney(
-                        booking.estimatedPrice,
-                      )}`,
-                      `Final Price: $${formatMoney(booking.finalPrice)}`,
-                      `Deposit: $${formatMoney(booking.depositAmount)}`,
-                    ]}
-                  />
-
-                  <InfoCard
-                    title="Assignment"
-                    lines={[
-                      `Driver: ${booking.driver?.fullName || 'Not assigned yet'}`,
-                      `Vehicle: ${
-                        booking.vehicle
-                          ? `${booking.vehicle.name} (${booking.vehicle.registrationNo})`
-                          : 'Not assigned yet'
-                      }`,
-                    ]}
-                  />
-                </div>
-
-                <div className="border-t border-white/10 p-6">
-                  <div className="rounded-3xl border border-[#C8A96A]/20 bg-[#C8A96A]/10 p-5">
-                    <p className="text-sm font-semibold text-[#C8A96A]">
-                      What happens next?
-                    </p>
-                    <p className="mt-2 text-sm leading-6 text-neutral-300">
-                      Our team will review your booking, confirm availability
-                      and update the booking status. Keep your booking reference
-                      safe for future tracking.
-                    </p>
-                  </div>
-                </div>
-              </div>
-            )}
-          </section>
-        </div>
-      </section>
+      <PublicFooter />
 
       <style jsx>{`
-        .input-field {
+        .track-input {
           width: 100%;
           border-radius: 1rem;
           border: 1px solid rgba(255, 255, 255, 0.1);
-          background: rgba(255, 255, 255, 0.04);
-          padding: 0.85rem 1rem;
+          background: rgba(255, 255, 255, 0.045);
+          padding: 0.9rem 1rem;
           font-size: 0.875rem;
           color: white;
           outline: none;
@@ -301,23 +342,49 @@ export default function TrackBookingPage() {
             background 0.2s ease;
         }
 
-        .input-field::placeholder {
+        .track-input::placeholder {
           color: rgba(163, 163, 163, 0.65);
         }
 
-        .input-field:focus {
-          border-color: rgba(200, 169, 106, 0.7);
-          background: rgba(255, 255, 255, 0.06);
+        .track-input:focus {
+          border-color: rgba(255, 255, 255, 0.34);
+          background: rgba(255, 255, 255, 0.07);
         }
       `}</style>
-    </main>
+    </div>
+  );
+}
+
+function EmptyState({
+  eyebrow,
+  title,
+  description,
+}: {
+  eyebrow: string;
+  title: string;
+  description: string;
+}) {
+  return (
+    <div className="p-8 sm:p-10">
+      <p className="text-[11px] font-light uppercase tracking-[0.34em] text-neutral-500">
+        {eyebrow}
+      </p>
+
+      <h2 className="mt-3 text-2xl font-semibold tracking-[-0.02em]">
+        {title}
+      </h2>
+
+      <p className="mt-3 max-w-xl text-sm font-light leading-6 text-neutral-500">
+        {description}
+      </p>
+    </div>
   );
 }
 
 function InfoCard({ title, lines }: { title: string; lines: string[] }) {
   return (
-    <div className="rounded-3xl border border-white/10 bg-black/20 p-5">
-      <p className="text-xs uppercase tracking-[0.25em] text-neutral-500">
+    <div className="rounded-[26px] border border-white/10 bg-black/25 p-5">
+      <p className="text-[11px] font-light uppercase tracking-[0.28em] text-neutral-500">
         {title}
       </p>
 
@@ -325,7 +392,11 @@ function InfoCard({ title, lines }: { title: string; lines: string[] }) {
         {lines.map((line, index) => (
           <p
             key={`${title}-${index}`}
-            className={index === 0 ? 'font-semibold text-white' : 'text-sm text-neutral-400'}
+            className={
+              index === 0
+                ? 'font-semibold text-white'
+                : 'text-sm font-light text-neutral-400'
+            }
           >
             {line}
           </p>
@@ -336,22 +407,18 @@ function InfoCard({ title, lines }: { title: string; lines: string[] }) {
 }
 
 function StatusBadge({ label }: { label: string }) {
-  const styles: Record<string, string> = {
-    PENDING: 'border-yellow-500/30 bg-yellow-500/10 text-yellow-300',
-    CONFIRMED: 'border-blue-500/30 bg-blue-500/10 text-blue-300',
-    DRIVER_ASSIGNED: 'border-[#C8A96A]/30 bg-[#C8A96A]/10 text-[#C8A96A]',
-    VEHICLE_ASSIGNED: 'border-[#C8A96A]/30 bg-[#C8A96A]/10 text-[#C8A96A]',
-    IN_PROGRESS: 'border-purple-500/30 bg-purple-500/10 text-purple-300',
-    COMPLETED: 'border-green-500/30 bg-green-500/10 text-green-300',
-    CANCELLED: 'border-red-500/30 bg-red-500/10 text-red-300',
-    NO_SHOW: 'border-red-500/30 bg-red-500/10 text-red-300',
-  };
+  const activeStatuses = ['CONFIRMED', 'DRIVER_ASSIGNED', 'VEHICLE_ASSIGNED'];
+  const completeStatuses = ['COMPLETED'];
+
+  const className = completeStatuses.includes(label)
+    ? 'border-white bg-white text-black'
+    : activeStatuses.includes(label)
+      ? 'border-white/25 bg-white/[0.10] text-white'
+      : 'border-white/15 bg-white/[0.055] text-neutral-200';
 
   return (
     <span
-      className={`inline-flex h-8 items-center justify-center rounded-full border px-4 text-[11px] font-bold uppercase tracking-wide ${
-        styles[label] ?? 'border-white/10 bg-white/5 text-neutral-300'
-      }`}
+      className={`inline-flex h-9 items-center justify-center rounded-full border px-4 text-[11px] font-semibold uppercase tracking-wide ${className}`}
     >
       {label.replaceAll('_', ' ')}
     </span>
@@ -359,19 +426,14 @@ function StatusBadge({ label }: { label: string }) {
 }
 
 function PaymentBadge({ label }: { label: string }) {
-  const styles: Record<string, string> = {
-    PAID: 'border-green-500/30 bg-green-500/10 text-green-300',
-    PARTIALLY_PAID: 'border-[#C8A96A]/30 bg-[#C8A96A]/10 text-[#C8A96A]',
-    UNPAID: 'border-red-500/30 bg-red-500/10 text-red-300',
-    FAILED: 'border-red-500/30 bg-red-500/10 text-red-300',
-    REFUNDED: 'border-blue-500/30 bg-blue-500/10 text-blue-300',
-  };
+  const className =
+    label === 'PAID'
+      ? 'border-white bg-white text-black'
+      : 'border-white/15 bg-white/[0.055] text-neutral-200';
 
   return (
     <span
-      className={`inline-flex h-8 items-center justify-center rounded-full border px-4 text-[11px] font-bold uppercase tracking-wide ${
-        styles[label] ?? 'border-white/10 bg-white/5 text-neutral-300'
-      }`}
+      className={`inline-flex h-9 items-center justify-center rounded-full border px-4 text-[11px] font-semibold uppercase tracking-wide ${className}`}
     >
       {label.replaceAll('_', ' ')}
     </span>

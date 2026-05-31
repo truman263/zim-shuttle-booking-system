@@ -1,9 +1,13 @@
-import type { Metadata } from "next";
+﻿import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "LadyBird Shuttle Services",
-  description: "Premium shuttle booking and operations platform",
+  title: "LadyBird Shuttle Services | Harare Airport Transfers & Zimbabwe Shuttle Booking",
+  description:
+    "Book Harare airport transfers, private shuttle hire, corporate transport and long-distance shuttle services across Zimbabwe with LadyBird Shuttle Services.",
+  icons: {
+    icon: "/brand/ladybird-favicon.ico",
+  },
 };
 
 export default function RootLayout({
