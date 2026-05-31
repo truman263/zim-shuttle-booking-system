@@ -42,77 +42,79 @@ export function HomeBookingPanel() {
   return (
     <section
       id="book"
-      className="relative z-20 mx-auto -mt-[13rem] max-w-2xl px-5 sm:px-6 lg:-mt-[14.5rem]"
+      className="relative z-20 -mt-[14rem] px-5 pb-12 sm:px-6 sm:pb-14 lg:-mt-[16rem] lg:pb-16"
     >
-      <div
-        className="homepage-booking-card relative overflow-hidden rounded-[30px] border border-white/10 bg-black/55 p-3 shadow-[0_30px_100px_rgba(0,0,0,0.58)] backdrop-blur-2xl sm:p-4"
-        style={{
-          background:
-            "linear-gradient(145deg, rgba(255,255,255,0.085), rgba(255,255,255,0.032) 46%, rgba(0,0,0,0.62))",
-        }}
-      >
-        <div className="relative z-10">
-          <div className="grid grid-cols-2 gap-2.5">
-            <PanelTab active={mode === "BOOK"} onClick={() => setMode("BOOK")}>
-              Book a Shuttle
-            </PanelTab>
+      <div className="mx-auto max-w-2xl">
+        <div
+          className="homepage-booking-card relative overflow-hidden rounded-[30px] border border-white/10 bg-black/55 p-3 shadow-[0_30px_100px_rgba(0,0,0,0.58)] backdrop-blur-2xl sm:p-4"
+          style={{
+            background:
+              "linear-gradient(145deg, rgba(255,255,255,0.085), rgba(255,255,255,0.032) 46%, rgba(0,0,0,0.62))",
+          }}
+        >
+          <div className="relative z-10">
+            <div className="grid grid-cols-2 gap-2.5">
+              <PanelTab active={mode === "BOOK"} onClick={() => setMode("BOOK")}>
+                Book a Shuttle
+              </PanelTab>
 
-            <PanelTab active={mode === "TRACK"} onClick={() => setMode("TRACK")}>
-              Track Booking
-            </PanelTab>
+              <PanelTab active={mode === "TRACK"} onClick={() => setMode("TRACK")}>
+                Track Booking
+              </PanelTab>
+            </div>
+
+            {mode === "BOOK" ? (
+              <div>
+                <div className="mt-4 rounded-[24px] border border-white/10 bg-black/25 p-3">
+                  <Link
+                    href="/booking"
+                    className="group grid gap-3 rounded-[20px] px-3 py-2.5 text-left transition hover:bg-white/[0.045] sm:grid-cols-[1fr_auto] sm:items-center"
+                  >
+                    <span>
+                      <span className="block text-sm font-semibold text-white">
+                        Start a trip request
+                      </span>
+                      <span className="mt-1 block text-xs font-light leading-5 text-neutral-500">
+                        Open the secure booking page for route, passenger and
+                        travel details.
+                      </span>
+                    </span>
+
+                    <span className="inline-flex h-10 items-center justify-center rounded-full bg-white px-5 text-xs font-semibold text-black transition group-hover:bg-neutral-200">
+                      Open Booking
+                    </span>
+                  </Link>
+
+                  <div className="homepage-route-line mt-3">
+                    <span className="homepage-route-dot" />
+                  </div>
+
+                  <div className="mt-3 flex items-center justify-center gap-2 text-xs font-light text-neutral-500">
+                    <span className="homepage-live-dot" />
+                    Online booking and tracking
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div>
+                <div className="mx-auto mt-4 grid max-w-xl gap-3 sm:grid-cols-[1fr_auto]">
+                  <input
+                    value={reference}
+                    onChange={(event) => setReference(event.target.value)}
+                    placeholder="Example: LB-20260523-3899"
+                    className="h-12 rounded-full border border-white/10 bg-white/[0.04] px-5 text-center text-sm text-white outline-none transition placeholder:text-neutral-600 focus:border-white/35 focus:bg-white/[0.065] sm:text-left"
+                  />
+
+                  <Link
+                    href={trackingHref}
+                    className="inline-flex h-12 items-center justify-center rounded-full bg-white px-8 text-sm font-semibold text-black transition hover:bg-neutral-200"
+                  >
+                    Track
+                  </Link>
+                </div>
+              </div>
+            )}
           </div>
-
-          {mode === "BOOK" ? (
-            <div>
-              <div className="mt-4 rounded-[24px] border border-white/10 bg-black/25 p-3">
-                <Link
-                  href="/booking"
-                  className="group grid gap-3 rounded-[20px] px-3 py-2.5 text-left transition hover:bg-white/[0.045] sm:grid-cols-[1fr_auto] sm:items-center"
-                >
-                  <span>
-                    <span className="block text-sm font-semibold text-white">
-                      Start a trip request
-                    </span>
-                    <span className="mt-1 block text-xs font-light leading-5 text-neutral-500">
-                      Open the secure booking page for route, passenger and
-                      travel details.
-                    </span>
-                  </span>
-
-                  <span className="inline-flex h-10 items-center justify-center rounded-full bg-white px-5 text-xs font-semibold text-black transition group-hover:bg-neutral-200">
-                    Open Booking
-                  </span>
-                </Link>
-
-                <div className="homepage-route-line mt-3">
-                  <span className="homepage-route-dot" />
-                </div>
-
-                <div className="mt-3 flex items-center justify-center gap-2 text-xs font-light text-neutral-500">
-                  <span className="homepage-live-dot" />
-                  Online booking and tracking
-                </div>
-              </div>
-            </div>
-          ) : (
-            <div>
-              <div className="mx-auto mt-4 grid max-w-xl gap-3 sm:grid-cols-[1fr_auto]">
-                <input
-                  value={reference}
-                  onChange={(event) => setReference(event.target.value)}
-                  placeholder="Example: LB-20260523-3899"
-                  className="h-12 rounded-full border border-white/10 bg-white/[0.04] px-5 text-center text-sm text-white outline-none transition placeholder:text-neutral-600 focus:border-white/35 focus:bg-white/[0.065] sm:text-left"
-                />
-
-                <Link
-                  href={trackingHref}
-                  className="inline-flex h-12 items-center justify-center rounded-full bg-white px-8 text-sm font-semibold text-black transition hover:bg-neutral-200"
-                >
-                  Track
-                </Link>
-              </div>
-            </div>
-          )}
         </div>
       </div>
 

@@ -33,7 +33,7 @@ export function HomeHero() {
       <div className="homepage-orb homepage-orb-one" />
       <div className="homepage-orb homepage-orb-two" />
 
-      <div className="relative z-10 mx-auto max-w-5xl -translate-y-10 sm:-translate-y-12 lg:-translate-y-16">
+      <div className="relative z-10 mx-auto max-w-5xl -translate-y-14 sm:-translate-y-16 lg:-translate-y-32">
         <div className="homepage-fade-up mx-auto max-w-4xl overflow-hidden">
           <div className="homepage-service-marquee">
             <div className="homepage-service-track">
@@ -62,7 +62,10 @@ export function HomeHero() {
         .homepage-bg-image {
           background-size: min(1420px, 108vw) auto;
           background-position: center 45%;
-          animation: homepageImageDrift 28s ease-in-out infinite alternate;
+          transform-origin: 58% 44%;
+          will-change: transform;
+          animation: homepageImageDrift 36s cubic-bezier(0.45, 0, 0.2, 1)
+            infinite;
         }
 
         .homepage-fade-up {
@@ -196,11 +199,17 @@ export function HomeHero() {
         }
 
         @keyframes homepageImageDrift {
-          from {
-            transform: translate3d(-0.55%, -0.32%, 0) scale(1.035);
+          0% {
+            transform: translate3d(-0.45%, -0.25%, 0) scale(1.025);
           }
-          to {
-            transform: translate3d(0.55%, 0.34%, 0) scale(1.005);
+          46% {
+            transform: translate3d(0.42%, 0.26%, 0) scale(1.078);
+          }
+          72% {
+            transform: translate3d(0.58%, -0.12%, 0) scale(1.055);
+          }
+          100% {
+            transform: translate3d(-0.45%, -0.25%, 0) scale(1.025);
           }
         }
 
