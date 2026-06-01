@@ -6,7 +6,7 @@ import Link from "next/link";
 export function PublicHeader() {
   const navItems = [
     { label: "Home", href: "/" },
-    { label: "Services", href: "/#services" },
+    { label: "Services", href: "/services" },
     { label: "Fleet", href: "/#fleet" },
     { label: "Routes", href: "/#routes" },
     { label: "Contact", href: "/#contact" },
@@ -18,7 +18,7 @@ export function PublicHeader() {
         <Link
           href="/"
           aria-label="LadyBird Shuttle Services home"
-          className="flex min-w-[160px] items-center sm:min-w-[200px] lg:min-w-[230px]"
+          className="flex min-w-[160px] items-center transition duration-500 hover:scale-[1.012] hover:opacity-95 sm:min-w-[200px] lg:min-w-[230px]"
         >
           <Image
             src="/brand/ladybird-logo.png"
@@ -35,7 +35,7 @@ export function PublicHeader() {
             <Link
               key={item.href}
               href={item.href}
-              className="transition hover:text-white"
+              className="public-nav-link relative py-2 transition duration-300 hover:-translate-y-0.5 hover:text-white"
             >
               {item.label}
             </Link>
@@ -45,19 +45,63 @@ export function PublicHeader() {
         <div className="flex items-center gap-3">
           <Link
             href="/booking/track"
-            className="hidden rounded-full border border-white/15 px-5 py-2.5 text-sm font-semibold text-white transition hover:border-white/30 hover:bg-white/5 sm:inline-flex"
+            className="public-header-action hidden rounded-full border border-white/15 px-5 py-2.5 text-sm font-semibold text-white transition duration-300 hover:-translate-y-0.5 hover:border-white/30 hover:bg-white/5 sm:inline-flex"
           >
             Track
           </Link>
 
           <Link
             href="/booking"
-            className="rounded-full bg-white px-5 py-2.5 text-sm font-semibold text-black transition hover:bg-neutral-200 sm:px-6"
+            className="public-header-action rounded-full bg-white px-5 py-2.5 text-sm font-semibold text-black transition duration-300 hover:-translate-y-0.5 hover:bg-neutral-200 sm:px-6"
           >
             Book Now
           </Link>
         </div>
       </div>
+
+      <style jsx global>{`
+        .public-nav-link::after {
+          content: "";
+          position: absolute;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          height: 1px;
+          border-radius: 9999px;
+          background: rgba(255, 255, 255, 0.72);
+          transform: scaleX(0);
+          transform-origin: center;
+          opacity: 0;
+          transition:
+            transform 320ms ease,
+            opacity 320ms ease;
+        }
+
+        .public-nav-link:hover::after {
+          transform: scaleX(1);
+          opacity: 1;
+        }
+
+        .public-header-action {
+          box-shadow: 0 0 0 rgba(255, 255, 255, 0);
+        }
+
+        .public-header-action:hover {
+          box-shadow: 0 12px 34px rgba(255, 255, 255, 0.08);
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+          .public-nav-link,
+          .public-header-action {
+            transition: none;
+          }
+
+          .public-nav-link:hover,
+          .public-header-action:hover {
+            transform: none;
+          }
+        }
+      `}</style>
     </header>
   );
 }

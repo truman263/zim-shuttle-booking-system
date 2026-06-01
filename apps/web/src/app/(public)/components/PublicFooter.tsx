@@ -7,10 +7,12 @@ import { FloatingWhatsAppAgent } from "./FloatingWhatsAppAgent";
 export function PublicFooter() {
   const quickLinks = [
     { label: "Home", href: "/" },
-    { label: "Services", href: "/#services" },
+    { label: "Services", href: "/services" },
     { label: "Fleet", href: "/#fleet" },
     { label: "Routes", href: "/#routes" },
     { label: "Contact", href: "/#contact" },
+    { label: "Book Now", href: "/booking" },
+    { label: "Track Booking", href: "/booking/track" },
   ];
 
   const services = [
@@ -39,8 +41,9 @@ export function PublicFooter() {
             </Link>
 
             <p className="mt-5 max-w-md text-sm font-light leading-7 text-neutral-400">
-              Premium shuttle services for airport transfers, corporate travel,
-              private hire and custom routes across Zimbabwe.
+              LadyBird Shuttle Services provides online shuttle booking support
+              for airport transfers, corporate transport, private hire and
+              custom route requests across Zimbabwe.
             </p>
 
             <div className="mt-6 flex flex-wrap gap-3">

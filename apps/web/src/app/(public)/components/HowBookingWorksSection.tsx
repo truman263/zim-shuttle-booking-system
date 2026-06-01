@@ -96,6 +96,28 @@ export function HowBookingWorksSection() {
           animation: bookingStepFloat 8.5s ease-in-out infinite;
         }
 
+        .booking-step-card::before {
+          content: "";
+          pointer-events: none;
+          position: absolute;
+          inset: 0;
+          z-index: 2;
+          background: linear-gradient(
+            118deg,
+            transparent 0%,
+            transparent 38%,
+            rgba(255, 255, 255, 0.42) 50%,
+            transparent 62%,
+            transparent 100%
+          );
+          opacity: 0;
+          transform: translateX(-110%);
+        }
+
+        .booking-step-card:hover::before {
+          animation: bookingStepSheen 950ms ease-out both;
+        }
+
         .booking-step-card:nth-child(2) {
           animation-delay: 0.55s;
         }
@@ -257,8 +279,23 @@ export function HowBookingWorksSection() {
           }
         }
 
+        @keyframes bookingStepSheen {
+          0% {
+            opacity: 0;
+            transform: translateX(-110%);
+          }
+          35% {
+            opacity: 0.28;
+          }
+          100% {
+            opacity: 0;
+            transform: translateX(110%);
+          }
+        }
+
         @media (prefers-reduced-motion: reduce) {
           .booking-step-card,
+          .booking-step-card:hover::before,
           .booking-step-glass,
           .booking-step-corner,
           .booking-step-number::after,

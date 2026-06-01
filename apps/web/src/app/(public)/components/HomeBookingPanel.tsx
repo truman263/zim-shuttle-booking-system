@@ -21,8 +21,8 @@ function PanelTab({
       onClick={onClick}
       className={
         active
-          ? "inline-flex h-11 items-center justify-center rounded-full bg-white px-5 text-sm font-semibold text-black shadow-[0_14px_45px_rgba(255,255,255,0.08)] transition hover:bg-neutral-200"
-          : "inline-flex h-11 items-center justify-center rounded-full border border-white/10 bg-black/25 px-5 text-sm font-semibold text-neutral-400 transition hover:border-white/25 hover:bg-white/[0.04] hover:text-white"
+          ? "homepage-panel-control inline-flex h-11 items-center justify-center rounded-full bg-white px-5 text-sm font-semibold text-black shadow-[0_14px_45px_rgba(255,255,255,0.08)] transition duration-300 hover:-translate-y-0.5 hover:bg-neutral-200"
+          : "homepage-panel-control inline-flex h-11 items-center justify-center rounded-full border border-white/10 bg-black/25 px-5 text-sm font-semibold text-neutral-400 transition duration-300 hover:-translate-y-0.5 hover:border-white/25 hover:bg-white/[0.04] hover:text-white"
       }
     >
       {children}
@@ -68,7 +68,7 @@ export function HomeBookingPanel() {
                 <div className="mt-4 rounded-[24px] border border-white/10 bg-black/25 p-3">
                   <Link
                     href="/booking"
-                    className="group grid gap-3 rounded-[20px] px-3 py-2.5 text-left transition hover:bg-white/[0.045] sm:grid-cols-[1fr_auto] sm:items-center"
+                    className="homepage-panel-surface group grid gap-3 rounded-[20px] px-3 py-2.5 text-left transition duration-500 hover:bg-white/[0.045] sm:grid-cols-[1fr_auto] sm:items-center"
                   >
                     <span>
                       <span className="block text-sm font-semibold text-white">
@@ -80,7 +80,7 @@ export function HomeBookingPanel() {
                       </span>
                     </span>
 
-                    <span className="inline-flex h-10 items-center justify-center rounded-full bg-white px-5 text-xs font-semibold text-black transition group-hover:bg-neutral-200">
+                    <span className="homepage-panel-cta inline-flex h-10 items-center justify-center rounded-full bg-white px-5 text-xs font-semibold text-black transition group-hover:bg-neutral-200">
                       Open Booking
                     </span>
                   </Link>
@@ -107,7 +107,7 @@ export function HomeBookingPanel() {
 
                   <Link
                     href={trackingHref}
-                    className="inline-flex h-12 items-center justify-center rounded-full bg-white px-8 text-sm font-semibold text-black transition hover:bg-neutral-200"
+                    className="homepage-panel-cta inline-flex h-12 items-center justify-center rounded-full bg-white px-8 text-sm font-semibold text-black transition hover:bg-neutral-200"
                   >
                     Track
                   </Link>
@@ -164,6 +164,47 @@ export function HomeBookingPanel() {
 
         .homepage-booking-card {
           animation: homepagePanelFloat 18s ease-in-out infinite alternate;
+          transition:
+            border-color 500ms ease,
+            box-shadow 500ms ease,
+            transform 500ms ease;
+        }
+
+        .homepage-booking-card:hover {
+          animation-play-state: paused;
+          border-color: rgba(255, 255, 255, 0.2);
+          box-shadow: 0 36px 120px rgba(0, 0, 0, 0.66);
+          transform: translate3d(0, -4px, 0) scale(1.003) !important;
+        }
+
+        .homepage-panel-control,
+        .homepage-panel-cta,
+        .homepage-panel-surface {
+          position: relative;
+          overflow: hidden;
+        }
+
+        .homepage-panel-control::after,
+        .homepage-panel-cta::after,
+        .homepage-panel-surface::after {
+          content: "";
+          pointer-events: none;
+          position: absolute;
+          inset: 0;
+          background: linear-gradient(
+            110deg,
+            transparent,
+            rgba(255, 255, 255, 0.24),
+            transparent
+          );
+          opacity: 0;
+          transform: translateX(-120%);
+        }
+
+        .homepage-panel-control:hover::after,
+        .homepage-panel-cta:hover::after,
+        .homepage-panel-surface:hover::after {
+          animation: homepageInteractiveSheen 900ms ease-out both;
         }
 
         .homepage-route-line {
@@ -231,6 +272,20 @@ export function HomeBookingPanel() {
           }
         }
 
+        @keyframes homepageInteractiveSheen {
+          0% {
+            opacity: 0;
+            transform: translateX(-120%);
+          }
+          28% {
+            opacity: 0.42;
+          }
+          100% {
+            opacity: 0;
+            transform: translateX(120%);
+          }
+        }
+
         @keyframes homepageRouteTrace {
           0% {
             transform: translateX(-110%);
@@ -280,6 +335,9 @@ export function HomeBookingPanel() {
         @media (prefers-reduced-motion: reduce) {
           .homepage-booking-card,
           .homepage-booking-card::before,
+          .homepage-panel-control:hover::after,
+          .homepage-panel-cta:hover::after,
+          .homepage-panel-surface:hover::after,
           .homepage-route-line::before,
           .homepage-route-dot,
           .homepage-live-dot {

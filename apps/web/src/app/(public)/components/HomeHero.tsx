@@ -52,9 +52,9 @@ export function HomeHero() {
         </h1>
 
         <p className="homepage-fade-up mx-auto mt-5 max-w-3xl text-sm font-light leading-8 text-neutral-300/85 sm:text-base">
-          Arrange airport transfers, corporate travel, private shuttle hire and
-          custom routes across Zimbabwe with a clear booking process, confirmed
-          trip details and reliable communication before you travel.
+          We make your journey simple from arrival to destination, with reliable
+          airport transfers, private shuttle hire, corporate transport and
+          city-to-city travel across Zimbabwe.
         </p>
       </div>
 
