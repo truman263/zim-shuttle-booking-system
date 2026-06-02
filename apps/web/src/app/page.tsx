@@ -1,5 +1,6 @@
 import { HomeBookingPanel } from "./(public)/components/HomeBookingPanel";
 import { HomeHero } from "./(public)/components/HomeHero";
+import { HomeTravelGuideSection } from "./(public)/components/HomeTravelGuideSection";
 import { HowBookingWorksSection } from "./(public)/components/HowBookingWorksSection";
 import { FleetComfortSection } from "./(public)/components/FleetComfortSection";
 import { FaqSection } from "./(public)/components/FaqSection";
@@ -26,6 +27,7 @@ export default function Home() {
         <HowBookingWorksSection />
         <ServicePromiseStrip />
         <FleetComfortSection />
+        <HomeTravelGuideSection />
         <SmartRoutesSection />
         <FaqSection />
         <PublicFooter />

@@ -9,7 +9,7 @@ export function PublicFooter() {
     { label: "Home", href: "/" },
     { label: "Services", href: "/services" },
     { label: "Fleet", href: "/fleet" },
-    { label: "Routes", href: "/#routes" },
+    { label: "Travel Guide", href: "/travel-guide" },
     { label: "Contact", href: "/#contact" },
     { label: "Book Now", href: "/booking" },
     { label: "Track Booking", href: "/booking/track" },
