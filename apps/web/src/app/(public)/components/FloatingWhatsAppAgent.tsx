@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 
 const WHATSAPP_NUMBER = "263773615432";
+const WHATSAPP_DISPLAY = "+263 77 361 5432";
 
 export function FloatingWhatsAppAgent() {
   const [isOpen, setIsOpen] = useState(false);
@@ -85,7 +86,7 @@ export function FloatingWhatsAppAgent() {
             <div className="mt-4 flex items-center justify-between gap-3 rounded-2xl border border-white/10 bg-white/[0.04] px-3 py-2.5">
               <div className="flex items-center gap-2 text-xs text-neutral-400">
                 <span className="h-2 w-2 rounded-full bg-white/80 shadow-[0_0_18px_rgba(255,255,255,0.5)] whatsapp-agent-pulse" />
-                Opens WhatsApp chat
+                WhatsApp {WHATSAPP_DISPLAY}
               </div>
 
               <a

@@ -5,6 +5,8 @@ import { apiGet, apiPost } from '@/lib/api';
 
 const COMPANY_ID = 'cmpfkzypy0000l4ew82k92cl1';
 const WHATSAPP_NUMBER = '263773615432';
+const CONTACT_EMAIL = 'info@ladybirdshuttles.co.zw';
+const CONTACT_PHONE_DISPLAY = '+263 77 361 5432';
 
 type PublicBookingExperienceVariant = 'full' | 'compactHero';
 
@@ -1227,6 +1229,20 @@ function BookingFooter({
             Premium shuttle bookings for airport transfers, city-to-city trips,
             round trips and private hire across Zimbabwe.
           </p>
+          <div className="mt-3 flex flex-wrap gap-x-4 gap-y-2 text-xs text-neutral-500">
+            <a
+              href={`mailto:${CONTACT_EMAIL}`}
+              className="transition hover:text-white"
+            >
+              {CONTACT_EMAIL}
+            </a>
+            <a
+              href={`tel:+${WHATSAPP_NUMBER}`}
+              className="transition hover:text-white"
+            >
+              {CONTACT_PHONE_DISPLAY}
+            </a>
+          </div>
         </div>
 
         <nav

@@ -6,6 +6,12 @@ import { FloatingWhatsAppAgent } from "./FloatingWhatsAppAgent";
 
 export function PublicFooter() {
   const year = new Date().getFullYear();
+  const whatsappNumber = "263773615432";
+  const phoneDisplay = "+263 77 361 5432";
+  const email = "info@ladybirdshuttles.co.zw";
+  const whatsappHref = `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(
+    "Hello LadyBird Shuttle Services, I need help with a shuttle booking.",
+  )}`;
 
   const exploreLinks = [
     { label: "Home", href: "/" },
@@ -19,20 +25,13 @@ export function PublicFooter() {
     { label: "Track Booking", href: "/booking/track" },
   ];
 
-  const services = [
-    "Airport transfers",
-    "Private shuttle hire",
-    "Corporate travel",
-    "Custom Zimbabwe routes",
-  ];
-
   return (
     <>
       <footer
         id="contact"
         className="border-t border-white/10 bg-black px-5 py-12 text-white sm:px-6 lg:py-14"
       >
-        <div className="mx-auto grid max-w-7xl gap-10 lg:grid-cols-[1.1fr_0.9fr_0.9fr_1fr]">
+        <div className="mx-auto grid max-w-7xl gap-10 lg:grid-cols-[1.15fr_0.8fr_0.8fr_1.15fr]">
           <div>
             <Link href="/" aria-label="LadyBird Shuttle Services home">
               <Image
@@ -87,13 +86,30 @@ export function PublicFooter() {
 
           <div>
             <p className="text-[11px] font-medium uppercase tracking-[0.32em] text-neutral-500">
-              Services
+              Contact
             </p>
-            <div className="mt-5 grid gap-3 text-sm text-neutral-400">
-              {services.map((service) => (
-                <p key={service}>{service}</p>
-              ))}
-            </div>
+            <address className="mt-5 grid gap-3 text-sm not-italic text-neutral-400">
+              <a
+                href={`mailto:${email}`}
+                className="transition hover:text-white"
+              >
+                {email}
+              </a>
+              <a
+                href={`tel:+${whatsappNumber}`}
+                className="transition hover:text-white"
+              >
+                {phoneDisplay}
+              </a>
+              <a
+                href={whatsappHref}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="transition hover:text-white"
+              >
+                WhatsApp {phoneDisplay}
+              </a>
+            </address>
           </div>
         </div>
 
