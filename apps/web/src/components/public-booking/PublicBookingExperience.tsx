@@ -1214,6 +1214,8 @@ function BookingFooter({
 }: {
   switchMode: (mode: ViewMode) => void;
 }) {
+  const year = new Date().getFullYear();
+
   return (
     <footer className="relative border-t border-white/10 px-5 py-9 md:px-8">
       <div className="mx-auto flex max-w-6xl flex-col gap-6 text-sm text-neutral-400 md:flex-row md:items-center md:justify-between">
@@ -1270,8 +1272,19 @@ function BookingFooter({
         </nav>
       </div>
 
-      <div className="mx-auto mt-6 max-w-6xl border-t border-white/10 pt-5 text-xs text-neutral-600">
-        © 2026 LadyBird Shuttle Services. All rights reserved.
+      <div className="mx-auto mt-6 flex max-w-6xl flex-col gap-2 border-t border-white/10 pt-5 text-xs leading-6 text-neutral-600 md:flex-row md:items-center md:justify-between">
+        <p>&copy; {year} All Rights Reserved | LadyBird Shuttle Services</p>
+        <p>
+          Developed & Powered by{' '}
+          <a
+            href="https://truman.co.zw"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="font-medium text-neutral-400 transition hover:text-white"
+          >
+            Tirivsdhe Marinda
+          </a>
+        </p>
       </div>
     </footer>
   );

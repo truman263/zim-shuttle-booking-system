@@ -5,12 +5,16 @@ import Link from "next/link";
 import { FloatingWhatsAppAgent } from "./FloatingWhatsAppAgent";
 
 export function PublicFooter() {
-  const quickLinks = [
+  const year = new Date().getFullYear();
+
+  const exploreLinks = [
     { label: "Home", href: "/" },
     { label: "Services", href: "/services" },
     { label: "Fleet", href: "/fleet" },
     { label: "Travel Guide", href: "/travel-guide" },
-    { label: "Contact", href: "/#contact" },
+  ];
+
+  const bookingLinks = [
     { label: "Book Now", href: "/booking" },
     { label: "Track Booking", href: "/booking/track" },
   ];
@@ -26,9 +30,9 @@ export function PublicFooter() {
     <>
       <footer
         id="contact"
-        className="border-t border-white/10 bg-black px-5 py-12 text-white sm:px-6"
+        className="border-t border-white/10 bg-black px-5 py-12 text-white sm:px-6 lg:py-14"
       >
-        <div className="mx-auto grid max-w-7xl gap-10 md:grid-cols-[1.2fr_0.8fr_0.8fr]">
+        <div className="mx-auto grid max-w-7xl gap-10 lg:grid-cols-[1.1fr_0.9fr_0.9fr_1fr]">
           <div>
             <Link href="/" aria-label="LadyBird Shuttle Services home">
               <Image
@@ -41,33 +45,35 @@ export function PublicFooter() {
             </Link>
 
             <p className="mt-5 max-w-md text-sm font-light leading-7 text-neutral-400">
-              LadyBird Shuttle Services provides online shuttle booking support
-              for airport transfers, corporate transport, private hire and
-              custom route requests across Zimbabwe.
+              Premium shuttle booking support for airport transfers, corporate
+              transport, private hire and custom route requests across
+              Zimbabwe.
             </p>
-
-            <div className="mt-6 flex flex-wrap gap-3">
-              <Link
-                href="/booking"
-                className="rounded-full bg-white px-5 py-2.5 text-sm font-semibold text-black transition hover:bg-neutral-200"
-              >
-                Book Now
-              </Link>
-              <Link
-                href="/booking/track"
-                className="rounded-full border border-white/10 px-5 py-2.5 text-sm font-semibold text-neutral-300 transition hover:border-white/25 hover:text-white"
-              >
-                Track Booking
-              </Link>
-            </div>
           </div>
 
           <div>
             <p className="text-[11px] font-medium uppercase tracking-[0.32em] text-neutral-500">
-              Quick Links
+              Explore
+            </p>
+            <nav className="mt-5 grid grid-cols-2 gap-x-5 gap-y-3 text-sm text-neutral-400 lg:grid-cols-1">
+              {exploreLinks.map((item) => (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className="transition hover:text-white"
+                >
+                  {item.label}
+                </Link>
+              ))}
+            </nav>
+          </div>
+
+          <div>
+            <p className="text-[11px] font-medium uppercase tracking-[0.32em] text-neutral-500">
+              Bookings
             </p>
             <nav className="mt-5 grid gap-3 text-sm text-neutral-400">
-              {quickLinks.map((item) => (
+              {bookingLinks.map((item) => (
                 <Link
                   key={item.href}
                   href={item.href}
@@ -91,9 +97,19 @@ export function PublicFooter() {
           </div>
         </div>
 
-        <div className="mx-auto mt-10 flex max-w-7xl flex-col gap-3 border-t border-white/10 pt-6 text-xs text-neutral-600 sm:flex-row sm:items-center sm:justify-between">
-          <p>LadyBird Shuttle Services</p>
-          <p>Zimbabwe shuttle and airport transfer bookings</p>
+        <div className="mx-auto mt-10 flex max-w-7xl flex-col gap-3 border-t border-white/10 pt-6 text-xs leading-6 text-neutral-500 lg:flex-row lg:items-center lg:justify-between">
+          <p>&copy; {year} All Rights Reserved | LadyBird Shuttle Services</p>
+          <p>
+            Developed & Powered by{" "}
+            <a
+              href="https://truman.co.zw"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="font-medium text-neutral-300 transition hover:text-white"
+            >
+              Tirivsdhe Marinda
+            </a>
+          </p>
         </div>
       </footer>
 
