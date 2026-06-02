@@ -8,7 +8,7 @@ export function PublicFooter() {
   const quickLinks = [
     { label: "Home", href: "/" },
     { label: "Services", href: "/services" },
-    { label: "Fleet", href: "/#fleet" },
+    { label: "Fleet", href: "/fleet" },
     { label: "Routes", href: "/#routes" },
     { label: "Contact", href: "/#contact" },
     { label: "Book Now", href: "/booking" },

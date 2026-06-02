@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 const services = [
   {
     number: "01",
@@ -54,9 +56,15 @@ export function ServicePromiseStrip() {
               the vehicles presentable and the pickup experience organised.
             </p>
             <p className="mt-4 border-l border-white/10 pl-4 text-sm font-light leading-7 text-white/82">
-              No unnecessary waiting. Clean decent vehicles. Fair pricing. A
-              more comfortable Zimbabwe visit.
+              No unnecessary waiting. Clean, comfortable vehicles. Fair pricing.
+              A smoother Zimbabwe visit.
             </p>
+            <Link
+              href="/services"
+              className="home-services-cta mt-6 inline-flex h-11 items-center justify-center rounded-full border border-white/10 bg-white/[0.035] px-5 text-sm font-semibold text-white transition duration-300 hover:-translate-y-0.5 hover:border-white/25 hover:bg-white/[0.06]"
+            >
+              See all services
+            </Link>
           </div>
         </div>
 
@@ -89,16 +97,16 @@ export function ServicePromiseStrip() {
         <div className="home-services-marquee mt-5 overflow-hidden rounded-[28px] border border-white/10 bg-white/[0.025] py-4 backdrop-blur-2xl">
           <div className="home-services-marquee-track">
             <span>
-              No unnecessary waiting / Clean decent vehicles / Fair pricing /
-              Comfortable Zimbabwe visits
+              No unnecessary waiting / Clean, comfortable vehicles / Fair
+              pricing / A smoother Zimbabwe visit
             </span>
             <span aria-hidden="true">
-              No unnecessary waiting / Clean decent vehicles / Fair pricing /
-              Comfortable Zimbabwe visits
+              No unnecessary waiting / Clean, comfortable vehicles / Fair
+              pricing / A smoother Zimbabwe visit
             </span>
             <span aria-hidden="true">
-              No unnecessary waiting / Clean decent vehicles / Fair pricing /
-              Comfortable Zimbabwe visits
+              No unnecessary waiting / Clean, comfortable vehicles / Fair
+              pricing / A smoother Zimbabwe visit
             </span>
           </div>
         </div>
@@ -121,6 +129,30 @@ export function ServicePromiseStrip() {
         }
 
         .home-service-card:hover::before {
+          animation: homeServicesSheen 950ms ease-out both;
+        }
+
+        .home-services-cta {
+          position: relative;
+          overflow: hidden;
+        }
+
+        .home-services-cta::after {
+          content: "";
+          pointer-events: none;
+          position: absolute;
+          inset: 0;
+          background: linear-gradient(
+            118deg,
+            transparent,
+            rgba(255, 255, 255, 0.13),
+            transparent
+          );
+          opacity: 0;
+          transform: translateX(-120%);
+        }
+
+        .home-services-cta:hover::after {
           animation: homeServicesSheen 950ms ease-out both;
         }
 
@@ -177,6 +209,8 @@ export function ServicePromiseStrip() {
         @media (prefers-reduced-motion: reduce) {
           .home-service-card,
           .home-service-card:hover::before,
+          .home-services-cta,
+          .home-services-cta:hover::after,
           .home-services-marquee-track {
             animation: none;
             transform: none;

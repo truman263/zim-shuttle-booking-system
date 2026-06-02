@@ -22,7 +22,7 @@ export function HowBookingWorksSection() {
   return (
     <section
       aria-labelledby="how-booking-works-heading"
-      className="relative overflow-hidden bg-[#F5F5F2] px-5 py-20 text-neutral-950 sm:px-6 lg:py-24"
+      className="relative overflow-hidden bg-[#F5F5F2] px-5 py-16 text-neutral-950 sm:px-6 lg:py-20"
     >
       <div className="pointer-events-none absolute inset-x-0 top-0 h-20 bg-gradient-to-b from-[#030303] to-transparent opacity-20" />
       <div className="pointer-events-none absolute left-1/2 top-10 h-72 w-[min(780px,82vw)] -translate-x-1/2 rounded-full bg-white/70 blur-3xl" />
@@ -41,11 +41,13 @@ export function HowBookingWorksSection() {
           </h2>
           <p className="mx-auto mt-5 max-w-2xl text-sm font-normal leading-7 text-neutral-600 sm:text-base sm:leading-8">
             Submit your route, confirm the details and track your booking online
-            with a simple customer journey from first request to completed trip.
+            with a simple customer journey from first request to completed
+            journey.
           </p>
         </div>
 
-        <div className="relative mt-12 lg:mt-14">
+        <div className="relative mt-10 lg:mt-12">
+          <div className="booking-mobile-flow pointer-events-none absolute bottom-8 left-10 top-8 md:hidden" />
           <div className="pointer-events-none absolute left-[16.66%] right-[16.66%] top-10 hidden h-px bg-neutral-950/15 lg:block" />
           <div className="booking-flow-signal pointer-events-none absolute left-[16.66%] right-[16.66%] top-10 hidden lg:block" />
 
@@ -75,7 +77,7 @@ export function HowBookingWorksSection() {
           </div>
         </div>
 
-        <div className="mt-12 flex flex-col items-center justify-center gap-3 sm:flex-row">
+        <div className="mt-10 flex flex-col items-center justify-center gap-3 sm:flex-row">
           <Link
             href="/booking"
             className="booking-primary-cta inline-flex h-12 items-center justify-center rounded-full bg-neutral-950 px-6 text-sm font-semibold text-white transition hover:bg-neutral-800"
@@ -157,6 +159,45 @@ export function HowBookingWorksSection() {
         .booking-flow-signal {
           height: 1px;
           overflow: visible;
+        }
+
+        .booking-mobile-flow {
+          width: 1px;
+          background: linear-gradient(
+            180deg,
+            transparent,
+            rgba(10, 10, 10, 0.14),
+            transparent
+          );
+        }
+
+        .booking-mobile-flow::before {
+          content: "";
+          position: absolute;
+          top: 0;
+          left: 0;
+          width: 1px;
+          height: 28%;
+          background: linear-gradient(
+            180deg,
+            transparent,
+            rgba(10, 10, 10, 0.46),
+            transparent
+          );
+          animation: bookingMobileTrace 5.8s ease-in-out infinite;
+        }
+
+        .booking-mobile-flow::after {
+          content: "";
+          position: absolute;
+          top: 0;
+          left: -3px;
+          width: 7px;
+          height: 7px;
+          border-radius: 9999px;
+          background: rgba(10, 10, 10, 0.62);
+          box-shadow: 0 0 18px rgba(10, 10, 10, 0.18);
+          animation: bookingMobileDot 5.8s ease-in-out infinite;
         }
 
         .booking-flow-signal::before {
@@ -269,6 +310,36 @@ export function HowBookingWorksSection() {
           }
         }
 
+        @keyframes bookingMobileTrace {
+          0% {
+            opacity: 0;
+            transform: translateY(-18%);
+          }
+          18%,
+          78% {
+            opacity: 1;
+          }
+          100% {
+            opacity: 0;
+            transform: translateY(340%);
+          }
+        }
+
+        @keyframes bookingMobileDot {
+          0% {
+            opacity: 0;
+            transform: translateY(-18%);
+          }
+          18%,
+          78% {
+            opacity: 0.82;
+          }
+          100% {
+            opacity: 0;
+            transform: translateY(340%);
+          }
+        }
+
         @keyframes bookingCtaBreathe {
           0%,
           100% {
@@ -301,6 +372,8 @@ export function HowBookingWorksSection() {
           .booking-step-number::after,
           .booking-flow-signal::before,
           .booking-flow-signal::after,
+          .booking-mobile-flow::before,
+          .booking-mobile-flow::after,
           .booking-primary-cta {
             animation: none;
           }
