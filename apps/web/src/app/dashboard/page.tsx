@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { apiGet } from '@/lib/api';
 
 type DashboardSummary = {
   company: {
@@ -47,15 +48,9 @@ export default function DashboardPage() {
   useEffect(() => {
     async function fetchDashboardSummary() {
       try {
-        const response = await fetch(
-          `http://localhost:5000/dashboard/summary/${COMPANY_ID}`,
+        const data = await apiGet<DashboardSummary>(
+          `/dashboard/summary/${COMPANY_ID}`,
         );
-
-        if (!response.ok) {
-          throw new Error('Failed to load dashboard summary');
-        }
-
-        const data = await response.json();
         setSummary(data);
       } catch (error) {
         setErrorMessage(
@@ -81,7 +76,7 @@ export default function DashboardPage() {
         <h1 className="text-2xl font-semibold">Dashboard Error</h1>
         <p className="mt-3 text-red-300">{errorMessage}</p>
         <p className="mt-3 text-sm text-neutral-400">
-          Make sure the backend is running on http://localhost:5000.
+          Make sure the backend API is reachable from this environment.
         </p>
       </div>
     );
