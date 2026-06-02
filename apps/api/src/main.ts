@@ -25,10 +25,10 @@ async function bootstrap() {
     }),
   );
 
-  const port = process.env.API_PORT || 5000;
-  await app.listen(port);
+  const port = process.env.PORT || process.env.API_PORT || 5000;
+  await app.listen(port, '0.0.0.0');
 
-  console.log(`API running on http://localhost:${port}`);
+  console.log(`API running on port ${port}`);
 }
 
 bootstrap();
