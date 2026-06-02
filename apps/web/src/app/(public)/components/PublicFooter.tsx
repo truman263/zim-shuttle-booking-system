@@ -18,6 +18,7 @@ export function PublicFooter() {
     { label: "Services", href: "/services" },
     { label: "Fleet", href: "/fleet" },
     { label: "Travel Guide", href: "/travel-guide" },
+    { label: "Contact", href: "/contact" },
   ];
 
   const bookingLinks = [
