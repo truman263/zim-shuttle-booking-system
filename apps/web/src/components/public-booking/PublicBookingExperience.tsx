@@ -30,6 +30,7 @@ type RouteRecord = {
   distanceKm?: string | number | null;
   estimatedDurationMinutes?: number | null;
   isActive: boolean;
+  isDeleted?: boolean;
 };
 
 type SmartRouteEstimate = {
@@ -267,7 +268,7 @@ export default function PublicBookingExperience({
   const usesCustomRoute = form.routeMode === 'CUSTOM_ROUTE';
 
   const activeRoutes = useMemo(() => {
-    return routes.filter((route) => route.isActive);
+    return routes.filter((route) => route.isActive && !route.isDeleted);
   }, [routes]);
 
   useEffect(() => {

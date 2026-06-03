@@ -5,7 +5,35 @@ const { PrismaClient } = require('@prisma/client');
 
 const COMPANY_ID = 'cmpfkzypy0000l4ew82k92cl1';
 
-const INVENTED_STAGING_ROUTE_IDS = [
+const APPROVED_SAVED_ROUTES = [
+  {
+    id: 'cmpflfapi00003oewd5kxj8kg',
+    name: 'Harare to Masvingo',
+    pickupCity: 'Harare',
+    destinationCity: 'Masvingo',
+    basePrice: '35',
+    routeType: 'CITY_TO_CITY',
+    priceUnit: 'PER_PASSENGER',
+    distanceKm: '297',
+    estimatedDurationMinutes: 240,
+    roadCondition: 'GOOD',
+  },
+  {
+    id: 'cmpgrd8nw0000ioewwesbpg0o',
+    name: 'Harare Airport to Harare CBD',
+    pickupCity: 'Harare Airport',
+    destinationCity: 'Harare CBD',
+    basePrice: '25',
+    routeType: 'AIRPORT_TRANSFER',
+    priceUnit: 'PER_TRIP',
+    distanceKm: '15',
+    estimatedDurationMinutes: 25,
+    roadCondition: 'GOOD',
+  },
+];
+
+const ARCHIVED_ROUTE_IDS = [
+  'cmpgre11w0001ioewflrkx9n9',
   'lb-route-harare-mutare',
   'lb-route-harare-bulawayo',
   'lb-route-harare-masvingo',
@@ -23,7 +51,7 @@ const prisma = new PrismaClient({
   }),
 });
 
-async function archiveInventedRoute(routeId, archivedAt) {
+async function archiveRoute(routeId, archivedAt) {
   const route = await prisma.route.findUnique({
     where: { id: routeId },
     select: {
@@ -53,6 +81,40 @@ async function archiveInventedRoute(routeId, archivedAt) {
   return { routeId, action: 'archived' };
 }
 
+async function upsertSavedRoute(route) {
+  const routeData = {
+    companyId: COMPANY_ID,
+    name: route.name,
+    pickupCity: route.pickupCity,
+    destinationCity: route.destinationCity,
+    basePrice: route.basePrice,
+    isActive: true,
+    isDeleted: false,
+    deletedAt: null,
+    routeType: route.routeType,
+    pricingMode: 'FIXED_ROUTE',
+    priceUnit: route.priceUnit,
+    distanceKm: route.distanceKm,
+    estimatedDurationMinutes: route.estimatedDurationMinutes,
+    roadCondition: route.roadCondition,
+  };
+
+  await prisma.route.upsert({
+    where: { id: route.id },
+    update: routeData,
+    create: {
+      id: route.id,
+      ...routeData,
+    },
+  });
+
+  return {
+    routeId: route.id,
+    name: route.name,
+    action: 'active-saved-route-upserted',
+  };
+}
+
 async function main() {
   await prisma.company.upsert({
     where: { id: COMPANY_ID },
@@ -78,16 +140,26 @@ async function main() {
   });
 
   const archivedAt = new Date();
-  const routeResults = [];
+  const savedRouteResults = [];
+  const archivedRouteResults = [];
 
-  for (const routeId of INVENTED_STAGING_ROUTE_IDS) {
-    routeResults.push(await archiveInventedRoute(routeId, archivedAt));
+  for (const route of APPROVED_SAVED_ROUTES) {
+    savedRouteResults.push(await upsertSavedRoute(route));
+  }
+
+  for (const routeId of ARCHIVED_ROUTE_IDS) {
+    archivedRouteResults.push(await archiveRoute(routeId, archivedAt));
   }
 
   console.log('Staging seed completed for LadyBird Shuttle Services.');
   console.log(`Company ID: ${COMPANY_ID}`);
-  console.log('Owner-unapproved staging routes were archived/deactivated.');
-  console.table(routeResults);
+  console.log('Approved baseline saved routes were restored as active.');
+  console.table(savedRouteResults);
+  console.log('Duplicate or unapproved routes were archived/deactivated.');
+  console.table(archivedRouteResults);
+  console.log(
+    'For a guarded hard reset of preview data, run prisma/reset-staging-preview.js.',
+  );
 }
 
 main()
