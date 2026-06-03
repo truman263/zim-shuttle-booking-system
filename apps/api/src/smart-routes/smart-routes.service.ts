@@ -70,7 +70,7 @@ export class SmartRoutesService {
     if (!apiKey) {
       return {
         requiresManualQuote: true,
-        reason: 'GOOGLE_MAPS_SERVER_KEY is not configured.',
+        reason: 'Manual quote required.',
         companyId: dto.companyId,
         pickupLocation: dto.pickupLocation,
         destination: dto.destination,
@@ -80,7 +80,7 @@ export class SmartRoutesService {
         distanceKm: null,
         durationMinutes: null,
         message:
-          'This custom route requires a manual quote because Google Maps is not configured yet.',
+          'This route will be reviewed manually and quoted by the LadyBird team.',
       };
     }
 

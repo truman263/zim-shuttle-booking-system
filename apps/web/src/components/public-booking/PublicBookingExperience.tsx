@@ -291,6 +291,30 @@ export default function PublicBookingExperience({
     fetchRoutes();
   }, []);
 
+  useEffect(() => {
+    if (
+      loadingRoutes ||
+      activeRoutes.length > 0 ||
+      form.routeMode === 'CUSTOM_ROUTE'
+    ) {
+      return;
+    }
+
+    setForm((currentForm) => ({
+      ...currentForm,
+      routeMode: 'CUSTOM_ROUTE',
+      routeId: '',
+      pickupLocation: '',
+      destination: '',
+      returnPickupLocation: '',
+      returnDestination: '',
+    }));
+    setEstimate(null);
+    setBookingResponse(null);
+    setErrorMessage('');
+    setSuccessMessage('');
+  }, [activeRoutes.length, form.routeMode, loadingRoutes]);
+
   function clearMessages() {
     setErrorMessage('');
     setSuccessMessage('');
@@ -451,6 +475,10 @@ export default function PublicBookingExperience({
   }
 
   function validateBookingForm(requireCustomerDetails: boolean) {
+    if (!usesCustomRoute && activeRoutes.length === 0) {
+      return 'No saved fare routes are currently available for instant pricing. Please use Custom Route to request a quote.';
+    }
+
     if (!usesCustomRoute && !form.routeId) {
       return 'Please select a route or choose Custom Route.';
     }
@@ -1370,6 +1398,8 @@ function BookingFormView({
   usesCustomRoute: boolean;
   setRouteMode: (mode: RouteMode) => void;
 }) {
+  const hasSavedRoutes = activeRoutes.length > 0;
+
   return (
     <form noValidate onSubmit={submitBooking} className="space-y-4 p-4 md:p-5">
       <section>
@@ -1380,7 +1410,15 @@ function BookingFormView({
         />
 
         <div className="mt-3 grid gap-3 md:grid-cols-4">
-          {!usesCustomRoute ? (
+          {!hasSavedRoutes ? (
+            <button
+              type="button"
+              disabled
+              className={`${modeButtonClass(false)} cursor-not-allowed opacity-65`}
+            >
+              Saved routes unavailable
+            </button>
+          ) : !usesCustomRoute ? (
             <RoutePicker
               routes={activeRoutes}
               selectedRoute={selectedRoute}
@@ -1392,7 +1430,9 @@ function BookingFormView({
               type="button"
               onClick={() => setRouteMode('SAVED_ROUTE')}
               className={modeButtonClass(false)}
-            >Popular Routes ▾</button>
+            >
+              Saved Routes
+            </button>
           )}
 
           <button
@@ -1419,6 +1459,13 @@ function BookingFormView({
             Round Trip
           </button>
         </div>
+
+        {!hasSavedRoutes && !loadingRoutes && (
+          <p className="mt-3 rounded-2xl border border-white/10 bg-white/[0.04] px-4 py-3 text-xs font-medium leading-6 text-neutral-300">
+            No saved fare routes are currently available for instant pricing.
+            Please use Custom Route to request a quote.
+          </p>
+        )}
 
         {usesCustomRoute && (
           <p className="mt-3 text-xs font-medium text-neutral-400">
@@ -1696,7 +1743,7 @@ function RoutePicker({
             ? selectedRoute.name
             : loadingRoutes
               ? 'Loading routes...'
-              : 'Popular Routes'}
+              : 'Saved Routes'}
         </span>
 
         <span
@@ -1712,7 +1759,8 @@ function RoutePicker({
         <div className="absolute z-50 mt-2 max-h-72 w-full overflow-auto rounded-2xl border border-white/10 bg-[#0c0c0d]/95 p-2 shadow-[0_24px_80px_rgba(0,0,0,0.55)] backdrop-blur-2xl">
           {routes.length === 0 && (
             <div className="rounded-xl px-3 py-3 text-sm text-neutral-400">
-              No active routes available.
+              No saved fare routes are currently available for instant pricing.
+              Please use Custom Route to request a quote.
             </div>
           )}
 
