@@ -1,10 +1,13 @@
 ﻿import { Body, Controller, Delete, Get, Param, Patch, Post } from '@nestjs/common';
 import { BookingStatus } from '@prisma/client';
+import { UseGuards } from '@nestjs/common';
+import { AdminAuthGuard } from '../auth/admin-auth.guard';
 import { BookingsService } from './bookings.service';
 import { CreateBookingDto } from './dto/create-booking.dto';
 import { UpdateBookingDto } from './dto/update-booking.dto';
 
 @Controller('bookings')
+@UseGuards(AdminAuthGuard)
 export class BookingsController {
   constructor(private readonly bookingsService: BookingsService) {}
 

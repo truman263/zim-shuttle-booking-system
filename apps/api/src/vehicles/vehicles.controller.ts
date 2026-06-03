@@ -1,9 +1,12 @@
 import { Body, Controller, Get, Param, Patch, Post } from '@nestjs/common';
 import { VehiclesService } from './vehicles.service';
+import { UseGuards } from '@nestjs/common';
+import { AdminAuthGuard } from '../auth/admin-auth.guard';
 import { CreateVehicleDto } from './dto/create-vehicle.dto';
 import { UpdateVehicleDto } from './dto/update-vehicle.dto';
 
 @Controller('vehicles')
+@UseGuards(AdminAuthGuard)
 export class VehiclesController {
   constructor(private readonly vehiclesService: VehiclesService) {}
 

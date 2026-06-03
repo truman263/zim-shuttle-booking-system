@@ -1,8 +1,11 @@
 import { Body, Controller, Get, Param, Post } from '@nestjs/common';
 import { CustomersService } from './customers.service';
+import { UseGuards } from '@nestjs/common';
+import { AdminAuthGuard } from '../auth/admin-auth.guard';
 import { CreateCustomerDto } from './dto/create-customer.dto';
 
 @Controller('customers')
+@UseGuards(AdminAuthGuard)
 export class CustomersController {
   constructor(private readonly customersService: CustomersService) {}
 

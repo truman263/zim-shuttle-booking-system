@@ -275,7 +275,9 @@ export default function PublicBookingExperience({
     async function fetchRoutes() {
       try {
         setLoadingRoutes(true);
-        const routesData = await apiGet<RouteRecord[] | RouteRecord>('/routes');
+        const routesData = await apiGet<RouteRecord[] | RouteRecord>(
+          '/public-routes',
+        );
         const routeList = Array.isArray(routesData) ? routesData : [routesData];
         setRoutes(routeList);
       } catch (error) {

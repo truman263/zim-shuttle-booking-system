@@ -2,10 +2,13 @@ export const API_BASE_URL =
   process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
 
 export async function apiGet<T>(path: string): Promise<T> {
-  const response = await fetch(`${API_BASE_URL}${path}`);
+  const response = await fetch(`${API_BASE_URL}${path}`, {
+    credentials: 'include',
+  });
 
   if (!response.ok) {
-    throw new Error(`Failed to fetch ${path}`);
+    const error = await response.json().catch(() => null);
+    throw new Error(error?.message || `Failed to fetch ${path}`);
   }
 
   return response.json();
@@ -20,6 +23,7 @@ export async function apiPost<T>(
     headers: {
       'Content-Type': 'application/json',
     },
+    credentials: 'include',
     body: JSON.stringify(body),
   });
 
@@ -40,6 +44,7 @@ export async function apiPatch<T>(
     headers: {
       'Content-Type': 'application/json',
     },
+    credentials: 'include',
     body: JSON.stringify(body),
   });
 
@@ -54,6 +59,7 @@ export async function apiPatch<T>(
 export async function apiDelete<T>(path: string): Promise<T> {
   const response = await fetch(`${API_BASE_URL}${path}`, {
     method: 'DELETE',
+    credentials: 'include',
   });
 
   if (!response.ok) {

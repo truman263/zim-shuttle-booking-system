@@ -1,4 +1,9 @@
+'use client';
+
 import Link from 'next/link';
+import { usePathname, useRouter } from 'next/navigation';
+import { ReactNode, useEffect, useState } from 'react';
+import { apiGet, apiPost } from '@/lib/api';
 
 const navigationItems = [
   { name: 'Overview', href: '/dashboard' },
@@ -11,11 +16,63 @@ const navigationItems = [
   { name: 'Payments', href: '/dashboard/payments' },
 ];
 
-export default function DashboardLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+type AdminUser = {
+  id: string;
+  fullName: string;
+  email: string;
+  role: string;
+};
+
+export default function DashboardLayout({ children }: { children: ReactNode }) {
+  const router = useRouter();
+  const pathname = usePathname();
+  const [adminUser, setAdminUser] = useState<AdminUser | null>(null);
+  const [checkingSession, setCheckingSession] = useState(true);
+
+  useEffect(() => {
+    let mounted = true;
+
+    async function checkSession() {
+      try {
+        const user = await apiGet<AdminUser>('/auth/me');
+
+        if (mounted) {
+          setAdminUser(user);
+        }
+      } catch {
+        if (mounted) {
+          router.replace('/admin-login');
+        }
+      } finally {
+        if (mounted) {
+          setCheckingSession(false);
+        }
+      }
+    }
+
+    void checkSession();
+
+    return () => {
+      mounted = false;
+    };
+  }, [router, pathname]);
+
+  async function logout() {
+    await apiPost('/auth/logout', {});
+    setAdminUser(null);
+    router.replace('/admin-login');
+  }
+
+  if (checkingSession || !adminUser) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-black px-6 text-white">
+        <div className="rounded-3xl border border-white/10 bg-white/[0.04] p-6 text-sm text-neutral-400">
+          Checking admin access...
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-black text-white">
       <aside className="fixed left-0 top-0 hidden h-screen w-72 border-r border-white/10 bg-[#050505] px-6 py-6 lg:block">
@@ -23,9 +80,7 @@ export default function DashboardLayout({
           <p className="text-xs uppercase tracking-[0.45em] text-[#B8B8B8]">
             LadyBird
           </p>
-          <h1 className="mt-3 text-2xl font-semibold tracking-tight">
-            Admin
-          </h1>
+          <h1 className="mt-3 text-2xl font-semibold tracking-tight">Admin</h1>
           <p className="mt-2 text-sm text-neutral-500">
             Shuttle operations system
           </p>
@@ -71,8 +126,15 @@ export default function DashboardLayout({
                 Trial
               </span>
               <span className="rounded-full border border-white/10 px-4 py-2 text-xs text-neutral-400">
-                Admin
+                {adminUser.fullName}
               </span>
+              <button
+                type="button"
+                onClick={logout}
+                className="rounded-full border border-white/10 px-4 py-2 text-xs text-neutral-300 transition hover:border-white/25 hover:text-white"
+              >
+                Logout
+              </button>
             </div>
           </div>
         </header>

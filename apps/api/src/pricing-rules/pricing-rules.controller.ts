@@ -1,9 +1,12 @@
 import { Body, Controller, Get, Param, Patch, Post } from '@nestjs/common';
 import { PricingRulesService } from './pricing-rules.service';
+import { UseGuards } from '@nestjs/common';
+import { AdminAuthGuard } from '../auth/admin-auth.guard';
 import { CreatePricingRuleDto } from './dto/create-pricing-rule.dto';
 import { UpdatePricingRuleDto } from './dto/update-pricing-rule.dto';
 
 @Controller('pricing-rules')
+@UseGuards(AdminAuthGuard)
 export class PricingRulesController {
   constructor(private readonly pricingRulesService: PricingRulesService) {}
 
