@@ -7,9 +7,9 @@ import { AuthService } from './auth.service';
 
 @Global()
 @Module({
-  imports: [JwtModule.register({}), PrismaModule],
+  imports: [JwtModule.register({ global: true }), PrismaModule],
   controllers: [AuthController],
   providers: [AuthService, AdminAuthGuard],
-  exports: [AuthService, AdminAuthGuard],
+  exports: [AuthService, AdminAuthGuard, JwtModule],
 })
 export class AuthModule {}

@@ -22,10 +22,10 @@ import { ZonesModule } from './zones/zones.module';
 
 @Module({
   imports: [
+    AuthModule,
     SmartRoutesModule,
     NotificationsModule,
     PublicPaymentsModule,
-    AuthModule,
     PrismaModule,
     CompaniesModule,
     RoutesModule,
