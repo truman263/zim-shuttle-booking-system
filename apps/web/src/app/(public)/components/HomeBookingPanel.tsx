@@ -21,8 +21,8 @@ function PanelTab({
       onClick={onClick}
       className={
         active
-          ? "homepage-panel-control inline-flex h-11 items-center justify-center rounded-full bg-white px-5 text-sm font-semibold text-black shadow-[0_14px_45px_rgba(255,255,255,0.08)] transition duration-300 hover:-translate-y-0.5 hover:bg-neutral-200"
-          : "homepage-panel-control inline-flex h-11 items-center justify-center rounded-full border border-white/10 bg-black/25 px-5 text-sm font-semibold text-neutral-400 transition duration-300 hover:-translate-y-0.5 hover:border-white/25 hover:bg-white/[0.04] hover:text-white"
+          ? "homepage-panel-control inline-flex h-11 items-center justify-center rounded-full bg-white px-3 text-xs font-semibold text-black shadow-[0_14px_45px_rgba(255,255,255,0.08)] transition duration-300 hover:-translate-y-0.5 hover:bg-neutral-200 sm:px-5 sm:text-sm"
+          : "homepage-panel-control inline-flex h-11 items-center justify-center rounded-full border border-white/10 bg-black/25 px-3 text-xs font-semibold text-neutral-400 transition duration-300 hover:-translate-y-0.5 hover:border-white/25 hover:bg-white/[0.04] hover:text-white sm:px-5 sm:text-sm"
       }
     >
       {children}
@@ -107,7 +107,7 @@ export function HomeBookingPanel() {
 
                   <Link
                     href={trackingHref}
-                    className="homepage-panel-cta inline-flex h-12 items-center justify-center rounded-full bg-white px-8 text-sm font-semibold text-black transition hover:bg-neutral-200"
+                    className="homepage-panel-cta inline-flex h-12 w-full items-center justify-center rounded-full bg-white px-8 text-sm font-semibold text-black transition hover:bg-neutral-200"
                   >
                     Track
                   </Link>

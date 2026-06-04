@@ -73,14 +73,14 @@ export default function AdminLoginPage() {
 
   return (
     <main
-      className="min-h-screen bg-[#030303] px-5 py-10 text-white sm:px-6"
+      className="min-h-dvh bg-[#030303] px-4 py-8 text-white sm:px-6 sm:py-10"
       style={{
         fontFamily:
           "Inter, Montserrat, Poppins, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
       }}
     >
-      <section className="mx-auto flex min-h-[calc(100vh-5rem)] max-w-6xl items-center justify-center">
-        <div className="grid w-full overflow-hidden rounded-[34px] border border-white/10 bg-white/[0.035] shadow-[0_30px_120px_rgba(0,0,0,0.55)] backdrop-blur-xl lg:grid-cols-[0.95fr_1.05fr]">
+      <section className="mx-auto flex min-h-[calc(100dvh-4rem)] max-w-6xl items-center justify-center">
+        <div className="grid w-full overflow-hidden rounded-[26px] border border-white/10 bg-white/[0.035] shadow-[0_30px_120px_rgba(0,0,0,0.55)] backdrop-blur-xl sm:rounded-[34px] lg:grid-cols-[0.95fr_1.05fr]">
           <div className="hidden border-r border-white/10 bg-black/40 p-8 lg:block">
             <Image
               src="/brand/ladybird-logo.png"

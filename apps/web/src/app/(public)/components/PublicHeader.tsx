@@ -17,11 +17,11 @@ export function PublicHeader() {
 
   return (
     <header className="sticky top-0 z-50 border-b border-white/10 bg-black/80 backdrop-blur-2xl">
-      <div className="mx-auto flex h-20 max-w-7xl items-center justify-between gap-5 px-5 sm:px-6">
+      <div className="mx-auto flex h-20 max-w-7xl items-center justify-between gap-2 px-4 sm:gap-5 sm:px-6">
         <Link
           href="/"
           aria-label="LadyBird Shuttle Services home"
-          className="flex min-w-[160px] items-center transition duration-500 hover:scale-[1.012] hover:opacity-95 sm:min-w-[200px] lg:min-w-[230px]"
+          className="flex min-w-[132px] items-center transition duration-500 hover:scale-[1.012] hover:opacity-95 sm:min-w-[200px] lg:min-w-[230px]"
         >
           <Image
             src="/brand/ladybird-logo.png"
@@ -29,7 +29,7 @@ export function PublicHeader() {
             width={220}
             height={54}
             priority
-            className="h-auto w-[158px] object-contain sm:w-[190px] lg:w-[210px]"
+            className="h-auto w-[132px] object-contain sm:w-[190px] lg:w-[210px]"
           />
         </Link>
 
@@ -45,7 +45,7 @@ export function PublicHeader() {
           ))}
         </nav>
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 sm:gap-3">
           <Link
             href="/booking/track"
             className="public-header-action hidden rounded-full border border-white/15 px-5 py-2.5 text-sm font-semibold text-white transition duration-300 hover:-translate-y-0.5 hover:border-white/30 hover:bg-white/5 sm:inline-flex"
@@ -55,7 +55,7 @@ export function PublicHeader() {
 
           <Link
             href="/booking"
-            className="public-header-action rounded-full bg-white px-5 py-2.5 text-sm font-semibold text-black transition duration-300 hover:-translate-y-0.5 hover:bg-neutral-200 sm:px-6"
+            className="public-header-action rounded-full bg-white px-4 py-2.5 text-sm font-semibold text-black transition duration-300 hover:-translate-y-0.5 hover:bg-neutral-200 sm:px-6"
           >
             Book Now
           </Link>

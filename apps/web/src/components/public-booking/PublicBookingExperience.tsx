@@ -830,7 +830,7 @@ export default function PublicBookingExperience({
   const hasResult = estimate || bookingResponse || trackedBooking;
 
   return (
-    <main data-view-variant={variant} className="relative min-h-screen overflow-hidden bg-[#030303] text-white">
+    <main data-view-variant={variant} className="relative min-h-dvh overflow-hidden bg-[#030303] text-white">
       <div
         className="booking-bg pointer-events-none absolute inset-0 bg-cover bg-right-top bg-no-repeat opacity-72"
         style={{
@@ -850,7 +850,7 @@ export default function PublicBookingExperience({
       <div className="animated-orb orb-two" />
       <div className="animated-orb orb-three" />
 
-      <section className="relative border-b border-white/10 px-5 py-8 md:px-8 md:py-10">
+      <section className="relative border-b border-white/10 px-4 py-8 sm:px-5 md:px-8 md:py-10">
         <div className="mx-auto max-w-6xl">
           <p className="text-xs uppercase tracking-[0.4em] text-neutral-500">
             LadyBird Shuttle Services
@@ -858,7 +858,7 @@ export default function PublicBookingExperience({
 
           <div className="mt-5 grid gap-6 lg:grid-cols-[1fr_440px] lg:items-end">
             <div>
-              <h1 className="max-w-3xl text-4xl font-semibold tracking-tight md:text-6xl">
+              <h1 className="max-w-3xl text-[2.45rem] font-semibold leading-[1.02] tracking-tight sm:text-4xl md:text-6xl">
                 Book and track your shuttle.
               </h1>
 
@@ -897,10 +897,10 @@ export default function PublicBookingExperience({
         </div>
       </section>
 
-      <section className="relative px-5 py-6 md:px-8">
+      <section className="relative px-4 py-6 sm:px-5 md:px-8">
         <div className="mx-auto max-w-6xl">
           <section className="premium-glass glass-card-motion overflow-visible rounded-[28px] border border-white/10 text-white shadow-[0_28px_90px_rgba(0,0,0,0.5)]">
-            <div className="border-b border-white/10 px-4 py-3 md:px-5">
+            <div className="border-b border-white/10 px-4 py-3 sm:px-5">
               <h2 className="text-xl font-semibold">
                 {viewMode === 'BOOK' ? 'Booking Details' : 'Track Booking'}
               </h2>
@@ -1404,7 +1404,7 @@ function BookingFormView({
   const hasSavedRoutes = activeRoutes.length > 0;
 
   return (
-    <form noValidate onSubmit={submitBooking} className="space-y-4 p-4 md:p-5">
+    <form noValidate onSubmit={submitBooking} className="space-y-4 p-4 sm:p-5">
       <section>
         <SectionTitle
           number="01"
@@ -1479,8 +1479,8 @@ function BookingFormView({
         {!usesCustomRoute && selectedRoute && (
           <div className="mt-4 rounded-2xl border border-white/10 bg-white/[0.045] p-4 backdrop-blur-xl">
             <div className="flex flex-col justify-between gap-3 md:flex-row md:items-center">
-              <div>
-                <p className="font-semibold text-white">{selectedRoute.name}</p>
+              <div className="min-w-0">
+                <p className="break-words font-semibold text-white">{selectedRoute.name}</p>
                 <p className="mt-1 text-sm text-neutral-400">
                   {selectedRoute.pickupCity} → {selectedRoute.destinationCity}
                 </p>
@@ -1687,7 +1687,7 @@ function BookingFormView({
           type="button"
           onClick={estimatePrice}
           disabled={estimating}
-          className="rounded-full border border-white/20 bg-white/[0.03] px-5 py-2.5 text-xs font-semibold text-white transition hover:border-white/35 hover:bg-white hover:text-black disabled:cursor-not-allowed disabled:opacity-50"
+          className="rounded-full border border-white/20 bg-white/[0.03] px-5 py-3 text-xs font-semibold text-white transition hover:border-white/35 hover:bg-white hover:text-black disabled:cursor-not-allowed disabled:opacity-50"
         >
           {estimating ? 'Calculating...' : 'Get Estimate'}
         </button>
@@ -1695,7 +1695,7 @@ function BookingFormView({
         <button
           type="submit"
           disabled={submitting}
-          className="rounded-full bg-white px-5 py-2.5 text-xs font-semibold text-black transition hover:bg-neutral-300 disabled:cursor-not-allowed disabled:opacity-50"
+          className="rounded-full bg-white px-5 py-3 text-xs font-semibold text-black transition hover:bg-neutral-300 disabled:cursor-not-allowed disabled:opacity-50"
         >
           {submitting ? 'Submitting...' : 'Submit Booking'}
         </button>
@@ -1781,11 +1781,11 @@ function RoutePicker({
                   : 'hover:bg-white/[0.06]'
               }`}
             >
-              <span className="block text-sm font-semibold text-white">
+              <span className="block break-words text-sm font-semibold text-white">
                 {route.name}
               </span>
 
-              <span className="mt-1 block text-xs text-neutral-400">
+              <span className="mt-1 block break-words text-xs text-neutral-400">
                 {route.pickupCity} → {route.destinationCity}
               </span>
             </button>
@@ -1808,7 +1808,7 @@ function TrackFormView({
   trackBooking: (event: FormEvent<HTMLFormElement>) => void;
 }) {
   return (
-    <form noValidate onSubmit={trackBooking} className="space-y-6 p-5 md:p-6">
+    <form noValidate onSubmit={trackBooking} className="space-y-6 p-4 sm:p-5 md:p-6">
       <SectionTitle
         number="01"
         title="Booking reference"
@@ -1827,7 +1827,7 @@ function TrackFormView({
       <button
         type="submit"
         disabled={tracking}
-        className="w-full rounded-full bg-white px-5 py-2.5 text-xs font-semibold text-black transition hover:bg-neutral-300 disabled:cursor-not-allowed disabled:opacity-50"
+        className="w-full rounded-full bg-white px-5 py-3 text-xs font-semibold text-black transition hover:bg-neutral-300 disabled:cursor-not-allowed disabled:opacity-50"
       >
         {tracking ? 'Checking...' : 'Track Booking'}
       </button>
@@ -1876,7 +1876,7 @@ function SummaryPanel({
             </p>
           </div>
 
-          <p className="rounded-2xl border border-white/10 bg-black/30 px-4 py-4 text-center text-xl font-semibold">
+          <p className="break-words rounded-2xl border border-white/10 bg-black/30 px-4 py-4 text-center text-xl font-semibold">
             {bookingResponse.bookingRef}
           </p>
         </div>
@@ -1897,7 +1897,7 @@ function SummaryPanel({
           </p>
         </div>
 
-        <div className="mt-5 rounded-2xl border border-[#C8A96A]/25 bg-[#C8A96A]/10 p-4 text-sm leading-6 text-[#C8A96A]">
+        <div className="mt-5 rounded-2xl border border-white/10 bg-white/[0.055] p-4 text-sm leading-6 text-neutral-200">
           Booking request received. Payment will be available once our team approves your booking.
         </div>
 
@@ -1943,7 +1943,7 @@ function SummaryPanel({
 
           <div className="mt-3 flex flex-col justify-between gap-4 md:flex-row md:items-center">
             <div>
-              <h3 className="text-2xl font-semibold">
+              <h3 className="break-words text-2xl font-semibold">
                 {trackedBooking.bookingRef}
               </h3>
 
@@ -2012,7 +2012,7 @@ function SummaryPanel({
 
         <div className="border-t border-white/10 p-5">
           {isAwaitingApproval && (
-            <div className="rounded-2xl border border-[#C8A96A]/25 bg-[#C8A96A]/10 p-4 text-sm leading-6 text-[#C8A96A]">
+            <div className="rounded-2xl border border-white/10 bg-white/[0.055] p-4 text-sm leading-6 text-neutral-200">
               <p className="font-semibold text-white">Awaiting approval</p>
               <p className="mt-1">
                 Your booking request is being reviewed. Payment will become available once LadyBird Shuttle Services confirms your booking.
@@ -2199,8 +2199,8 @@ function InfoBlock({ title, lines }: { title: string; lines: string[] }) {
             key={`${title}-${index}`}
             className={
               index === 0
-                ? 'font-semibold text-white'
-                : 'text-sm text-neutral-400'
+                ? 'break-words font-semibold text-white'
+                : 'break-words text-sm text-neutral-400'
             }
           >
             {line}

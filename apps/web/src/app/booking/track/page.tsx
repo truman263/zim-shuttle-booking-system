@@ -122,7 +122,7 @@ export default function TrackBookingPage() {
 
   return (
     <div
-      className="min-h-screen bg-[#030303] text-white"
+      className="min-h-dvh bg-[#030303] text-white"
       style={{
         fontFamily:
           "Inter, Montserrat, Poppins, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
@@ -159,11 +159,11 @@ export default function TrackBookingPage() {
         </section>
 
         <section className="relative px-5 pb-20 sm:px-6">
-          <div className="mx-auto grid max-w-7xl gap-6 lg:grid-cols-[420px_1fr]">
+          <div className="mx-auto grid max-w-7xl gap-6 lg:grid-cols-[420px_minmax(0,1fr)]">
             <form
               noValidate
               onSubmit={trackBooking}
-              className="h-fit rounded-[30px] border border-white/10 bg-white/[0.045] p-5 shadow-[0_28px_90px_rgba(0,0,0,0.45)] backdrop-blur-2xl sm:p-6"
+              className="h-fit rounded-[26px] border border-white/10 bg-white/[0.045] p-5 shadow-[0_28px_90px_rgba(0,0,0,0.45)] backdrop-blur-2xl sm:rounded-[30px] sm:p-6"
             >
               <p className="text-[11px] font-light uppercase tracking-[0.34em] text-neutral-500">
                 Booking Reference
@@ -212,7 +212,7 @@ export default function TrackBookingPage() {
               </Link>
             </form>
 
-            <section className="overflow-hidden rounded-[30px] border border-white/10 bg-white/[0.045] shadow-[0_28px_90px_rgba(0,0,0,0.45)] backdrop-blur-2xl">
+            <section className="min-w-0 overflow-hidden rounded-[26px] border border-white/10 bg-white/[0.045] shadow-[0_28px_90px_rgba(0,0,0,0.45)] backdrop-blur-2xl sm:rounded-[30px]">
               {loading && !booking && (
                 <EmptyState
                   eyebrow="Checking"
@@ -238,7 +238,7 @@ export default function TrackBookingPage() {
                           Booking Found
                         </p>
 
-                        <h2 className="mt-3 text-3xl font-semibold tracking-[-0.035em] text-white sm:text-4xl">
+                        <h2 className="mt-3 break-words text-3xl font-semibold tracking-[-0.035em] text-white sm:text-4xl">
                           {booking.bookingRef}
                         </h2>
 
@@ -394,8 +394,8 @@ function InfoCard({ title, lines }: { title: string; lines: string[] }) {
             key={`${title}-${index}`}
             className={
               index === 0
-                ? 'font-semibold text-white'
-                : 'text-sm font-light text-neutral-400'
+                ? 'break-words font-semibold text-white'
+                : 'break-words text-sm font-light text-neutral-400'
             }
           >
             {line}
