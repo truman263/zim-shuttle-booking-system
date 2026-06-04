@@ -96,41 +96,49 @@ export default function ContactPage() {
     >
       <PublicHeader />
       <main className="overflow-x-hidden">
-        <section className="relative min-h-[620px] overflow-hidden px-5 py-16 sm:px-6 lg:min-h-[700px] lg:py-20">
+        <section className="relative min-h-[650px] overflow-hidden px-7 py-16 sm:min-h-[680px] sm:px-8 sm:py-20 lg:min-h-[700px] lg:px-6 lg:py-20">
+          <Image
+            src="/images/public-site/fleet/contact-hero-mobile.jpg"
+            alt="LadyBird Shuttle Services contact and shuttle booking enquiries"
+            fill
+            priority
+            sizes="100vw"
+            className="object-cover object-[56%_center] lg:hidden"
+          />
           <Image
             src="/images/public-site/corporate-transfer.jpg"
             alt="LadyBird Shuttle Services contact and shuttle booking enquiries"
             fill
             priority
             sizes="100vw"
-            className="object-cover object-center"
+            className="hidden object-cover object-[58%_center] lg:block lg:object-center"
           />
           <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(0,0,0,0.9),rgba(0,0,0,0.66)_46%,rgba(0,0,0,0.48)),radial-gradient(circle_at_68%_35%,rgba(255,255,255,0.13),transparent_34%)]" />
           <div className="absolute inset-x-0 bottom-0 h-44 bg-gradient-to-t from-[#030303] to-transparent" />
 
           <div className="relative mx-auto flex min-h-[500px] max-w-7xl items-center lg:min-h-[560px]">
-            <div className="max-w-4xl">
+            <div className="w-full max-w-4xl">
               <p className="text-[11px] font-medium uppercase tracking-[0.36em] text-white/55">
                 Contact LadyBird
               </p>
-              <h1 className="mt-6 text-4xl font-semibold leading-[0.98] tracking-[-0.055em] text-white sm:text-5xl lg:text-[58px]">
+              <h1 className="mt-6 max-w-[22rem] break-words text-[2.55rem] font-semibold leading-[1.02] tracking-[-0.055em] text-white sm:max-w-3xl sm:text-5xl sm:leading-[0.98] lg:max-w-4xl lg:text-[58px]">
                 Let's arrange the right shuttle journey.
               </h1>
-              <p className="mt-6 max-w-2xl text-sm font-light leading-7 text-white/75 sm:text-base sm:leading-8">
+              <p className="mt-6 max-w-[22rem] text-[15px] font-light leading-8 text-white/78 sm:max-w-2xl sm:text-base">
                 Start with your route, travel date, passenger details and any
                 luggage notes so the team can review your request and guide the
                 next step.
               </p>
-              <div className="mt-8 flex flex-col gap-3 sm:flex-row">
+              <div className="mt-8 flex flex-wrap gap-2.5 sm:gap-3">
                 <Link
                   href="/booking"
-                  className="inline-flex h-12 items-center justify-center rounded-full bg-white px-6 text-sm font-semibold text-black transition duration-300 hover:-translate-y-0.5 hover:bg-neutral-200"
+                  className="inline-flex h-10 items-center justify-center rounded-full bg-white px-4 text-[13px] font-semibold text-black transition duration-300 hover:-translate-y-0.5 hover:bg-neutral-200 sm:h-12 sm:px-6 sm:text-sm"
                 >
                   Book a Shuttle
                 </Link>
                 <Link
                   href="/booking/track"
-                  className="inline-flex h-12 items-center justify-center rounded-full border border-white/15 bg-white/[0.045] px-6 text-sm font-semibold text-white backdrop-blur-2xl transition duration-300 hover:-translate-y-0.5 hover:border-white/30 hover:bg-white/[0.075]"
+                  className="inline-flex h-10 items-center justify-center rounded-full border border-white/15 bg-white/[0.045] px-4 text-[13px] font-semibold text-white backdrop-blur-2xl transition duration-300 hover:-translate-y-0.5 hover:border-white/30 hover:bg-white/[0.075] sm:h-12 sm:px-6 sm:text-sm"
                 >
                   Track Booking
                 </Link>
@@ -171,7 +179,7 @@ export default function ContactPage() {
                   </p>
                   <Link
                     href={card.href}
-                    className="mt-6 inline-flex h-11 items-center justify-center rounded-full bg-neutral-950 px-5 text-sm font-semibold text-white transition duration-300 hover:-translate-y-0.5 hover:bg-neutral-800"
+                    className="mt-6 inline-flex h-10 items-center justify-center rounded-full bg-neutral-950 px-4 text-[13px] font-semibold text-white transition duration-300 hover:-translate-y-0.5 hover:bg-neutral-800 sm:h-11 sm:px-5 sm:text-sm"
                   >
                     {card.cta}
                   </Link>
@@ -351,16 +359,16 @@ export default function ContactPage() {
                   Submit your trip details online and receive a booking
                   reference for follow-up and tracking.
                 </p>
-                <div className="mt-8 flex flex-col justify-center gap-3 sm:flex-row">
+                <div className="mt-8 flex flex-wrap justify-center gap-2.5 sm:gap-3">
                   <Link
                     href="/booking"
-                    className="inline-flex h-12 items-center justify-center rounded-full bg-white px-6 text-sm font-semibold text-black transition duration-300 hover:-translate-y-0.5 hover:bg-neutral-200"
+                    className="inline-flex h-10 items-center justify-center rounded-full bg-white px-4 text-[13px] font-semibold text-black transition duration-300 hover:-translate-y-0.5 hover:bg-neutral-200 sm:h-12 sm:px-6 sm:text-sm"
                   >
                     Book Now
                   </Link>
                   <Link
                     href="/booking/track"
-                    className="inline-flex h-12 items-center justify-center rounded-full border border-white/15 bg-white/[0.045] px-6 text-sm font-semibold text-white transition duration-300 hover:-translate-y-0.5 hover:border-white/30 hover:bg-white/[0.075]"
+                    className="inline-flex h-10 items-center justify-center rounded-full border border-white/15 bg-white/[0.045] px-4 text-[13px] font-semibold text-white transition duration-300 hover:-translate-y-0.5 hover:border-white/30 hover:bg-white/[0.075] sm:h-12 sm:px-6 sm:text-sm"
                   >
                     Track Booking
                   </Link>

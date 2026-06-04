@@ -98,7 +98,9 @@ export function SmartRoutesSection() {
 
     async function fetchRoutes() {
       try {
-        const routesData = await apiGet<RouteRecord[] | RouteRecord>("/routes");
+        const routesData = await apiGet<RouteRecord[] | RouteRecord>(
+          "/public-routes",
+        );
         const activeRoutes = normalizeRoutes(routesData)
           .filter((route) => route.isActive !== false)
           .sort((first, second) => {
@@ -114,7 +116,7 @@ export function SmartRoutesSection() {
         if (mounted) {
           setRoutes([]);
           setMessage(
-            "Saved routes could not be loaded. You can still enter a trip below.",
+            "Enter your route details to request a tailored shuttle quote.",
           );
         }
       }
@@ -126,32 +128,6 @@ export function SmartRoutesSection() {
       mounted = false;
     };
   }, []);
-
-  useEffect(() => {
-    if (!pickup && !destination && routes[0]) {
-      setPickup(routes[0].pickupCity);
-      setDestination(routes[0].destinationCity);
-    }
-  }, [destination, pickup, routes]);
-
-  const locationSuggestions = useMemo(() => {
-    const suggestions = new Map<string, string>();
-
-    routes.forEach((route) => {
-      const pickupKey = normalizeLocation(route.pickupCity);
-      const destinationKey = normalizeLocation(route.destinationCity);
-
-      if (!suggestions.has(pickupKey)) {
-        suggestions.set(pickupKey, route.pickupCity);
-      }
-
-      if (!suggestions.has(destinationKey)) {
-        suggestions.set(destinationKey, route.destinationCity);
-      }
-    });
-
-    return Array.from(suggestions.values());
-  }, [routes]);
 
   const matchingSavedRoute = useMemo(() => {
     const normalizedPickup = normalizeLocation(pickup);
@@ -227,12 +203,13 @@ export function SmartRoutesSection() {
 
       if (!result.distanceKm || !result.durationMinutes) {
         setMessage(
-          "This route can still be submitted for review if distance and ETA are not available yet.",
+          result.message ||
+            "This route will be reviewed manually and quoted by the LadyBird team.",
         );
       }
     } catch {
       setMessage(
-        "Trip details could not be checked right now. You can still continue to booking and submit the route for review.",
+        "This route will be reviewed manually and quoted by the LadyBird team.",
       );
     } finally {
       setCheckingTrip(false);
@@ -273,7 +250,7 @@ export function SmartRoutesSection() {
         </div>
 
         <div className="mt-10 grid gap-6 lg:grid-cols-[0.92fr_1.08fr] lg:items-stretch">
-          <div className="relative min-h-[460px] overflow-hidden rounded-[34px] border border-black/10 bg-neutral-950 p-6 text-white shadow-[0_28px_90px_rgba(0,0,0,0.18)] sm:p-8">
+          <div className="relative order-2 min-h-[460px] overflow-hidden rounded-[34px] border border-black/10 bg-neutral-950 p-6 text-white shadow-[0_28px_90px_rgba(0,0,0,0.18)] sm:p-8 lg:order-1">
             <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_24%_18%,rgba(255,255,255,0.22),transparent_28%),linear-gradient(150deg,rgba(255,255,255,0.12),transparent_44%)]" />
             <svg
               aria-hidden="true"
@@ -321,7 +298,9 @@ export function SmartRoutesSection() {
                           "Route status",
                           previewSource === "saved"
                             ? "Saved LadyBird route"
-                            : preview?.matchedRouteName
+                            : preview?.requiresManualQuote
+                              ? "Manual quote review"
+                              : preview?.matchedRouteName
                               ? "Matched saved corridor"
                               : "Custom route",
                         ],
@@ -368,7 +347,7 @@ export function SmartRoutesSection() {
             </div>
           </div>
 
-          <div className="rounded-[34px] border border-black/10 bg-white/74 p-5 shadow-[0_24px_90px_rgba(0,0,0,0.08)] backdrop-blur-2xl sm:p-7 lg:p-8">
+          <div className="order-1 rounded-[34px] border border-black/10 bg-white/74 p-5 shadow-[0_24px_90px_rgba(0,0,0,0.08)] backdrop-blur-2xl sm:p-7 lg:order-2 lg:p-8">
             <div className="border-b border-black/10 pb-6">
               <p className="text-[11px] font-medium uppercase tracking-[0.32em] text-neutral-500">
                 Route checker
@@ -382,10 +361,9 @@ export function SmartRoutesSection() {
               <label className="grid gap-2 text-sm font-semibold text-neutral-950">
                 Pickup
                 <input
-                  list="ladybird-route-suggestions"
                   value={pickup}
                   onChange={(event) => setPickup(event.target.value)}
-                  placeholder="Example: Harare"
+                  placeholder="Example: Harare Airport"
                   className="h-13 rounded-[22px] border border-black/10 bg-[#FBFBFA] px-5 text-sm font-normal text-neutral-800 outline-none transition placeholder:text-neutral-400 focus:border-black/25 focus:bg-white"
                 />
               </label>
@@ -393,24 +371,17 @@ export function SmartRoutesSection() {
               <label className="grid gap-2 text-sm font-semibold text-neutral-950">
                 Destination
                 <input
-                  list="ladybird-route-suggestions"
                   value={destination}
                   onChange={(event) => setDestination(event.target.value)}
-                  placeholder="Example: Mutare"
+                  placeholder="Example: Harare CBD"
                   className="h-13 rounded-[22px] border border-black/10 bg-[#FBFBFA] px-5 text-sm font-normal text-neutral-800 outline-none transition placeholder:text-neutral-400 focus:border-black/25 focus:bg-white"
                 />
               </label>
 
-              <datalist id="ladybird-route-suggestions">
-                {locationSuggestions.map((location) => (
-                  <option key={location} value={location} />
-                ))}
-              </datalist>
-
               <button
                 type="submit"
                 disabled={checkingTrip}
-                className="routes-premium-cta mt-1 inline-flex h-12 items-center justify-center rounded-full bg-neutral-950 px-6 text-sm font-semibold text-white transition duration-300 hover:-translate-y-0.5 hover:bg-neutral-800 disabled:cursor-not-allowed disabled:opacity-60"
+                className="routes-premium-cta mt-1 inline-flex h-11 items-center justify-center rounded-full bg-neutral-950 px-5 text-[13px] font-semibold text-white transition duration-300 hover:-translate-y-0.5 hover:bg-neutral-800 disabled:cursor-not-allowed disabled:opacity-60 sm:h-12 sm:px-6 sm:text-sm"
               >
                 {checkingTrip ? "Checking route" : "Check trip details"}
               </button>

@@ -833,9 +833,6 @@ export default function PublicBookingExperience({
     <main data-view-variant={variant} className="relative min-h-dvh overflow-hidden bg-[#030303] text-white">
       <div
         className="booking-bg pointer-events-none absolute inset-0 bg-cover bg-right-top bg-no-repeat opacity-72"
-        style={{
-          backgroundImage: "url('/booking-bg.jpg')",
-        }}
       />
 
       <div className="pointer-events-none absolute inset-0 bg-black/38" />
@@ -889,7 +886,7 @@ export default function PublicBookingExperience({
 
               <p className="mt-3 px-2 text-sm leading-6 text-neutral-500">
                 {viewMode === 'BOOK'
-                  ? 'Submit your travel details and receive a booking reference.'
+                  ? 'Submit your trip details through the secure booking form and keep your reference for tracking.'
                   : 'Enter your booking reference to view the latest status.'}
               </p>
             </div>
@@ -975,10 +972,20 @@ export default function PublicBookingExperience({
 
       <style jsx global>{`
         .booking-bg {
+          background-image: url("/booking-bg-desktop.jpg");
+          background-position: right center;
           transform: scale(1.08);
           transform-origin: center;
           animation: backgroundDrift 28s ease-in-out infinite alternate;
           filter: saturate(0.9) contrast(1.08) brightness(0.94);
+        }
+
+        @media (max-width: 768px) {
+          .booking-bg {
+            background-image: url("/booking-bg-mobile.jpg");
+            background-position: center top;
+            transform: scale(1.04);
+          }
         }
 
         .glass-motion-layer {

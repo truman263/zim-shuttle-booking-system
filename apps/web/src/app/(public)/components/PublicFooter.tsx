@@ -92,7 +92,7 @@ export function PublicFooter() {
             <address className="mt-5 grid gap-3 text-sm not-italic text-neutral-400">
               <a
                 href={`mailto:${email}`}
-                className="transition hover:text-white"
+                className="break-words transition hover:text-white"
               >
                 {email}
               </a>
@@ -106,7 +106,7 @@ export function PublicFooter() {
                 href={whatsappHref}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="transition hover:text-white"
+                className="break-words transition hover:text-white"
               >
                 WhatsApp {phoneDisplay}
               </a>
@@ -116,7 +116,7 @@ export function PublicFooter() {
 
         <div className="mx-auto mt-10 flex max-w-7xl flex-col gap-3 border-t border-white/10 pt-6 text-xs leading-6 text-neutral-500 lg:flex-row lg:items-center lg:justify-between">
           <p>&copy; {year} All Rights Reserved | LadyBird Shuttle Services</p>
-          <p>
+          <p className="lg:text-right">
             Developed & Powered by{" "}
             <a
               href="https://truman.co.zw"
@@ -124,7 +124,7 @@ export function PublicFooter() {
               rel="noopener noreferrer"
               className="font-medium text-neutral-300 transition hover:text-white"
             >
-              Tirivsdhe Marinda
+              Tirivashe Marinda
             </a>
           </p>
         </div>

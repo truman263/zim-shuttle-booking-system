@@ -140,17 +140,17 @@ export default function TrackBookingPage() {
         <div className="pointer-events-none absolute inset-x-0 top-0 h-[560px] bg-[linear-gradient(180deg,rgba(0,0,0,0.70)_0%,rgba(0,0,0,0.42)_44%,#030303_100%)]" />
         <div className="pointer-events-none absolute left-1/2 top-28 h-72 w-72 -translate-x-1/2 rounded-full bg-white/[0.055] blur-3xl" />
 
-        <section className="relative px-5 pb-12 pt-16 sm:px-6 lg:pb-16 lg:pt-20">
+        <section className="relative px-7 pb-12 pt-14 sm:px-6 sm:pt-16 lg:pb-16 lg:pt-20">
           <div className="mx-auto max-w-7xl">
             <p className="text-[11px] font-light uppercase tracking-[0.42em] text-neutral-500">
               Booking tracking
             </p>
 
-            <h1 className="mt-5 max-w-4xl text-4xl font-semibold leading-[1.02] tracking-[-0.052em] text-white sm:text-5xl lg:text-6xl">
+            <h1 className="mt-5 max-w-[22rem] break-words text-[2.55rem] font-semibold leading-[1.02] tracking-[-0.052em] text-white sm:max-w-4xl sm:text-5xl lg:text-6xl">
               Track your shuttle booking.
             </h1>
 
-            <p className="mt-5 max-w-2xl text-sm font-light leading-8 text-neutral-300/85 sm:text-base">
+            <p className="mt-5 max-w-[22rem] text-[15px] font-light leading-8 text-neutral-300/85 sm:max-w-2xl sm:text-base">
               Enter your booking reference to view trip status, payment state,
               passenger details and assignment updates from LadyBird Shuttle
               Services.

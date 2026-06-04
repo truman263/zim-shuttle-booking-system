@@ -50,7 +50,7 @@ function ArrowLink({
     <Link
       href={href}
       className={[
-        "inline-flex h-12 items-center justify-center rounded-full px-6 text-sm font-semibold transition duration-300 hover:-translate-y-0.5",
+        "inline-flex h-10 items-center justify-center rounded-full px-4 text-[13px] font-semibold transition duration-300 hover:-translate-y-0.5 sm:h-12 sm:px-6 sm:text-sm",
         variant === "dark"
           ? "bg-neutral-950 text-white hover:bg-neutral-800"
           : "bg-white text-black hover:bg-neutral-200",
@@ -64,37 +64,45 @@ function ArrowLink({
 export function FleetPage() {
   return (
     <main className="overflow-x-hidden bg-[#030303] text-white">
-      <section className="relative min-h-[620px] overflow-hidden px-5 py-20 sm:px-6 lg:min-h-[700px] lg:py-24">
+      <section className="relative min-h-[650px] overflow-hidden px-7 py-16 sm:min-h-[680px] sm:px-8 sm:py-20 lg:min-h-[700px] lg:px-6 lg:py-24">
+        <Image
+          src="/images/public-site/fleet/fleet-hero-mobile.jpg"
+          alt="LadyBird shuttle vehicle prepared for private and group travel"
+          fill
+          priority
+          sizes="100vw"
+          className="object-cover object-[52%_center] lg:hidden"
+        />
         <Image
           src="/images/public-site/fleet/fleet-hero.jpg"
           alt="LadyBird shuttle vehicle prepared for private and group travel"
           fill
           priority
           sizes="100vw"
-          className="object-cover object-center"
+          className="hidden object-cover object-[60%_center] lg:block lg:object-center"
         />
         <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(0,0,0,0.86),rgba(0,0,0,0.58)_44%,rgba(0,0,0,0.36)),radial-gradient(circle_at_72%_34%,rgba(255,255,255,0.16),transparent_36%)]" />
         <div className="absolute inset-x-0 bottom-0 h-44 bg-gradient-to-t from-[#030303] to-transparent" />
 
         <div className="relative mx-auto flex min-h-[500px] max-w-7xl items-center lg:min-h-[560px]">
-          <div className="max-w-3xl">
+          <div className="w-full max-w-3xl">
             <p className="text-[11px] font-medium uppercase tracking-[0.36em] text-white/55">
               LadyBird Fleet
             </p>
-            <h1 className="mt-6 text-4xl font-semibold leading-[0.98] tracking-[-0.055em] text-white sm:text-5xl lg:text-6xl">
+            <h1 className="mt-6 max-w-[22rem] break-words text-[2.5rem] font-semibold leading-[1.02] tracking-[-0.055em] text-white sm:max-w-3xl sm:text-5xl sm:leading-[0.98] lg:text-6xl">
               Comfortable vehicles prepared for private and group travel.
             </h1>
-            <p className="mt-6 max-w-2xl text-sm font-light leading-7 text-white/72 sm:text-base sm:leading-8">
+            <p className="mt-6 max-w-[22rem] text-[15px] font-light leading-8 text-white/78 sm:max-w-2xl sm:text-base">
               LadyBird focuses on clean passenger spaces, practical luggage
               consideration and professional vehicle assignment for airport
               transfers, corporate travel, private shuttle hire and custom
               route requests.
             </p>
-            <div className="mt-8 flex flex-col gap-3 sm:flex-row">
+            <div className="mt-8 flex flex-wrap gap-2.5 sm:gap-3">
               <ArrowLink href="/booking" label="Book a Shuttle" />
               <Link
                 href="/services"
-                className="inline-flex h-12 items-center justify-center rounded-full border border-white/15 bg-white/[0.045] px-6 text-sm font-semibold text-white backdrop-blur-2xl transition duration-300 hover:-translate-y-0.5 hover:border-white/30 hover:bg-white/[0.075]"
+                className="inline-flex h-10 items-center justify-center rounded-full border border-white/15 bg-white/[0.045] px-4 text-[13px] font-semibold text-white backdrop-blur-2xl transition duration-300 hover:-translate-y-0.5 hover:border-white/30 hover:bg-white/[0.075] sm:h-12 sm:px-6 sm:text-sm"
               >
                 View Services
               </Link>
@@ -310,11 +318,11 @@ export function FleetPage() {
                 Submit your trip details online and receive a booking reference
                 for follow-up and tracking.
               </p>
-              <div className="mt-8 flex flex-col justify-center gap-3 sm:flex-row">
+              <div className="mt-8 flex flex-wrap justify-center gap-2.5 sm:gap-3">
                 <ArrowLink href="/booking" label="Book Now" />
                 <Link
                   href="/booking/track"
-                  className="inline-flex h-12 items-center justify-center rounded-full border border-white/15 bg-white/[0.045] px-6 text-sm font-semibold text-white transition duration-300 hover:-translate-y-0.5 hover:border-white/30 hover:bg-white/[0.075]"
+                  className="inline-flex h-10 items-center justify-center rounded-full border border-white/15 bg-white/[0.045] px-4 text-[13px] font-semibold text-white transition duration-300 hover:-translate-y-0.5 hover:border-white/30 hover:bg-white/[0.075] sm:h-12 sm:px-6 sm:text-sm"
                 >
                   Track Booking
                 </Link>

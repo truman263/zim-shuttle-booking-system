@@ -61,7 +61,7 @@ export default async function TravelGuideArticle({
     >
       <PublicHeader />
       <main className="overflow-x-hidden">
-        <section className="relative px-5 py-16 sm:px-6 lg:py-20">
+        <section className="relative px-7 py-14 sm:px-8 sm:py-16 lg:px-6 lg:py-20">
           <div className="pointer-events-none absolute inset-x-0 top-0 h-72 bg-[radial-gradient(circle_at_50%_0%,rgba(255,255,255,0.12),transparent_58%)]" />
           <div className="relative mx-auto max-w-4xl border-y border-white/10 py-12">
             <Link
@@ -73,10 +73,10 @@ export default async function TravelGuideArticle({
             <p className="mt-8 text-[11px] font-medium uppercase tracking-[0.34em] text-white/38">
               {post.category}
             </p>
-            <h1 className="mt-5 text-4xl font-semibold leading-[1.02] tracking-[-0.055em] sm:text-5xl lg:text-[56px]">
+            <h1 className="mt-5 max-w-[22rem] break-words text-[2.45rem] font-semibold leading-[1.02] tracking-[-0.055em] sm:max-w-3xl sm:text-5xl lg:max-w-4xl lg:text-[56px]">
               {post.title}
             </h1>
-            <p className="mt-6 max-w-3xl text-sm font-light leading-7 text-white/70 sm:text-base sm:leading-8">
+            <p className="mt-6 max-w-[22rem] text-[15px] font-light leading-8 text-white/72 sm:max-w-3xl sm:text-base">
               {post.intro}
             </p>
             <p className="mt-6 text-sm text-white/38">{post.readTime}</p>

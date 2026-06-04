@@ -2,12 +2,9 @@
 
 export function HomeHero() {
   return (
-    <section className="relative flex min-h-[600px] items-center justify-center overflow-hidden px-5 pb-24 pt-16 text-center sm:min-h-[640px] sm:px-6 sm:pt-20 lg:min-h-[700px] lg:pb-28 lg:pt-14 xl:min-h-[730px]">
+    <section className="relative flex min-h-[650px] items-center justify-center overflow-hidden px-7 pb-28 pt-10 text-left sm:min-h-[680px] sm:px-8 sm:pt-14 lg:min-h-[700px] lg:px-6 lg:pb-28 lg:pt-14 lg:text-center xl:min-h-[730px]">
       <div
         className="homepage-bg-image pointer-events-none absolute inset-0 bg-center bg-no-repeat opacity-88"
-        style={{
-          backgroundImage: "url('/images/public-site/lb-hero-shuttle.jpg')",
-        }}
       />
 
       <div className="pointer-events-none absolute inset-0 bg-black/42" />
@@ -27,14 +24,15 @@ export function HomeHero() {
             "linear-gradient(180deg, rgba(0,0,0,0.72) 0%, rgba(0,0,0,0.18) 42%, rgba(3,3,3,1) 100%)",
         }}
       />
+      <div className="homepage-mobile-readability pointer-events-none absolute inset-0 lg:hidden" />
 
       <div className="homepage-atmosphere" />
       <div className="homepage-light-sweep" />
       <div className="homepage-orb homepage-orb-one" />
       <div className="homepage-orb homepage-orb-two" />
 
-      <div className="relative z-10 mx-auto max-w-5xl -translate-y-14 sm:-translate-y-16 lg:-translate-y-32">
-        <div className="homepage-fade-up mx-auto max-w-4xl overflow-hidden">
+      <div className="relative z-10 mx-auto w-full max-w-5xl -translate-y-10 sm:-translate-y-14 lg:-translate-y-32">
+        <div className="homepage-fade-up w-full max-w-[22rem] overflow-hidden sm:max-w-[34rem] lg:mx-auto lg:max-w-4xl">
           <div className="homepage-service-marquee">
             <div className="homepage-service-track">
               <span>
@@ -47,19 +45,20 @@ export function HomeHero() {
           </div>
         </div>
 
-        <h1 className="homepage-fade-up mx-auto mt-6 max-w-4xl text-4xl font-bold leading-[1.02] tracking-[-0.052em] text-white drop-shadow-[0_18px_46px_rgba(0,0,0,0.52)] sm:text-5xl lg:text-6xl">
+        <h1 className="homepage-fade-up mt-6 max-w-[22rem] break-words text-[2.55rem] font-bold leading-[1.02] tracking-[-0.052em] text-white drop-shadow-[0_18px_46px_rgba(0,0,0,0.52)] sm:max-w-[36rem] sm:text-5xl lg:mx-auto lg:max-w-4xl lg:text-6xl">
           Airport transfers and private shuttle travel across Zimbabwe.
         </h1>
 
-        <p className="homepage-fade-up mx-auto mt-5 max-w-3xl text-sm font-light leading-8 text-neutral-300/85 sm:text-base">
-          We make your journey simple from arrival to destination, with reliable
-          airport transfers, private shuttle hire, corporate transport and
-          city-to-city travel across Zimbabwe.
+        <p className="homepage-fade-up mt-5 max-w-[22rem] text-[15px] font-light leading-8 text-neutral-200/90 sm:max-w-[34rem] sm:text-base lg:mx-auto lg:max-w-3xl lg:text-neutral-300/85">
+          From arrival to destination, LadyBird helps you arrange airport
+          transfers, private shuttle hire, corporate transport and city-to-city
+          travel with clear trip details before you move.
         </p>
       </div>
 
       <style jsx global>{`
         .homepage-bg-image {
+          background-image: url("/images/public-site/lb-hero-shuttle.jpg");
           background-size: min(1420px, 108vw) auto;
           background-position: center 45%;
           transform-origin: 58% 44%;
@@ -213,6 +212,22 @@ export function HomeHero() {
           }
         }
 
+        .homepage-mobile-readability {
+          background:
+            linear-gradient(
+              90deg,
+              rgba(0, 0, 0, 0.82) 0%,
+              rgba(0, 0, 0, 0.48) 54%,
+              rgba(0, 0, 0, 0.64) 100%
+            ),
+            linear-gradient(
+              180deg,
+              rgba(0, 0, 0, 0.52) 0%,
+              transparent 34%,
+              rgba(3, 3, 3, 0.9) 100%
+            );
+        }
+
         @keyframes homepageAtmosphereBreathe {
           from {
             opacity: 0.34;
@@ -257,8 +272,31 @@ export function HomeHero() {
 
         @media (max-width: 768px) {
           .homepage-bg-image {
-            background-size: auto 100%;
-            background-position: center 48%;
+            background-image: url("/images/public-site/fleet/home-hero-mobile.jpg");
+            background-size: cover;
+            background-position: 58% 43%;
+            opacity: 0.96;
+            transform-origin: 58% 43%;
+          }
+
+          .homepage-service-marquee {
+            max-width: 100%;
+            mask-image: linear-gradient(
+              90deg,
+              black,
+              black 78%,
+              transparent
+            );
+          }
+
+          .homepage-service-track {
+            gap: 1.55rem;
+            animation-duration: 30s;
+          }
+
+          .homepage-service-track span {
+            font-size: 10px;
+            letter-spacing: 0.28em;
           }
         }
       `}</style>

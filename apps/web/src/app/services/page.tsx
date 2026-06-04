@@ -74,14 +74,22 @@ export default function ServicesPage() {
       <PublicHeader />
 
       <main className="overflow-x-hidden">
-        <section className="relative min-h-[640px] overflow-hidden px-5 py-24 sm:px-6 lg:py-28">
+        <section className="relative min-h-[660px] overflow-hidden px-7 py-16 sm:min-h-[680px] sm:px-8 sm:py-20 lg:min-h-[640px] lg:px-6 lg:py-28">
+          <Image
+            src="/images/public-site/fleet/services-hero-mobile.jpg"
+            alt="LadyBird Shuttle Services corporate transfer"
+            fill
+            priority
+            sizes="100vw"
+            className="object-cover object-[54%_center] opacity-75 lg:hidden"
+          />
           <Image
             src="/images/public-site/corporate-transfer.jpg"
             alt="LadyBird Shuttle Services corporate transfer"
             fill
             priority
             sizes="100vw"
-            className="services-hero-image object-cover object-center opacity-75"
+            className="services-hero-image hidden object-cover object-[58%_center] opacity-75 lg:block lg:object-center"
           />
           <div className="absolute inset-0 bg-black/62" />
           <div className="services-hero-sweep pointer-events-none absolute inset-[-18%]" />
@@ -93,31 +101,31 @@ export default function ServicesPage() {
             }}
           />
 
-          <div className="relative mx-auto flex min-h-[460px] max-w-7xl items-center">
-            <div className="max-w-4xl">
+          <div className="relative mx-auto flex min-h-[500px] max-w-7xl items-center lg:min-h-[460px]">
+            <div className="w-full max-w-4xl">
               <p className="services-reveal text-[11px] font-medium uppercase tracking-[0.34em] text-neutral-400">
                 LadyBird Shuttle Services
               </p>
-              <h1 className="services-reveal mt-5 max-w-4xl text-4xl font-semibold leading-[1.02] tracking-[-0.05em] text-white sm:text-5xl lg:text-6xl">
+              <h1 className="services-reveal mt-5 max-w-[22rem] break-words text-[2.55rem] font-semibold leading-[1.02] tracking-[-0.05em] text-white sm:max-w-3xl sm:text-5xl lg:max-w-4xl lg:text-6xl">
                 Airport transfers, corporate transport and private shuttle hire
                 across Zimbabwe.
               </h1>
-              <p className="services-reveal mt-6 max-w-2xl text-sm font-light leading-8 text-neutral-300 sm:text-base">
+              <p className="services-reveal mt-6 max-w-[22rem] text-[15px] font-light leading-8 text-neutral-300 sm:max-w-2xl sm:text-base">
                 From Harare airport pickups to corporate travel, private shuttle
                 hire and custom Zimbabwe routes, LadyBird helps customers submit
                 clear trip details and receive confirmation before travel.
               </p>
 
-              <div className="services-reveal mt-8 flex flex-col gap-3 sm:flex-row">
+              <div className="services-reveal mt-8 flex flex-wrap gap-2.5 sm:gap-3">
                 <Link
                   href="/booking"
-                  className="inline-flex h-12 items-center justify-center rounded-full bg-white px-6 text-sm font-semibold text-black transition hover:bg-neutral-200"
+                  className="inline-flex h-10 items-center justify-center rounded-full bg-white px-4 text-[13px] font-semibold text-black transition hover:bg-neutral-200 sm:h-12 sm:px-6 sm:text-sm"
                 >
                   Book a Shuttle
                 </Link>
                 <Link
                   href="/booking/track"
-                  className="inline-flex h-12 items-center justify-center rounded-full border border-white/15 bg-black/25 px-6 text-sm font-semibold text-white backdrop-blur-xl transition hover:border-white/30 hover:bg-white/[0.05]"
+                  className="inline-flex h-10 items-center justify-center rounded-full border border-white/15 bg-black/25 px-4 text-[13px] font-semibold text-white backdrop-blur-xl transition hover:border-white/30 hover:bg-white/[0.05] sm:h-12 sm:px-6 sm:text-sm"
                 >
                   Track Booking
                 </Link>
@@ -286,16 +294,16 @@ export default function ServicesPage() {
                 </p>
               </div>
 
-              <div className="flex flex-col gap-3 sm:flex-row lg:justify-end">
+              <div className="flex flex-wrap gap-2.5 sm:gap-3 lg:justify-end">
                 <Link
                   href="/booking"
-                  className="inline-flex h-12 items-center justify-center rounded-full bg-white px-6 text-sm font-semibold text-black transition hover:bg-neutral-200"
+                  className="inline-flex h-10 items-center justify-center rounded-full bg-white px-4 text-[13px] font-semibold text-black transition hover:bg-neutral-200 sm:h-12 sm:px-6 sm:text-sm"
                 >
                   Book Now
                 </Link>
                 <Link
                   href="/booking/track"
-                  className="inline-flex h-12 items-center justify-center rounded-full border border-white/10 px-6 text-sm font-semibold text-white transition hover:border-white/25 hover:bg-white/[0.045]"
+                  className="inline-flex h-10 items-center justify-center rounded-full border border-white/10 px-4 text-[13px] font-semibold text-white transition hover:border-white/25 hover:bg-white/[0.045] sm:h-12 sm:px-6 sm:text-sm"
                 >
                   Track Booking
                 </Link>

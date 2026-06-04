@@ -35,7 +35,7 @@ export function FleetComfortSection() {
       <div className="pointer-events-none absolute bottom-0 left-[-10%] h-80 w-80 rounded-full bg-white/[0.025] blur-3xl" />
 
       <div className="relative mx-auto grid max-w-7xl gap-6 lg:grid-cols-[0.95fr_1.05fr] lg:items-stretch">
-        <div className="fleet-comfort-image-panel group relative min-h-[320px] overflow-hidden rounded-[34px] border border-white/10 bg-black shadow-[0_28px_90px_rgba(0,0,0,0.42)] sm:min-h-[390px] lg:min-h-full">
+        <div className="fleet-comfort-image-panel group relative order-2 min-h-[320px] overflow-hidden rounded-[34px] border border-white/10 bg-black shadow-[0_28px_90px_rgba(0,0,0,0.42)] sm:min-h-[390px] lg:order-1 lg:min-h-full">
           <Image
             src="/images/public-site/fleet-interior.jpg"
             alt="Clean shuttle interior seating for LadyBird Shuttle Services passengers"
@@ -58,7 +58,7 @@ export function FleetComfortSection() {
           </div>
         </div>
 
-        <div className="rounded-[34px] border border-white/10 bg-white/[0.035] p-5 backdrop-blur-2xl sm:p-7 lg:p-8">
+        <div className="order-1 rounded-[34px] border border-white/10 bg-white/[0.035] p-5 backdrop-blur-2xl sm:p-7 lg:order-2 lg:p-8">
           <p className="text-[11px] font-medium uppercase tracking-[0.34em] text-neutral-500">
             Fleet and Comfort
           </p>
@@ -97,13 +97,13 @@ export function FleetComfortSection() {
           <div className="mt-6 flex flex-col gap-3 sm:flex-row">
             <Link
               href="/booking"
-              className="fleet-comfort-cta inline-flex h-11 items-center justify-center rounded-full bg-white px-5 text-sm font-semibold text-black transition duration-300 hover:-translate-y-0.5 hover:bg-neutral-200"
+              className="fleet-comfort-cta inline-flex h-10 items-center justify-center rounded-full bg-white px-5 text-[13px] font-semibold text-black transition duration-300 hover:-translate-y-0.5 hover:bg-neutral-200 sm:h-11 sm:text-sm"
             >
               Book a Shuttle
             </Link>
             <Link
               href="/services"
-              className="fleet-comfort-cta inline-flex h-11 items-center justify-center rounded-full border border-white/10 bg-white/[0.025] px-5 text-sm font-semibold text-white transition duration-300 hover:-translate-y-0.5 hover:border-white/25 hover:bg-white/[0.05]"
+              className="fleet-comfort-cta inline-flex h-10 items-center justify-center rounded-full border border-white/10 bg-white/[0.025] px-5 text-[13px] font-semibold text-white transition duration-300 hover:-translate-y-0.5 hover:border-white/25 hover:bg-white/[0.05] sm:h-11 sm:text-sm"
             >
               View services
             </Link>

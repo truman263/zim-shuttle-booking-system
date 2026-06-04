@@ -2,47 +2,35 @@
 
 import Link from "next/link";
 import type { ReactNode } from "react";
-import { useState } from "react";
 
-type PanelMode = "BOOK" | "TRACK";
-
-function PanelTab({
-  active,
+function PanelAction({
+  href,
+  primary,
   children,
-  onClick,
 }: {
-  active: boolean;
+  href: string;
+  primary?: boolean;
   children: ReactNode;
-  onClick: () => void;
 }) {
   return (
-    <button
-      type="button"
-      onClick={onClick}
+    <Link
+      href={href}
       className={
-        active
-          ? "homepage-panel-control inline-flex h-11 items-center justify-center rounded-full bg-white px-3 text-xs font-semibold text-black shadow-[0_14px_45px_rgba(255,255,255,0.08)] transition duration-300 hover:-translate-y-0.5 hover:bg-neutral-200 sm:px-5 sm:text-sm"
-          : "homepage-panel-control inline-flex h-11 items-center justify-center rounded-full border border-white/10 bg-black/25 px-3 text-xs font-semibold text-neutral-400 transition duration-300 hover:-translate-y-0.5 hover:border-white/25 hover:bg-white/[0.04] hover:text-white sm:px-5 sm:text-sm"
+        primary
+          ? "homepage-panel-control inline-flex h-10 items-center justify-center rounded-full bg-white px-3 text-xs font-semibold text-black shadow-[0_14px_45px_rgba(255,255,255,0.08)] transition duration-300 hover:-translate-y-0.5 hover:bg-neutral-200 sm:h-11 sm:px-5 sm:text-sm"
+          : "homepage-panel-control inline-flex h-10 items-center justify-center rounded-full border border-white/10 bg-black/25 px-3 text-xs font-semibold text-neutral-300 transition duration-300 hover:-translate-y-0.5 hover:border-white/25 hover:bg-white/[0.04] hover:text-white sm:h-11 sm:px-5 sm:text-sm"
       }
     >
       {children}
-    </button>
+    </Link>
   );
 }
 
 export function HomeBookingPanel() {
-  const [mode, setMode] = useState<PanelMode>("BOOK");
-  const [reference, setReference] = useState("");
-
-  const cleanReference = reference.trim();
-  const trackingHref = cleanReference
-    ? `/booking/track?reference=${encodeURIComponent(cleanReference)}`
-    : "/booking/track";
-
   return (
     <section
       id="book"
-      className="relative z-20 -mt-[14rem] px-5 pb-12 sm:px-6 sm:pb-14 lg:-mt-[16rem] lg:pb-16"
+      className="relative z-20 -mt-[11.5rem] px-4 pb-14 sm:-mt-[13rem] sm:px-6 sm:pb-14 lg:-mt-[16rem] lg:pb-16"
     >
       <div className="mx-auto max-w-2xl">
         <div
@@ -54,66 +42,44 @@ export function HomeBookingPanel() {
         >
           <div className="relative z-10">
             <div className="grid grid-cols-2 gap-2.5">
-              <PanelTab active={mode === "BOOK"} onClick={() => setMode("BOOK")}>
+              <PanelAction href="/booking" primary>
                 Book a Shuttle
-              </PanelTab>
+              </PanelAction>
 
-              <PanelTab active={mode === "TRACK"} onClick={() => setMode("TRACK")}>
+              <PanelAction href="/booking/track">
                 Track Booking
-              </PanelTab>
+              </PanelAction>
             </div>
 
-            {mode === "BOOK" ? (
-              <div>
-                <div className="mt-4 rounded-[24px] border border-white/10 bg-black/25 p-3">
-                  <Link
-                    href="/booking"
-                    className="homepage-panel-surface group grid gap-3 rounded-[20px] px-3 py-2.5 text-left transition duration-500 hover:bg-white/[0.045] sm:grid-cols-[1fr_auto] sm:items-center"
-                  >
-                    <span>
-                      <span className="block text-sm font-semibold text-white">
-                        Start a trip request
-                      </span>
-                      <span className="mt-1 block text-xs font-light leading-5 text-neutral-500">
-                        Open the secure booking page for route, passenger and
-                        travel details.
-                      </span>
-                    </span>
+            <div className="mt-4 rounded-[24px] border border-white/10 bg-black/25 p-3">
+              <Link
+                href="/booking"
+                className="homepage-panel-surface group grid gap-3 rounded-[20px] px-3 py-2.5 text-left transition duration-500 hover:bg-white/[0.045] sm:grid-cols-[1fr_auto] sm:items-center"
+              >
+                <span>
+                  <span className="block text-sm font-semibold text-white">
+                    Start a trip request
+                  </span>
+                  <span className="mt-1 block text-xs font-light leading-5 text-neutral-500">
+                    Submit your route, passenger and travel details through the
+                    secure booking page, then keep your reference for tracking.
+                  </span>
+                </span>
 
-                    <span className="homepage-panel-cta inline-flex h-10 items-center justify-center rounded-full bg-white px-5 text-xs font-semibold text-black transition group-hover:bg-neutral-200">
-                      Open Booking
-                    </span>
-                  </Link>
+                <span className="homepage-panel-cta inline-flex h-10 w-full items-center justify-center rounded-full bg-white px-5 text-xs font-semibold text-black transition group-hover:bg-neutral-200 sm:w-auto">
+                  Open Booking
+                </span>
+              </Link>
 
-                  <div className="homepage-route-line mt-3">
-                    <span className="homepage-route-dot" />
-                  </div>
-
-                  <div className="mt-3 flex items-center justify-center gap-2 text-xs font-light text-neutral-500">
-                    <span className="homepage-live-dot" />
-                    Online booking and tracking
-                  </div>
-                </div>
+              <div className="homepage-route-line mt-3">
+                <span className="homepage-route-dot" />
               </div>
-            ) : (
-              <div>
-                <div className="mx-auto mt-4 grid max-w-xl gap-3 sm:grid-cols-[1fr_auto]">
-                  <input
-                    value={reference}
-                    onChange={(event) => setReference(event.target.value)}
-                    placeholder="Example: LB-20260523-3899"
-                    className="h-12 rounded-full border border-white/10 bg-white/[0.04] px-5 text-center text-sm text-white outline-none transition placeholder:text-neutral-600 focus:border-white/35 focus:bg-white/[0.065] sm:text-left"
-                  />
 
-                  <Link
-                    href={trackingHref}
-                    className="homepage-panel-cta inline-flex h-12 w-full items-center justify-center rounded-full bg-white px-8 text-sm font-semibold text-black transition hover:bg-neutral-200"
-                  >
-                    Track
-                  </Link>
-                </div>
+              <div className="mt-3 flex items-center justify-center gap-2 text-xs font-light text-neutral-500">
+                <span className="homepage-live-dot" />
+                Online booking and tracking
               </div>
-            )}
+            </div>
           </div>
         </div>
       </div>

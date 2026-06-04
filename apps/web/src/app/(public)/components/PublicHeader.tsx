@@ -55,7 +55,7 @@ export function PublicHeader() {
 
           <Link
             href="/booking"
-            className="public-header-action rounded-full bg-white px-4 py-2.5 text-sm font-semibold text-black transition duration-300 hover:-translate-y-0.5 hover:bg-neutral-200 sm:px-6"
+            className="public-header-action inline-flex h-10 items-center rounded-full bg-white px-3.5 text-[13px] font-semibold text-black transition duration-300 hover:-translate-y-0.5 hover:bg-neutral-200 sm:h-auto sm:px-6 sm:py-2.5 sm:text-sm"
           >
             Book Now
           </Link>
@@ -116,14 +116,14 @@ export function PublicHeader() {
             <Link
               href="/booking"
               onClick={() => setMobileOpen(false)}
-              className="inline-flex h-12 items-center justify-center rounded-full bg-white px-5 text-sm font-semibold text-black transition hover:bg-neutral-200"
+              className="inline-flex h-11 items-center justify-center rounded-full bg-white px-4 text-[13px] font-semibold text-black transition hover:bg-neutral-200 sm:h-12 sm:px-5 sm:text-sm"
             >
               Book Now
             </Link>
             <Link
               href="/booking/track"
               onClick={() => setMobileOpen(false)}
-              className="inline-flex h-12 items-center justify-center rounded-full border border-white/10 bg-white/[0.035] px-5 text-sm font-semibold text-white transition hover:border-white/25 hover:bg-white/[0.06]"
+              className="inline-flex h-11 items-center justify-center rounded-full border border-white/10 bg-white/[0.035] px-4 text-[13px] font-semibold text-white transition hover:border-white/25 hover:bg-white/[0.06] sm:h-12 sm:px-5 sm:text-sm"
             >
               Track Booking
             </Link>

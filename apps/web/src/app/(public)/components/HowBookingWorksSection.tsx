@@ -55,17 +55,17 @@ export function HowBookingWorksSection() {
             {bookingSteps.map((step) => (
               <article
                 key={step.number}
-                className="booking-step-card group relative overflow-hidden rounded-[30px] border border-white/55 bg-neutral-950/[0.08] p-6 shadow-[0_22px_80px_rgba(0,0,0,0.1)] backdrop-blur-2xl transition duration-500 hover:-translate-y-1 hover:border-white/80 hover:bg-neutral-950/[0.11] sm:p-7"
+                className="booking-step-card group relative overflow-hidden rounded-[30px] border border-white/55 bg-neutral-950/[0.08] p-5 shadow-[0_22px_80px_rgba(0,0,0,0.1)] backdrop-blur-2xl transition duration-500 hover:-translate-y-1 hover:border-white/80 hover:bg-neutral-950/[0.11] sm:p-6 lg:p-7"
               >
                 <div className="booking-step-glass pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_18%_0%,rgba(255,255,255,0.72),transparent_34%),linear-gradient(135deg,rgba(255,255,255,0.62),rgba(255,255,255,0.08)_48%,rgba(0,0,0,0.04))]" />
                 <div className="pointer-events-none absolute inset-x-6 top-0 h-px bg-gradient-to-r from-transparent via-white/80 to-transparent" />
                 <span className="booking-step-corner pointer-events-none absolute right-6 top-6 h-10 w-10 rounded-full border border-white/45" />
                 <div className="relative z-10">
-                  <div className="booking-step-number relative grid h-20 w-20 place-items-center rounded-full border border-white/15 bg-neutral-950 text-sm font-semibold text-white shadow-[0_18px_45px_rgba(0,0,0,0.18)]">
+                  <div className="booking-step-number relative grid h-14 w-14 place-items-center rounded-full border border-white/15 bg-neutral-950 text-xs font-semibold text-white shadow-[0_18px_45px_rgba(0,0,0,0.18)] sm:h-16 sm:w-16 lg:h-20 lg:w-20 lg:text-sm">
                     {step.number}
                   </div>
 
-                  <h3 className="mt-8 text-xl font-semibold tracking-[-0.02em] text-neutral-950">
+                  <h3 className="mt-6 text-lg font-semibold tracking-[-0.02em] text-neutral-950 sm:text-xl lg:mt-8">
                     {step.title}
                   </h3>
                   <p className="mt-3 text-sm font-normal leading-7 text-neutral-600">
@@ -80,13 +80,13 @@ export function HowBookingWorksSection() {
         <div className="mt-10 flex flex-col items-center justify-center gap-3 sm:flex-row">
           <Link
             href="/booking"
-            className="booking-primary-cta inline-flex h-12 items-center justify-center rounded-full bg-neutral-950 px-6 text-sm font-semibold text-white transition hover:bg-neutral-800"
+            className="booking-primary-cta inline-flex h-10 items-center justify-center rounded-full bg-neutral-950 px-5 text-[13px] font-semibold text-white transition hover:bg-neutral-800 sm:h-11 sm:text-sm lg:h-12 lg:px-6"
           >
             Start Booking
           </Link>
           <Link
             href="/booking/track"
-            className="inline-flex h-12 items-center justify-center rounded-full border border-black/10 bg-white/60 px-6 text-sm font-semibold text-neutral-950 transition hover:border-black/20 hover:bg-white"
+            className="inline-flex h-10 items-center justify-center rounded-full border border-black/10 bg-white/60 px-5 text-[13px] font-semibold text-neutral-950 transition hover:border-black/20 hover:bg-white sm:h-11 sm:text-sm lg:h-12 lg:px-6"
           >
             Track Booking
           </Link>
