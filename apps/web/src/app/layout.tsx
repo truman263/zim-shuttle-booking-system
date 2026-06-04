@@ -6,7 +6,7 @@ export const metadata: Metadata = {
   description:
     "Book Harare airport transfers, private shuttle hire, corporate transport and long-distance shuttle services across Zimbabwe with LadyBird Shuttle Services.",
   icons: {
-    icon: "/brand/ladybird-favicon.ico",
+    icon: "/brand/ladybird-favicon.svg",
   },
 };
 
