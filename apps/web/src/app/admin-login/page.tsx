@@ -59,6 +59,16 @@ export default function AdminLoginPage() {
         email: email.trim(),
         password,
       });
+
+      try {
+        await apiGet<AdminUser>('/auth/me');
+      } catch {
+        setErrorMessage(
+          'Login succeeded but the session could not be saved. Please refresh and try again, or contact support.',
+        );
+        return;
+      }
+
       router.replace('/dashboard');
     } catch (error) {
       setErrorMessage(
