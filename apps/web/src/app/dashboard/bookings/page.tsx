@@ -1307,7 +1307,7 @@ export default function BookingsPage() {
           <p className="text-xs uppercase tracking-[0.35em] text-neutral-500">
             Bookings
           </p>
-          <h1 className="mt-3 text-4xl font-semibold tracking-tight">
+          <h1 className="mt-3 text-3xl font-semibold tracking-tight sm:text-4xl">
             Bookings Management
           </h1>
           <p className="mt-3 max-w-2xl text-sm leading-6 text-neutral-400">
@@ -2580,7 +2580,204 @@ function BookingsTable({
         </div>
       </div>
 
-      <div className="overflow-x-auto">
+      <div className="grid gap-3 p-3 lg:hidden">
+        {bookings.map((booking) => {
+          const isFinalStatus =
+            booking.status === 'COMPLETED' ||
+            booking.status === 'CANCELLED' ||
+            booking.status === 'NO_SHOW';
+
+          const canConfirm = booking.status === 'PENDING';
+          const canStartTrip = booking.status === 'CONFIRMED';
+          const canMarkCompleted = booking.status === 'IN_PROGRESS';
+          const canCancel =
+            booking.status === 'PENDING' ||
+            booking.status === 'CONFIRMED' ||
+            booking.status === 'IN_PROGRESS';
+
+          const latestTripAction = booking.tripActionLogs?.[0];
+          const isRoundTrip = booking.tripDirection === 'ROUND_TRIP';
+
+          return (
+            <article
+              key={booking.id}
+              className="rounded-[26px] border border-white/10 bg-black/25 p-4"
+            >
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <p className="break-words text-[11px] font-semibold uppercase tracking-[0.16em] text-neutral-300">
+                    {booking.bookingRef}
+                  </p>
+                  <h3 className="mt-2 text-base font-semibold leading-6 text-white">
+                    {booking.customer?.fullName ?? 'Unknown Customer'}
+                  </h3>
+                  <p className="mt-1 text-sm text-neutral-500">
+                    {booking.customer?.phone ?? 'No phone'}
+                  </p>
+                </div>
+                <StatusBadge status={booking.status} />
+              </div>
+
+              <div className="mt-4 rounded-2xl border border-white/10 bg-white/[0.03] p-3">
+                <p className="font-semibold leading-5 text-white">
+                  {booking.route?.name ?? 'Custom trip'}
+                </p>
+                <p className="mt-2 text-sm leading-6 text-neutral-400">
+                  {booking.pickupLocation} → {booking.destination}
+                </p>
+                <div className="mt-3 flex flex-wrap gap-2">
+                  <MiniBadge
+                    label={isRoundTrip ? 'Round trip' : 'One-way'}
+                    tone="neutral"
+                  />
+                  <MiniBadge
+                    label={
+                      booking.customTripType ||
+                      booking.tripType.replaceAll('_', ' ')
+                    }
+                    tone="neutral"
+                  />
+                </div>
+              </div>
+
+              <div className="mt-4 grid gap-3 text-sm sm:grid-cols-2">
+                <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-3">
+                  <p className="text-[10px] uppercase tracking-[0.18em] text-neutral-600">
+                    Schedule
+                  </p>
+                  <p className="mt-1 font-semibold leading-5 text-white">
+                    {new Date(booking.pickupDate).toLocaleString()}
+                  </p>
+                  {isRoundTrip && (
+                    <p className="mt-1 leading-5 text-neutral-500">
+                      Return:{' '}
+                      {booking.returnDate
+                        ? new Date(booking.returnDate).toLocaleString()
+                        : 'Not set'}
+                    </p>
+                  )}
+                </div>
+
+                <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-3">
+                  <p className="text-[10px] uppercase tracking-[0.18em] text-neutral-600">
+                    Assignment
+                  </p>
+                  <p className="mt-1 font-semibold leading-5 text-white">
+                    {booking.driver?.fullName ?? 'Driver not assigned'}
+                  </p>
+                  <p className="mt-1 leading-5 text-neutral-500">
+                    {booking.vehicle
+                      ? `${booking.vehicle.name} · ${booking.vehicle.registrationNo}`
+                      : 'Vehicle not assigned'}
+                  </p>
+                </div>
+              </div>
+
+              {latestTripAction && (
+                <div className="mt-3 rounded-2xl border border-white/10 bg-white/[0.03] p-3">
+                  <p className="text-[10px] uppercase tracking-[0.18em] text-neutral-600">
+                    Driver action
+                  </p>
+                  <p className="mt-1 text-sm font-semibold text-neutral-200">
+                    {latestTripAction.action.replaceAll('_', ' ')}
+                  </p>
+                  {latestTripAction.note && (
+                    <p className="mt-1 max-h-10 overflow-hidden text-xs leading-5 text-neutral-500">
+                      {latestTripAction.note}
+                    </p>
+                  )}
+                </div>
+              )}
+
+              <div className="mt-4 flex flex-wrap items-center gap-2">
+                <PaymentBadge status={booking.paymentStatus} />
+                <span className="rounded-full border border-white/10 bg-white/[0.03] px-3 py-1 text-[11px] font-semibold text-white">
+                  Pax {booking.passengers}
+                </span>
+                <span className="rounded-full border border-white/10 bg-white/[0.03] px-3 py-1 text-[11px] font-semibold text-neutral-300">
+                  {'Balance $' +
+                    formatTableMoney(getTableBookingBalanceAmount(booking))}
+                </span>
+              </div>
+
+              <div className="mt-4 grid grid-cols-2 gap-2 sm:flex sm:flex-wrap">
+                {isFinalStatus &&
+                  booking.paymentStatus !== 'PAID' &&
+                  booking.status !== 'CANCELLED' &&
+                  booking.status !== 'NO_SHOW' && (
+                    <MobileActionButton
+                      onClick={() => onRecordPayment(booking)}
+                    >
+                      Record Pay
+                    </MobileActionButton>
+                  )}
+
+                {isFinalStatus ? (
+                  <span className="rounded-full border border-white/10 bg-white/[0.03] px-3 py-2 text-center text-xs font-medium text-neutral-500">
+                    View Only
+                  </span>
+                ) : (
+                  <>
+                    <MobileActionButton onClick={() => onEdit(booking)}>
+                      Edit
+                    </MobileActionButton>
+
+                    {canConfirm && (
+                      <MobileActionButton
+                        tone="success"
+                        disabled={actionLoadingId === booking.id}
+                        onClick={() => onStatusChange(booking.id, 'CONFIRMED')}
+                      >
+                        {actionLoadingId === booking.id ? 'Working' : 'Confirm'}
+                      </MobileActionButton>
+                    )}
+
+                    {canStartTrip && (
+                      <MobileActionButton
+                        tone="purple"
+                        disabled={actionLoadingId === booking.id}
+                        onClick={() => onStatusChange(booking.id, 'IN_PROGRESS')}
+                      >
+                        {actionLoadingId === booking.id ? 'Working' : 'Start Trip'}
+                      </MobileActionButton>
+                    )}
+
+                    {canMarkCompleted && (
+                      <MobileActionButton
+                        tone="blue"
+                        disabled={actionLoadingId === booking.id}
+                        onClick={() => onStatusChange(booking.id, 'COMPLETED')}
+                      >
+                        {actionLoadingId === booking.id ? 'Working' : 'Mark Done'}
+                      </MobileActionButton>
+                    )}
+
+                    {booking.paymentStatus !== 'PAID' && (
+                      <MobileActionButton
+                        onClick={() => onRecordPayment(booking)}
+                      >
+                        Record Pay
+                      </MobileActionButton>
+                    )}
+
+                    {canCancel && (
+                      <MobileActionButton
+                        tone="danger"
+                        disabled={actionLoadingId === booking.id}
+                        onClick={() => onStatusChange(booking.id, 'CANCELLED')}
+                      >
+                        Cancel
+                      </MobileActionButton>
+                    )}
+                  </>
+                )}
+              </div>
+            </article>
+          );
+        })}
+      </div>
+
+      <div className="hidden overflow-x-auto lg:block">
         <table className="w-full min-w-[1080px] table-fixed border-collapse text-left text-[12px]">
           <thead className="border-b border-white/10 bg-white/[0.03] text-neutral-400">
             <tr>
@@ -2933,6 +3130,40 @@ function MiniBadge({
     >
       {label}
     </span>
+  );
+}
+
+function MobileActionButton({
+  children,
+  disabled,
+  onClick,
+  tone = 'neutral',
+}: {
+  children: ReactNode;
+  disabled?: boolean;
+  onClick: () => void;
+  tone?: 'neutral' | 'success' | 'danger' | 'purple' | 'blue';
+}) {
+  const toneClass =
+    tone === 'success'
+      ? 'border-green-500/30 bg-green-500/10 text-green-300'
+      : tone === 'danger'
+        ? 'border-red-500/30 bg-red-500/10 text-red-300'
+        : tone === 'purple'
+            ? 'border-purple-500/30 bg-purple-500/10 text-purple-300'
+            : tone === 'blue'
+              ? 'border-blue-500/30 bg-blue-500/10 text-blue-300'
+              : 'border-white/10 bg-white/[0.03] text-neutral-300';
+
+  return (
+    <button
+      type="button"
+      disabled={disabled}
+      onClick={onClick}
+      className={`min-h-10 rounded-full border px-3 py-2 text-xs font-semibold transition disabled:cursor-not-allowed disabled:opacity-40 ${toneClass}`}
+    >
+      {children}
+    </button>
   );
 }
 

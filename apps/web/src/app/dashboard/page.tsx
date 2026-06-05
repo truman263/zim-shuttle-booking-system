@@ -148,24 +148,14 @@ export default function DashboardPage() {
           </p>
         </div>
 
-        <div className="flex items-center gap-4 rounded-2xl border border-white/10 bg-white/[0.035] px-4 py-3">
-          <div className="flex h-14 w-24 items-center justify-center rounded-2xl border border-white/10 bg-black/35 px-3">
-            <Image
-              src="/brand/ladybird-logo.png"
-              alt="LadyBird Shuttle Services"
-              width={150}
-              height={62}
-              className="h-auto w-full"
-            />
-          </div>
-          <div>
-            <p className="text-xs uppercase tracking-[0.24em] text-neutral-500">
-              Company
-            </p>
-            <p className="mt-1 text-sm font-medium text-white">
-              {summary.company.name}
-            </p>
-          </div>
+        <div className="flex w-full items-center justify-center rounded-2xl border border-white/10 bg-white/[0.025] px-5 py-4 sm:w-auto sm:min-w-56">
+          <Image
+            src="/brand/ladybird-logo.png"
+            alt="LadyBird Shuttle Services"
+            width={210}
+            height={86}
+            className="h-auto w-40 opacity-95 sm:w-44"
+          />
         </div>
       </div>
 

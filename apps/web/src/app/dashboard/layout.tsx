@@ -72,8 +72,8 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
 
   if (checkingSession || !adminUser) {
     return (
-      <div className="flex min-h-dvh items-center justify-center bg-black px-6 text-white">
-        <div className="rounded-3xl border border-white/10 bg-white/[0.04] p-6 text-sm text-neutral-400">
+      <div className="flex min-h-dvh items-center justify-center bg-black px-4 text-white">
+        <div className="rounded-3xl border border-white/10 bg-white/[0.04] p-5 text-sm text-neutral-400 sm:p-6">
           Checking admin access...
         </div>
       </div>
@@ -111,9 +111,9 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
       </aside>
 
       <div className="lg:pl-72">
-        <header className="sticky top-0 z-20 border-b border-white/10 bg-black/80 px-4 py-3 backdrop-blur-xl sm:px-6 sm:py-4">
+        <header className="sticky top-0 z-20 border-b border-white/10 bg-black/80 px-3 py-3 backdrop-blur-xl sm:px-6 sm:py-4">
           <div className="mx-auto flex max-w-7xl items-center justify-between gap-4">
-            <div className="min-w-0">
+            <div className="min-w-0 pr-2">
               <p className="truncate text-[11px] uppercase tracking-[0.24em] text-neutral-500 sm:text-xs sm:tracking-[0.35em]">
                 Operations Control
               </p>
@@ -137,12 +137,12 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
           </div>
 
           <div className="mx-auto mt-3 max-w-7xl lg:hidden">
-            <div className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1 sm:-mx-6 sm:px-6">
+            <div className="-mx-3 flex gap-1.5 overflow-x-auto px-3 pb-1 sm:-mx-6 sm:gap-2 sm:px-6">
               {navigationItems.map((item) => (
                 <Link
                   key={item.href}
                   href={item.href}
-                  className={`shrink-0 rounded-full border px-4 py-2 text-xs font-medium transition ${
+                  className={`shrink-0 rounded-full border px-3.5 py-2 text-xs font-medium transition sm:px-4 ${
                     isActiveRoute(item.href)
                       ? 'border-white/25 bg-white text-black'
                       : 'border-white/10 bg-white/[0.035] text-neutral-300 hover:border-white/25 hover:text-white'
@@ -154,7 +154,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
               <button
                 type="button"
                 onClick={logout}
-                className="shrink-0 rounded-full border border-white/10 bg-white/[0.035] px-4 py-2 text-xs font-medium text-neutral-300 transition hover:border-white/25 hover:text-white sm:hidden"
+                className="shrink-0 rounded-full border border-white/10 bg-white/[0.035] px-3.5 py-2 text-xs font-medium text-neutral-300 transition hover:border-white/25 hover:text-white sm:hidden"
               >
                 Logout
               </button>
@@ -162,7 +162,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
           </div>
         </header>
 
-        <main className="mx-auto max-w-7xl px-4 py-6 sm:px-6 sm:py-8">
+        <main className="mx-auto max-w-7xl px-3 py-5 sm:px-6 sm:py-8">
           {children}
         </main>
       </div>

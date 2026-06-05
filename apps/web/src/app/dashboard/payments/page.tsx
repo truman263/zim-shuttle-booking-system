@@ -197,7 +197,7 @@ export default function PaymentsPage() {
             Payment Control
           </p>
 
-          <h1 className="mt-3 text-4xl font-semibold tracking-tight">
+          <h1 className="mt-3 text-3xl font-semibold tracking-tight sm:text-4xl">
             Payment Management
           </h1>
 

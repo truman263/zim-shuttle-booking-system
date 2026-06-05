@@ -83,14 +83,14 @@ export default function AdminLoginPage() {
 
   return (
     <main
-      className="min-h-dvh bg-[#030303] px-4 py-8 text-white sm:px-6 sm:py-10"
+      className="min-h-dvh overflow-x-hidden bg-[#030303] px-4 py-4 text-white sm:px-6 sm:py-10"
       style={{
         fontFamily:
           "Inter, Montserrat, Poppins, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
       }}
     >
-      <section className="mx-auto flex min-h-[calc(100dvh-4rem)] max-w-6xl items-center justify-center">
-        <div className="grid w-full overflow-hidden rounded-[26px] border border-white/10 bg-white/[0.035] shadow-[0_30px_120px_rgba(0,0,0,0.55)] backdrop-blur-xl sm:rounded-[34px] lg:grid-cols-[0.95fr_1.05fr]">
+      <section className="login-shell mx-auto flex min-h-[calc(100dvh-2rem)] w-full items-start justify-center pt-2 sm:min-h-[calc(100dvh-4rem)] sm:items-center sm:pt-0">
+        <div className="login-card grid min-w-0 overflow-hidden rounded-[22px] border border-white/10 bg-white/[0.035] shadow-[0_30px_120px_rgba(0,0,0,0.55)] backdrop-blur-xl sm:rounded-[34px] lg:grid-cols-[0.95fr_1.05fr]">
           <div className="hidden border-r border-white/10 bg-black/40 p-8 lg:block">
             <Image
               src="/brand/ladybird-logo.png"
@@ -115,21 +115,21 @@ export default function AdminLoginPage() {
             </div>
           </div>
 
-          <div className="p-6 sm:p-8 lg:p-10">
+          <div className="p-4 sm:p-8 lg:p-10">
             <Image
               src="/brand/ladybird-logo.png"
               alt="LadyBird Shuttle Services"
               width={180}
               height={74}
               priority
-              className="h-auto w-40 lg:hidden"
+              className="h-auto w-36 sm:w-40 lg:hidden"
             />
 
-            <div className="mt-10 lg:mt-0">
+            <div className="mt-7 sm:mt-10 lg:mt-0">
               <p className="text-xs uppercase tracking-[0.36em] text-neutral-500">
                 Login
               </p>
-              <h2 className="mt-4 text-3xl font-semibold tracking-[-0.035em]">
+              <h2 className="mt-4 text-2xl font-semibold tracking-[-0.035em] sm:text-3xl">
                 Admin sign in
               </h2>
               <p className="mt-3 text-sm font-light leading-6 text-neutral-400">
@@ -180,7 +180,7 @@ export default function AdminLoginPage() {
                 <button
                   type="submit"
                   disabled={submitting}
-                  className="mt-6 w-full rounded-full bg-white px-6 py-3 text-sm font-semibold text-black transition hover:bg-neutral-200 disabled:cursor-not-allowed disabled:opacity-50"
+                  className="mt-6 w-full rounded-full bg-white px-0 py-3.5 text-sm font-semibold text-black transition hover:bg-neutral-200 disabled:cursor-not-allowed disabled:opacity-50 sm:px-6"
                 >
                   {submitting ? 'Signing in...' : 'Sign in'}
                 </button>
@@ -191,13 +191,38 @@ export default function AdminLoginPage() {
       </section>
 
       <style jsx>{`
+        .login-shell {
+          max-width: calc(100vw - 32px);
+        }
+
+        .login-card {
+          width: calc(100vw - 32px);
+          max-width: calc(100vw - 32px);
+        }
+
+        .login-card,
+        .login-card * {
+          box-sizing: border-box;
+        }
+
+        @media (min-width: 640px) {
+          .login-shell {
+            max-width: 72rem;
+          }
+
+          .login-card {
+            width: calc(100% - 2rem);
+            max-width: 72rem;
+          }
+        }
+
         .admin-input {
           width: 100%;
           border-radius: 1rem;
           border: 1px solid rgba(255, 255, 255, 0.1);
           background: rgba(255, 255, 255, 0.045);
           padding: 0.9rem 1rem;
-          font-size: 0.875rem;
+          font-size: 1rem;
           color: white;
           outline: none;
           transition:
@@ -209,10 +234,16 @@ export default function AdminLoginPage() {
           color: rgba(163, 163, 163, 0.65);
         }
 
-        .admin-input:focus {
-          border-color: rgba(255, 255, 255, 0.34);
-          background: rgba(255, 255, 255, 0.07);
-        }
+          .admin-input:focus {
+            border-color: rgba(255, 255, 255, 0.34);
+            background: rgba(255, 255, 255, 0.07);
+          }
+
+          @media (min-width: 640px) {
+            .admin-input {
+              width: 100%;
+            }
+          }
       `}</style>
     </main>
   );
