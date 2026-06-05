@@ -9,6 +9,7 @@ import { BookingsModule } from './bookings/bookings.module';
 import { CompaniesModule } from './companies/companies.module';
 import { CustomersModule } from './customers/customers.module';
 import { DashboardModule } from './dashboard/dashboard.module';
+import { DriverTripsModule } from './driver-trips/driver-trips.module';
 import { DriversModule } from './drivers/drivers.module';
 import { PaymentsModule } from './payments/payments.module';
 import { PricingCalculatorModule } from './pricing-calculator/pricing-calculator.module';
@@ -26,6 +27,7 @@ import { ZonesModule } from './zones/zones.module';
     SmartRoutesModule,
     NotificationsModule,
     PublicPaymentsModule,
+    DriverTripsModule,
     PrismaModule,
     CompaniesModule,
     RoutesModule,

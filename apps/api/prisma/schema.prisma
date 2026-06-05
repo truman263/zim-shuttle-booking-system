@@ -55,6 +55,12 @@ enum NotificationDeliveryStatus {
   SKIPPED
 }
 
+enum TripActionType {
+  START_TRIP
+  COMPLETE_TRIP
+  REPORT_ISSUE
+}
+
 enum PaymentStatus {
   UNPAID
   PARTIALLY_PAID
@@ -201,6 +207,8 @@ model Company {
   vehicles     Vehicle[]
   routes       Route[]
   bookings     Booking[]
+  driverTripTokens DriverTripToken[]
+  tripActionLogs TripActionLog[]
   zones        Zone[]
   pricingRules PricingRule[]
 
@@ -253,6 +261,8 @@ model Driver {
   status        DriverStatus @default(AVAILABLE)
 
   bookings Booking[]
+  driverTripTokens DriverTripToken[]
+  tripActionLogs TripActionLog[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -404,9 +414,60 @@ model Booking {
   paymentStatus PaymentStatus @default(UNPAID)
 
   payments Payment[]
+  driverTripTokens DriverTripToken[]
+  tripActionLogs TripActionLog[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+model DriverTripToken {
+  id String @id @default(cuid())
+
+  companyId String
+  company   Company @relation(fields: [companyId], references: [id])
+
+  bookingId String
+  booking   Booking @relation(fields: [bookingId], references: [id])
+
+  driverId String
+  driver   Driver @relation(fields: [driverId], references: [id])
+
+  tokenHash String @unique
+  expiresAt DateTime
+  revokedAt DateTime?
+  lastUsedAt DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([bookingId])
+  @@index([driverId])
+  @@index([companyId])
+  @@index([expiresAt])
+}
+
+model TripActionLog {
+  id String @id @default(cuid())
+
+  companyId String
+  company   Company @relation(fields: [companyId], references: [id])
+
+  bookingId String
+  booking   Booking @relation(fields: [bookingId], references: [id])
+
+  driverId String
+  driver   Driver @relation(fields: [driverId], references: [id])
+
+  action TripActionType
+  note   String?
+
+  createdAt DateTime @default(now())
+
+  @@index([bookingId])
+  @@index([driverId])
+  @@index([companyId])
+  @@index([action])
 }
 
 model Payment {

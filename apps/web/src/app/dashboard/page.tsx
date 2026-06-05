@@ -1,5 +1,6 @@
 'use client';
 
+import Image from 'next/image';
 import { useEffect, useState } from 'react';
 import { apiGet } from '@/lib/api';
 
@@ -147,12 +148,24 @@ export default function DashboardPage() {
           </p>
         </div>
 
-        <div className="rounded-2xl border border-white/10 bg-white/[0.035] px-4 py-3">
-          <p className="text-sm text-neutral-400">Company</p>
-          <p className="mt-1 font-medium">{summary.company.name}</p>
-          <p className="mt-1 text-xs uppercase tracking-widest text-neutral-500">
-            {summary.company.status}
-          </p>
+        <div className="flex items-center gap-4 rounded-2xl border border-white/10 bg-white/[0.035] px-4 py-3">
+          <div className="flex h-14 w-24 items-center justify-center rounded-2xl border border-white/10 bg-black/35 px-3">
+            <Image
+              src="/brand/ladybird-logo.png"
+              alt="LadyBird Shuttle Services"
+              width={150}
+              height={62}
+              className="h-auto w-full"
+            />
+          </div>
+          <div>
+            <p className="text-xs uppercase tracking-[0.24em] text-neutral-500">
+              Company
+            </p>
+            <p className="mt-1 text-sm font-medium text-white">
+              {summary.company.name}
+            </p>
+          </div>
         </div>
       </div>
 

@@ -97,6 +97,7 @@ type SendEmailNotificationInput = {
   subject: string;
   text: string;
   html: string;
+  logMessage?: string;
   metadata?: Prisma.InputJsonValue;
   idempotencyKey: string;
 };
@@ -272,6 +273,7 @@ export class NotificationsService {
   async sendDriverAssignmentEmail(
     booking: BookingEmailRecord,
     previousDriverId?: string | null,
+    driverTripToken?: string | null,
   ) {
     if (!booking.driverId || previousDriverId === booking.driverId) {
       return;
@@ -301,7 +303,11 @@ export class NotificationsService {
       return;
     }
 
-    const email = this.buildDriverAssignmentEmail(booking, driver);
+    const email = this.buildDriverAssignmentEmail(
+      booking,
+      driver,
+      this.getDriverTripUrl(driverTripToken),
+    );
 
     await this.sendEmailWithLog({
       companyId: booking.companyId,
@@ -312,6 +318,7 @@ export class NotificationsService {
       subject: email.subject,
       text: email.text,
       html: email.html,
+      logMessage: email.logMessage,
       metadata,
       idempotencyKey: `driver-assigned-${booking.id}-${previousDriverId ?? 'none'}-${booking.driverId}`,
     });
@@ -386,7 +393,7 @@ export class NotificationsService {
         channel: NotificationChannel.EMAIL,
         recipient: null,
         subject: input.subject,
-        message: input.text,
+        message: input.logMessage ?? input.text,
         status: NotificationDeliveryStatus.SKIPPED,
         errorMessage: 'No email recipient configured.',
         metadata: input.metadata,
@@ -401,7 +408,7 @@ export class NotificationsService {
       channel: NotificationChannel.EMAIL,
       recipient: recipients.join(', '),
       subject: input.subject,
-      message: input.text,
+      message: input.logMessage ?? input.text,
       status: NotificationDeliveryStatus.QUEUED,
       metadata: input.metadata,
     });
@@ -683,9 +690,11 @@ export class NotificationsService {
   private buildDriverAssignmentEmail(
     booking: BookingEmailRecord,
     driver: BookingEmailDriver,
+    driverTripUrl?: string | null,
   ) {
     const customer = booking.customer;
     const routeLabel = this.getRouteLabel(booking);
+    const tripTypeLabel = booking.customTripType || this.humanise(booking.tripType);
     const companyContact = this.getCompanyContactLine(booking.company);
     const subject = `New trip assigned - ${booking.bookingRef}`;
     const rows: [string, string][] = [
@@ -693,7 +702,8 @@ export class NotificationsService {
       ['Pickup', this.formatDate(booking.pickupDate)],
       ['Pickup point', booking.pickupLocation],
       ['Destination', booking.destination],
-      ['Trip type', this.humanise(booking.tripDirection)],
+      ['Trip type', tripTypeLabel],
+      ['Trip direction', this.humanise(booking.tripDirection)],
       ['Route', routeLabel],
       ['Passenger', customer?.fullName || 'Not provided'],
       ['Passenger phone', customer?.phone || 'Not provided'],
@@ -703,6 +713,10 @@ export class NotificationsService {
       ['Company contact', companyContact],
     ];
 
+    if (driverTripUrl) {
+      rows.push(['Driver trip link', driverTripUrl]);
+    }
+
     const text = [
       `Hello ${driver.fullName},`,
       '',
@@ -711,16 +725,43 @@ export class NotificationsService {
       `Pickup: ${this.formatDate(booking.pickupDate)}`,
       `Pickup point: ${booking.pickupLocation}`,
       `Destination: ${booking.destination}`,
-      `Trip type: ${this.humanise(booking.tripDirection)}`,
+      `Trip type: ${tripTypeLabel}`,
+      `Trip direction: ${this.humanise(booking.tripDirection)}`,
       `Route: ${routeLabel}`,
       `Passenger: ${customer?.fullName || 'Not provided'}`,
       `Passenger phone/WhatsApp: ${customer?.phone || 'Not provided'}`,
       `Passengers: ${booking.passengers}`,
       `Luggage: ${booking.luggageDetails || 'Not provided'}`,
       `Special request: ${booking.specialNotes || 'Not provided'}`,
+      driverTripUrl ? `Driver trip link: ${driverTripUrl}` : null,
       '',
       companyContact,
-    ].join('\n');
+    ]
+      .filter(Boolean)
+      .join('\n');
+
+    const logMessage = [
+      `Hello ${driver.fullName},`,
+      '',
+      `A new trip has been assigned to you. Reference: ${booking.bookingRef}.`,
+      '',
+      `Pickup: ${this.formatDate(booking.pickupDate)}`,
+      `Pickup point: ${booking.pickupLocation}`,
+      `Destination: ${booking.destination}`,
+      `Trip type: ${tripTypeLabel}`,
+      `Trip direction: ${this.humanise(booking.tripDirection)}`,
+      `Route: ${routeLabel}`,
+      `Passenger: ${customer?.fullName || 'Not provided'}`,
+      `Passenger phone/WhatsApp: ${customer?.phone || 'Not provided'}`,
+      `Passengers: ${booking.passengers}`,
+      `Luggage: ${booking.luggageDetails || 'Not provided'}`,
+      `Special request: ${booking.specialNotes || 'Not provided'}`,
+      driverTripUrl ? 'Driver trip link: [secure driver trip link]' : null,
+      '',
+      companyContact,
+    ]
+      .filter(Boolean)
+      .join('\n');
 
     const html = this.wrapEmailHtml({
       title: 'New trip assigned',
@@ -728,11 +769,11 @@ export class NotificationsService {
       intro: `Hello ${this.escapeHtml(driver.fullName)}, a trip has been assigned to you.`,
       body: 'Review the trip details below and contact LadyBird operations if anything needs clarification before pickup.',
       rows,
-      ctaLabel: undefined,
-      ctaUrl: undefined,
+      ctaLabel: driverTripUrl ? 'Open trip details' : undefined,
+      ctaUrl: driverTripUrl,
     });
 
-    return { subject, text, html };
+    return { subject, text, html, logMessage };
   }
 
   private wrapEmailHtml(input: {
@@ -942,6 +983,16 @@ export class NotificationsService {
     return `${publicWebUrl}/booking/track?reference=${encodeURIComponent(
       bookingRef,
     )}`;
+  }
+
+  private getDriverTripUrl(token?: string | null) {
+    const publicWebUrl = this.getPublicWebUrl();
+
+    if (!publicWebUrl || !token) {
+      return null;
+    }
+
+    return `${publicWebUrl}/driver/trips/${encodeURIComponent(token)}`;
   }
 
   private bookingMetadata(booking: BookingEmailRecord, audience: string) {

@@ -100,6 +100,13 @@ type PaymentRecord = {
   paidAt?: string | null;
 };
 
+type TripActionLog = {
+  id: string;
+  action: string;
+  note?: string | null;
+  createdAt: string;
+};
+
 type Booking = {
   id: string;
   bookingRef: string;
@@ -131,6 +138,7 @@ type Booking = {
   status: string;
   paymentStatus: string;
   payments?: PaymentRecord[];
+  tripActionLogs?: TripActionLog[];
 
   customer?: {
     id: string;
@@ -2663,6 +2671,26 @@ function BookingsTable({
                   </td>
 
                   <td className="px-4 py-5">
+                    {(() => {
+                      const latestTripAction = booking.tripActionLogs?.[0];
+
+                      return latestTripAction ? (
+                        <div className="mb-4 rounded-2xl border border-white/10 bg-white/[0.035] px-3 py-2 text-left">
+                          <p className="text-[10px] uppercase tracking-[0.18em] text-neutral-600">
+                            Driver action
+                          </p>
+                          <p className="mt-1 text-[11px] font-semibold text-neutral-200">
+                            {latestTripAction.action.replaceAll('_', ' ')}
+                          </p>
+                          {latestTripAction.note && (
+                            <p className="mt-1 max-h-8 overflow-hidden text-[11px] leading-4 text-neutral-500">
+                              {latestTripAction.note}
+                            </p>
+                          )}
+                        </div>
+                      ) : null;
+                    })()}
+
                     <div>
                       <p className="text-[11px] uppercase tracking-[0.18em] text-neutral-600">
                         Driver

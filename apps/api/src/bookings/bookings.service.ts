@@ -10,6 +10,7 @@ import {
   TripDirection,
   VehicleStatus,
 } from '@prisma/client';
+import { DriverTripsService } from '../driver-trips/driver-trips.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateBookingDto } from './dto/create-booking.dto';
@@ -24,6 +25,7 @@ export class BookingsService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly notificationsService: NotificationsService,
+    private readonly driverTripsService: DriverTripsService,
   ) {}
 
   async create(createBookingDto: CreateBookingDto) {
@@ -523,11 +525,17 @@ export class BookingsService {
       return result;
     });
 
-    if (driverChanged && nextDriverId) {
-      await this.notifyDriverAssignment(
-        updatedBooking,
-        existingBooking.driverId,
-      );
+    if (driverChanged) {
+      if (nextDriverId) {
+        await this.notifyDriverAssignment(
+          updatedBooking,
+          existingBooking.driverId,
+        );
+      } else {
+        await this.driverTripsService.revokeActiveTokensForBooking(
+          updatedBooking.id,
+        );
+      }
     }
 
     return updatedBooking;
@@ -687,9 +695,15 @@ export class BookingsService {
     previousDriverId: string | null,
   ) {
     try {
+      const driverTripToken = await this.driverTripsService.createTokenForAssignment(
+        booking.id,
+        booking.driverId as string,
+      );
+
       await this.notificationsService.sendDriverAssignmentEmail(
         booking,
         previousDriverId,
+        driverTripToken,
       );
     } catch (error) {
       console.warn(
@@ -880,6 +894,12 @@ export class BookingsService {
       driver: true,
       vehicle: true,
       payments: true,
+      tripActionLogs: {
+        orderBy: {
+          createdAt: 'desc' as const,
+        },
+        take: 3,
+      },
     };
   }
 }
