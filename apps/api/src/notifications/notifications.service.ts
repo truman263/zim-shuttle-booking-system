@@ -710,17 +710,13 @@ export class NotificationsService {
       ['Passengers', String(booking.passengers)],
       ['Luggage', booking.luggageDetails || 'Not provided'],
       ['Special request', booking.specialNotes || 'Not provided'],
-      ['Company contact', companyContact],
     ];
-
-    if (driverTripUrl) {
-      rows.push(['Driver trip link', driverTripUrl]);
-    }
 
     const text = [
       `Hello ${driver.fullName},`,
       '',
       `A new trip has been assigned to you. Reference: ${booking.bookingRef}.`,
+      driverTripUrl ? `Manage assigned trip: ${driverTripUrl}` : null,
       '',
       `Pickup: ${this.formatDate(booking.pickupDate)}`,
       `Pickup point: ${booking.pickupLocation}`,
@@ -733,9 +729,11 @@ export class NotificationsService {
       `Passengers: ${booking.passengers}`,
       `Luggage: ${booking.luggageDetails || 'Not provided'}`,
       `Special request: ${booking.specialNotes || 'Not provided'}`,
-      driverTripUrl ? `Driver trip link: ${driverTripUrl}` : null,
       '',
       companyContact,
+      driverTripUrl
+        ? `If the button does not work, copy and open this link: ${driverTripUrl}`
+        : null,
     ]
       .filter(Boolean)
       .join('\n');
@@ -769,8 +767,13 @@ export class NotificationsService {
       intro: `Hello ${this.escapeHtml(driver.fullName)}, a trip has been assigned to you.`,
       body: 'Review the trip details below and contact LadyBird operations if anything needs clarification before pickup.',
       rows,
-      ctaLabel: driverTripUrl ? 'Open trip details' : undefined,
+      ctaLabel: driverTripUrl ? 'Manage Assigned Trip' : undefined,
       ctaUrl: driverTripUrl,
+      ctaPlacement: 'top',
+      fallbackLinkLabel: driverTripUrl
+        ? 'If the button does not work, copy and open this link:'
+        : undefined,
+      supportNote: companyContact,
     });
 
     return { subject, text, html, logMessage };
@@ -784,6 +787,9 @@ export class NotificationsService {
     rows: [string, string][];
     ctaLabel?: string;
     ctaUrl?: string | null;
+    ctaPlacement?: 'top' | 'bottom';
+    fallbackLinkLabel?: string;
+    supportNote?: string;
   }) {
     const rows = input.rows
       .map(
@@ -803,10 +809,34 @@ export class NotificationsService {
       input.ctaLabel && input.ctaUrl
         ? `<a href="${this.escapeHtml(
             input.ctaUrl,
-          )}" style="display:inline-block;margin-top:24px;border-radius:999px;background:#050505;color:#ffffff;text-decoration:none;padding:13px 22px;font-size:14px;font-weight:700;">${this.escapeHtml(
+          )}" style="display:inline-block;margin-top:24px;border-radius:999px;background:#050505;color:#ffffff;text-decoration:none;padding:14px 24px;font-size:14px;font-weight:700;text-align:center;">${this.escapeHtml(
             input.ctaLabel,
           )}</a>`
         : '';
+
+    const topCta = input.ctaPlacement === 'top' ? cta : '';
+    const bottomCta = input.ctaPlacement === 'top' ? '' : cta;
+    const fallbackLink =
+      input.fallbackLinkLabel && input.ctaUrl
+        ? `<div style="margin-top:26px;border-radius:18px;background:#f5f5f3;border:1px solid #e5e5e5;padding:16px;">
+            <p style="margin:0 0 8px;color:#525252;font-size:12px;line-height:1.6;">${this.escapeHtml(
+              input.fallbackLinkLabel,
+            )}</p>
+            <a href="${this.escapeHtml(
+              input.ctaUrl,
+            )}" style="color:#111111;font-size:12px;line-height:1.6;word-break:break-all;text-decoration:underline;">${this.escapeHtml(
+              input.ctaUrl,
+            )}</a>
+          </div>`
+        : '';
+    const supportNote = input.supportNote
+      ? `<div style="margin-top:18px;border-radius:18px;background:#fafafa;border:1px solid #e5e5e5;padding:16px;">
+          <p style="margin:0 0 6px;color:#737373;font-size:11px;letter-spacing:0.18em;text-transform:uppercase;">Operational support</p>
+          <p style="margin:0;color:#404040;font-size:13px;line-height:1.7;">${this.escapeHtml(
+            input.supportNote,
+          )}</p>
+        </div>`
+      : '';
 
     return `
       <!doctype html>
@@ -826,10 +856,13 @@ export class NotificationsService {
               <p style="margin:16px 0 0;color:#525252;font-size:14px;line-height:1.8;">${this.escapeHtml(
                 input.body,
               )}</p>
+              ${topCta}
               <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="margin-top:24px;border-collapse:collapse;">
                 ${rows}
               </table>
-              ${cta}
+              ${bottomCta}
+              ${fallbackLink}
+              ${supportNote}
               <p style="margin:28px 0 0;color:#737373;font-size:12px;line-height:1.7;">This message is about a LadyBird Shuttle Services booking request. It is not a payment confirmation unless the payment status says paid.</p>
             </section>
           </main>
@@ -917,10 +950,14 @@ export class NotificationsService {
   }
 
   private getCompanyContactLine(company?: BookingEmailCompany | null) {
+    const operationalEmail =
+      this.parseRecipients(process.env.EMAIL_REPLY_TO)[0] ||
+      this.parseRecipients(process.env.ADMIN_NOTIFICATION_EMAIL)[0] ||
+      company?.email;
     const contacts = [
       company?.phone ? `Phone: ${company.phone}` : null,
       company?.whatsapp ? `WhatsApp: ${company.whatsapp}` : null,
-      company?.email ? `Email: ${company.email}` : null,
+      operationalEmail ? `Email: ${operationalEmail}` : null,
     ].filter(Boolean);
 
     if (contacts.length === 0) {
