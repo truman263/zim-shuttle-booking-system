@@ -4,8 +4,6 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import {
-  NotificationEvent,
-  PaymentStatus,
   PricingMode,
   TripDirection,
   TripType,
@@ -188,32 +186,9 @@ export class PublicBookingsService {
     const booking = await this.bookingsService.create(bookingPayload);
 
     try {
-      const price = Number(booking.finalPrice ?? booking.estimatedPrice ?? 0);
-      const deposit = Number(booking.depositAmount ?? 0);
-      const balance = Math.max(price - deposit, 0).toFixed(2);
-
-      await this.notificationsService.logCustomerNotification({
-        companyId: booking.companyId,
-        bookingId: booking.id,
-        customerId: booking.customerId,
-        event: NotificationEvent.BOOKING_RECEIVED,
-        customerName: customer.fullName,
-        customerPhone: customer.phone,
-        customerEmail: customer.email,
-        subject: 'LadyBird booking request received',
-        message: `Hello ${customer.fullName}, your LadyBird Shuttle booking request has been received. Booking reference: ${booking.bookingRef}. Route: ${booking.pickupLocation} to ${booking.destination}. Estimated fare: $${price.toFixed(2)}. Deposit after approval: $${deposit.toFixed(2)}. Balance after deposit: $${balance}. Payment will become available after approval.`,
-        metadata: {
-          bookingRef: booking.bookingRef,
-          status: booking.status,
-          pickupLocation: booking.pickupLocation,
-          destination: booking.destination,
-          pickupDate: booking.pickupDate.toISOString(),
-          finalPrice: Number(booking.finalPrice ?? 0),
-          depositAmount: Number(booking.depositAmount ?? 0),
-        },
-      });
+      await this.notificationsService.sendBookingReceivedEmails(booking);
     } catch (error) {
-      console.error('Failed to log booking received notification', error);
+      console.error('Failed to process booking received notifications', error);
     }
 
     return {

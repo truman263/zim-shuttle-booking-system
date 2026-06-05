@@ -1869,6 +1869,10 @@ function SummaryPanel({
   paymentLoading: 'DEPOSIT' | 'FULL_PAYMENT' | null;
 }) {
   if (bookingResponse) {
+    const confirmationUrl = `/booking/track?reference=${encodeURIComponent(
+      bookingResponse.bookingRef,
+    )}`;
+
     return (
       <div className="rounded-3xl border border-white/10 bg-white/[0.06] p-5 text-white backdrop-blur-xl">
         <p className="text-xs uppercase tracking-[0.3em] text-neutral-500">
@@ -1908,16 +1912,30 @@ function SummaryPanel({
           Booking request received. Payment will be available once our team approves your booking.
         </div>
 
-        <div className="mt-5">
+        <div className="mt-5 grid gap-3 sm:grid-cols-2">
+          <a
+            href={confirmationUrl}
+            className="rounded-full bg-white px-5 py-3 text-center text-xs font-semibold text-black transition hover:bg-neutral-200"
+          >
+            Track Booking
+          </a>
+
+          <a
+            href={confirmationUrl}
+            className="rounded-full border border-white/15 bg-white/[0.04] px-5 py-3 text-center text-xs font-semibold text-white transition hover:border-white/30 hover:bg-white hover:text-black"
+          >
+            Print Confirmation
+          </a>
+
           <button
             type="button"
             onClick={() => {
               setTrackingRef(bookingResponse.bookingRef);
               switchMode('TRACK');
             }}
-            className="w-full rounded-full border border-white/15 bg-white/[0.04] px-5 py-3 text-xs font-semibold text-white transition hover:border-white/30 hover:bg-white hover:text-black"
+            className="rounded-full border border-white/10 bg-transparent px-5 py-3 text-xs font-semibold text-neutral-300 transition hover:border-white/25 hover:text-white sm:col-span-2"
           >
-            Track Booking
+            Track on this page
           </button>
         </div>
       </div>

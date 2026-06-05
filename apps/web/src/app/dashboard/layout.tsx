@@ -7,13 +7,14 @@ import { apiGet, apiPost } from '@/lib/api';
 
 const navigationItems = [
   { name: 'Overview', href: '/dashboard' },
-  { name: 'Reports', href: '/dashboard/reports' },
   { name: 'Bookings', href: '/dashboard/bookings' },
-  { name: 'Vehicles', href: '/dashboard/vehicles' },
-  { name: 'Drivers', href: '/dashboard/drivers' },
+  { name: 'Notifications', href: '/dashboard/notifications' },
+  { name: 'Payments', href: '/dashboard/payments' },
   { name: 'Customers', href: '/dashboard/customers' },
   { name: 'Routes', href: '/dashboard/routes' },
-  { name: 'Payments', href: '/dashboard/payments' },
+  { name: 'Vehicles', href: '/dashboard/vehicles' },
+  { name: 'Drivers', href: '/dashboard/drivers' },
+  { name: 'Reports', href: '/dashboard/reports' },
 ];
 
 type AdminUser = {
@@ -107,16 +108,6 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
             </Link>
           ))}
         </nav>
-
-        <div className="absolute bottom-6 left-6 right-6 rounded-3xl border border-white/10 bg-white/[0.03] p-4">
-          <p className="text-xs uppercase tracking-[0.25em] text-[#C8A96A]">
-            Premium
-          </p>
-          <p className="mt-2 text-sm font-medium">LadyBird Shuttle Services</p>
-          <p className="mt-1 text-xs text-neutral-500">
-            Zimbabwe transport operations
-          </p>
-        </div>
       </aside>
 
       <div className="lg:pl-72">
@@ -132,9 +123,6 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
             </div>
 
             <div className="hidden items-center gap-3 sm:flex">
-              <span className="rounded-full border border-[#C8A96A]/30 bg-[#C8A96A]/10 px-4 py-2 text-xs font-medium uppercase tracking-widest text-[#C8A96A]">
-                Trial
-              </span>
               <span className="hidden rounded-full border border-white/10 px-4 py-2 text-xs text-neutral-400 md:inline-flex">
                 {adminUser.fullName}
               </span>

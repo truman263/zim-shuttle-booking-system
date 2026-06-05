@@ -120,9 +120,13 @@ export default function TrackBookingPage() {
     await trackBookingByReference(bookingRef);
   }
 
+  function printConfirmation() {
+    window.print();
+  }
+
   return (
     <div
-      className="min-h-dvh bg-[#030303] text-white"
+      className="booking-track-page min-h-dvh bg-[#030303] text-white"
       style={{
         fontFamily:
           "Inter, Montserrat, Poppins, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
@@ -132,15 +136,15 @@ export default function TrackBookingPage() {
 
       <main className="relative overflow-hidden">
         <div
-          className="pointer-events-none absolute inset-x-0 top-0 h-[520px] bg-cover bg-center opacity-35"
+          className="track-print-hide pointer-events-none absolute inset-x-0 top-0 h-[520px] bg-cover bg-center opacity-35"
           style={{
             backgroundImage: "url('/images/public-site/lb-hero-shuttle.jpg')",
           }}
         />
-        <div className="pointer-events-none absolute inset-x-0 top-0 h-[560px] bg-[linear-gradient(180deg,rgba(0,0,0,0.70)_0%,rgba(0,0,0,0.42)_44%,#030303_100%)]" />
-        <div className="pointer-events-none absolute left-1/2 top-28 h-72 w-72 -translate-x-1/2 rounded-full bg-white/[0.055] blur-3xl" />
+        <div className="track-print-hide pointer-events-none absolute inset-x-0 top-0 h-[560px] bg-[linear-gradient(180deg,rgba(0,0,0,0.70)_0%,rgba(0,0,0,0.42)_44%,#030303_100%)]" />
+        <div className="track-print-hide pointer-events-none absolute left-1/2 top-28 h-72 w-72 -translate-x-1/2 rounded-full bg-white/[0.055] blur-3xl" />
 
-        <section className="relative px-7 pb-12 pt-14 sm:px-6 sm:pt-16 lg:pb-16 lg:pt-20">
+        <section className="track-print-hide relative px-7 pb-12 pt-14 sm:px-6 sm:pt-16 lg:pb-16 lg:pt-20">
           <div className="mx-auto max-w-7xl">
             <p className="text-[11px] font-light uppercase tracking-[0.42em] text-neutral-500">
               Booking tracking
@@ -158,12 +162,12 @@ export default function TrackBookingPage() {
           </div>
         </section>
 
-        <section className="relative px-5 pb-20 sm:px-6">
-          <div className="mx-auto grid max-w-7xl gap-6 lg:grid-cols-[420px_minmax(0,1fr)]">
+        <section className="track-print-section relative px-5 pb-20 sm:px-6">
+          <div className="track-print-grid mx-auto grid max-w-7xl gap-6 lg:grid-cols-[420px_minmax(0,1fr)]">
             <form
               noValidate
               onSubmit={trackBooking}
-              className="h-fit rounded-[26px] border border-white/10 bg-white/[0.045] p-5 shadow-[0_28px_90px_rgba(0,0,0,0.45)] backdrop-blur-2xl sm:rounded-[30px] sm:p-6"
+              className="track-print-hide h-fit rounded-[26px] border border-white/10 bg-white/[0.045] p-5 shadow-[0_28px_90px_rgba(0,0,0,0.45)] backdrop-blur-2xl sm:rounded-[30px] sm:p-6"
             >
               <p className="text-[11px] font-light uppercase tracking-[0.34em] text-neutral-500">
                 Booking Reference
@@ -212,7 +216,7 @@ export default function TrackBookingPage() {
               </Link>
             </form>
 
-            <section className="min-w-0 overflow-hidden rounded-[26px] border border-white/10 bg-white/[0.045] shadow-[0_28px_90px_rgba(0,0,0,0.45)] backdrop-blur-2xl sm:rounded-[30px]">
+            <section className="track-print-panel min-w-0 overflow-hidden rounded-[26px] border border-white/10 bg-white/[0.045] shadow-[0_28px_90px_rgba(0,0,0,0.45)] backdrop-blur-2xl sm:rounded-[30px]">
               {loading && !booking && (
                 <EmptyState
                   eyebrow="Checking"
@@ -250,6 +254,13 @@ export default function TrackBookingPage() {
                       <div className="flex flex-wrap gap-2 md:justify-end">
                         <StatusBadge label={booking.status} />
                         <PaymentBadge label={booking.paymentStatus} />
+                        <button
+                          type="button"
+                          onClick={printConfirmation}
+                          className="track-print-hide inline-flex h-9 items-center justify-center rounded-full border border-white/15 bg-white px-4 text-[11px] font-semibold uppercase tracking-wide text-black transition hover:bg-neutral-200"
+                        >
+                          Print
+                        </button>
                       </div>
                     </div>
                   </div>
@@ -349,6 +360,60 @@ export default function TrackBookingPage() {
         .track-input:focus {
           border-color: rgba(255, 255, 255, 0.34);
           background: rgba(255, 255, 255, 0.07);
+        }
+      `}</style>
+
+      <style jsx global>{`
+        @media print {
+          @page {
+            margin: 16mm;
+          }
+
+          body {
+            background: #ffffff !important;
+          }
+
+          .booking-track-page {
+            min-height: auto !important;
+            background: #ffffff !important;
+            color: #111111 !important;
+          }
+
+          .booking-track-page header,
+          .booking-track-page footer,
+          .booking-track-page .track-print-hide {
+            display: none !important;
+          }
+
+          .booking-track-page main {
+            overflow: visible !important;
+          }
+
+          .booking-track-page .track-print-section {
+            padding: 0 !important;
+          }
+
+          .booking-track-page .track-print-grid {
+            display: block !important;
+            max-width: none !important;
+          }
+
+          .booking-track-page .track-print-panel {
+            border: 1px solid #d4d4d4 !important;
+            background: #ffffff !important;
+            color: #111111 !important;
+            box-shadow: none !important;
+            backdrop-filter: none !important;
+          }
+
+          .booking-track-page .track-print-panel,
+          .booking-track-page .track-print-panel * {
+            color: #111111 !important;
+          }
+
+          .booking-track-page .track-print-panel div {
+            break-inside: avoid;
+          }
         }
       `}</style>
     </div>

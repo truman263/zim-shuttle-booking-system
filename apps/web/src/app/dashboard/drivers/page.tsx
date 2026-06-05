@@ -386,7 +386,7 @@ export default function DriversPage() {
                 <input
                   value={form.email}
                   onChange={(event) => updateForm('email', event.target.value)}
-                  placeholder="driver@ladybird.co.zw"
+                  placeholder="driver@ladybirdshuttles.co.zw"
                   type="email"
                   className="input-field"
                 />
