@@ -1327,7 +1327,7 @@ export default function BookingsPage() {
               setShowForm(true);
             }
           }}
-          className="rounded-full bg-white px-5 py-3 text-sm font-semibold text-black transition hover:bg-[#C8A96A]"
+          className="self-start rounded-full bg-white px-5 py-3 text-sm font-semibold text-black transition hover:bg-[#C8A96A]"
         >
           {showForm ? 'Close Form' : 'New Booking'}
         </button>

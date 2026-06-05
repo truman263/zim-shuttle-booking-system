@@ -349,7 +349,7 @@ export default function VehiclesPage() {
               setSuccessMessage('');
             }
           }}
-          className="rounded-full bg-white px-5 py-3 text-sm font-semibold text-black transition hover:bg-[#C8A96A]"
+          className="self-start rounded-full bg-white px-5 py-3 text-sm font-semibold text-black transition hover:bg-[#C8A96A]"
         >
           {showForm ? 'Close Form' : 'Add Vehicle'}
         </button>
@@ -539,7 +539,135 @@ export default function VehiclesPage() {
             </button>
           </div>
 
-          <div className="overflow-x-auto">
+          <div className="grid gap-3 p-3 lg:hidden">
+            {vehicles.map((vehicle) => {
+              const operationalBooking = getVehicleOperationalBooking(vehicle);
+
+              return (
+                <article
+                  key={vehicle.id}
+                  className="rounded-2xl border border-white/10 bg-white/[0.035] p-4"
+                >
+                  <div className="min-w-0">
+                    <p className="break-words text-base font-semibold text-white">
+                      {vehicle.name}
+                    </p>
+                    <p className="mt-1 break-words text-xs font-medium text-[#C8A96A]">
+                      {vehicle.registrationNo}
+                    </p>
+                    <div className="mt-2">
+                      <VehicleStatusBadge status={getVehicleDisplayStatus(vehicle)} />
+                    </div>
+                  </div>
+
+                  <div className="mt-4 grid grid-cols-2 gap-2 text-sm">
+                    <MobileInfo label="Type" value={vehicle.vehicleType} />
+                    <MobileInfo
+                      label="Capacity"
+                      value={`${vehicle.passengerCapacity} seats`}
+                    />
+                    <div className="col-span-2">
+                      <MobileInfo
+                        label="Luggage"
+                        value={vehicle.luggageCapacity || 'Luggage not specified'}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="mt-4 rounded-2xl border border-white/10 bg-black/30 p-3">
+                    {operationalBooking ? (
+                      <>
+                        <div className="flex flex-wrap items-center gap-2">
+                          <BookingStatusPill status={operationalBooking.status} />
+                          <span className="break-all text-xs font-semibold text-white">
+                            {operationalBooking.bookingRef}
+                          </span>
+                        </div>
+
+                        <p className="mt-3 break-words text-sm font-semibold text-white">
+                          {operationalBooking.customer?.fullName ??
+                            'Customer not set'}
+                        </p>
+                        <p className="mt-1 break-words text-xs leading-5 text-neutral-400">
+                          {operationalBooking.pickupLocation} {'->'}{' '}
+                          {operationalBooking.destination}
+                        </p>
+                        <div className="mt-3 grid gap-2 text-xs sm:grid-cols-2">
+                          <MobileInfo
+                            label="Pickup"
+                            value={formatBookingDate(
+                              operationalBooking.pickupDate,
+                            )}
+                          />
+                          <MobileInfo
+                            label="Driver"
+                            value={
+                              operationalBooking.driver?.fullName ??
+                              'Not assigned'
+                            }
+                          />
+                        </div>
+                      </>
+                    ) : (
+                      <>
+                        <p className="text-xs font-semibold text-neutral-300">
+                          No active or upcoming assignment
+                        </p>
+                        <p className="mt-2 text-xs leading-5 text-neutral-500">
+                          {getVehicleOperationalLabel(vehicle)}
+                        </p>
+                      </>
+                    )}
+                  </div>
+
+                  <div className="mt-4 grid grid-cols-2 gap-2">
+                    <button
+                      onClick={() => startEdit(vehicle)}
+                      className="min-h-11 rounded-full border border-white/10 px-3 py-2 text-xs font-semibold text-white transition hover:border-[#C8A96A]/40 hover:text-[#C8A96A]"
+                    >
+                      Edit
+                    </button>
+
+                    {vehicle.status !== 'MAINTENANCE' && (
+                      <button
+                        disabled={actionLoadingId === vehicle.id}
+                        onClick={() =>
+                          updateVehicleStatus(vehicle.id, 'MAINTENANCE')
+                        }
+                        className="min-h-11 rounded-full border border-yellow-500/30 bg-yellow-500/10 px-3 py-2 text-xs font-semibold text-yellow-300 transition hover:bg-yellow-500/20 disabled:cursor-not-allowed disabled:opacity-40"
+                      >
+                        Maintenance
+                      </button>
+                    )}
+
+                    {vehicle.status !== 'INACTIVE' && (
+                      <button
+                        disabled={actionLoadingId === vehicle.id}
+                        onClick={() => updateVehicleStatus(vehicle.id, 'INACTIVE')}
+                        className="min-h-11 rounded-full border border-red-500/30 bg-red-500/10 px-3 py-2 text-xs font-semibold text-red-300 transition hover:bg-red-500/20 disabled:cursor-not-allowed disabled:opacity-40"
+                      >
+                        Deactivate
+                      </button>
+                    )}
+
+                    {vehicle.status !== 'AVAILABLE' && (
+                      <button
+                        disabled={actionLoadingId === vehicle.id}
+                        onClick={() =>
+                          updateVehicleStatus(vehicle.id, 'AVAILABLE')
+                        }
+                        className="min-h-11 rounded-full border border-[#C8A96A]/30 bg-[#C8A96A]/10 px-3 py-2 text-xs font-semibold text-[#C8A96A] transition hover:bg-[#C8A96A]/20 disabled:cursor-not-allowed disabled:opacity-40"
+                      >
+                        Reactivate
+                      </button>
+                    )}
+                  </div>
+                </article>
+              );
+            })}
+          </div>
+
+          <div className="hidden overflow-x-auto lg:block">
             <table className="w-full min-w-[1120px] table-fixed border-collapse text-left text-xs">
               <thead className="border-b border-white/10 bg-white/[0.03] text-neutral-400">
                 <tr>
@@ -765,6 +893,17 @@ function SummaryCard({
           accent ? 'text-[#C8A96A]' : 'text-white'
         }`}
       >
+        {value}
+      </p>
+    </div>
+  );
+}
+
+function MobileInfo({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="min-w-0 rounded-2xl border border-white/10 bg-black/30 p-3">
+      <p className="text-[11px] text-neutral-500">{label}</p>
+      <p className="mt-1 break-words text-xs font-semibold text-white">
         {value}
       </p>
     </div>

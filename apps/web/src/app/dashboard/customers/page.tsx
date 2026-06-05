@@ -277,7 +277,7 @@ export default function CustomersPage() {
           type="button"
           onClick={fetchCustomerDashboard}
           disabled={loading}
-          className="rounded-full border border-white/10 px-5 py-3 text-sm font-semibold text-neutral-300 transition hover:border-[#C8A96A]/40 hover:text-white disabled:cursor-not-allowed disabled:opacity-50"
+          className="self-start rounded-full border border-white/10 px-5 py-3 text-sm font-semibold text-neutral-300 transition hover:border-[#C8A96A]/40 hover:text-white disabled:cursor-not-allowed disabled:opacity-50"
         >
           {loading ? 'Refreshing...' : 'Refresh'}
         </button>
@@ -328,7 +328,48 @@ export default function CustomersPage() {
           </p>
         </div>
 
-        <div className="overflow-x-auto">
+        <div className="grid gap-3 p-3 lg:hidden">
+          {customerRows.map((customer) => (
+            <article
+              key={customer.id}
+              className="rounded-2xl border border-white/10 bg-white/[0.035] p-4"
+            >
+              <div className="min-w-0">
+                <p className="break-words text-base font-semibold text-white">
+                  {customer.name}
+                </p>
+                <p className="mt-1 break-words text-sm text-neutral-400">
+                  {customer.phone}
+                </p>
+                {customer.isWalkIn && (
+                  <span className="mt-2 inline-flex rounded-full border border-[#C8A96A]/30 bg-[#C8A96A]/10 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide text-[#C8A96A]">
+                    Walk-in
+                  </span>
+                )}
+              </div>
+
+              <p className="mt-2 break-words text-xs leading-5 text-neutral-500">
+                {customer.email}
+              </p>
+
+              <div className="mt-4 grid grid-cols-2 gap-2 text-sm">
+                <MobileMetric label="Bookings" value={customer.totalBookings} />
+                <MobileMetric label="Last booking" value={customer.lastBookingDate} />
+                <MobileMetric
+                  label="Paid revenue"
+                  value={money(customer.paidRevenue)}
+                  accent
+                />
+                <MobileMetric
+                  label="Outstanding"
+                  value={money(customer.outstandingBalance)}
+                />
+              </div>
+            </article>
+          ))}
+        </div>
+
+        <div className="hidden overflow-x-auto lg:block">
           <table className="w-full min-w-[1180px] table-fixed border-collapse text-left text-xs">
             <thead className="border-b border-white/10 bg-white/[0.03] text-neutral-400">
               <tr>
@@ -423,6 +464,30 @@ function SummaryCard({
       <p
         className={
           'mt-2 text-2xl font-semibold ' +
+          (accent ? 'text-[#C8A96A]' : 'text-white')
+        }
+      >
+        {value}
+      </p>
+    </div>
+  );
+}
+
+function MobileMetric({
+  label,
+  value,
+  accent,
+}: {
+  label: string;
+  value: number | string;
+  accent?: boolean;
+}) {
+  return (
+    <div className="rounded-2xl border border-white/10 bg-black/30 p-3">
+      <p className="text-[11px] text-neutral-500">{label}</p>
+      <p
+        className={
+          'mt-1 break-words text-sm font-semibold ' +
           (accent ? 'text-[#C8A96A]' : 'text-white')
         }
       >

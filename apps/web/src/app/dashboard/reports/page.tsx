@@ -451,7 +451,7 @@ export default function ReportsPage() {
           type="button"
           onClick={fetchReports}
           disabled={loading}
-          className="rounded-full border border-white/10 px-5 py-3 text-sm font-semibold text-neutral-300 transition hover:border-[#C8A96A]/40 hover:text-white disabled:cursor-not-allowed disabled:opacity-50"
+          className="self-start rounded-full border border-white/10 px-5 py-3 text-sm font-semibold text-neutral-300 transition hover:border-[#C8A96A]/40 hover:text-white disabled:cursor-not-allowed disabled:opacity-50"
         >
           {loading ? 'Refreshing...' : 'Refresh'}
         </button>

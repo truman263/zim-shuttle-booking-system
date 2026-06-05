@@ -342,7 +342,7 @@ export default function RoutesPage() {
         <button
           type="button"
           onClick={() => setShowForm((current) => !current)}
-          className="rounded-full border border-[#C8A96A]/30 bg-[#C8A96A]/10 px-5 py-3 text-sm font-semibold text-[#C8A96A] transition hover:bg-[#C8A96A]/20"
+          className="self-start rounded-full border border-[#C8A96A]/30 bg-[#C8A96A]/10 px-5 py-3 text-sm font-semibold text-[#C8A96A] transition hover:bg-[#C8A96A]/20"
         >
           {showForm ? 'Hide Form' : 'Add Route'}
         </button>
@@ -538,7 +538,92 @@ export default function RoutesPage() {
             </div>
           </div>
 
-          <div className="overflow-x-auto">
+          <div className="grid gap-3 p-3 lg:hidden">
+            {routes.map((route) => (
+              <article
+                key={route.id}
+                className="rounded-2xl border border-white/10 bg-white/[0.035] p-4"
+              >
+                <div className="min-w-0">
+                  <p className="break-words text-base font-semibold text-white">
+                    {route.name}
+                  </p>
+                  <p className="mt-1 break-words text-xs leading-5 text-neutral-400">
+                    {route.pickupCity} {'->'} {route.destinationCity}
+                  </p>
+                  <div className="mt-2">
+                    <RouteStatusBadge isActive={route.isActive} />
+                  </div>
+                </div>
+
+                <div className="mt-4 grid grid-cols-2 gap-2">
+                  <MobileMetric
+                    label="Fare"
+                    value={'$' + money(route.basePrice)}
+                    accent
+                  />
+                  <MobileMetric label="Unit" value={nice(route.priceUnit)} />
+                  <MobileMetric
+                    label="Distance"
+                    value={
+                      route.distanceKm
+                        ? `${route.distanceKm} km`
+                        : 'Distance not set'
+                    }
+                  />
+                  <MobileMetric
+                    label="Duration"
+                    value={
+                      route.estimatedDurationMinutes
+                        ? `${route.estimatedDurationMinutes} min`
+                        : 'Duration not set'
+                    }
+                  />
+                  <MobileMetric label="Type" value={nice(route.routeType)} />
+                  <MobileMetric label="Road" value={nice(route.roadCondition)} />
+                </div>
+
+                <div className="mt-4 grid grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => startEdit(route)}
+                    className="min-h-11 rounded-full border border-white/10 px-3 py-2 text-xs font-semibold text-neutral-200 transition hover:border-[#C8A96A]/40 hover:text-[#C8A96A]"
+                  >
+                    Edit
+                  </button>
+
+                  {route.isActive ? (
+                    <button
+                      disabled={actionLoadingId === route.id}
+                      onClick={() => updateRouteStatus(route, false)}
+                      className="min-h-11 rounded-full border border-red-500/30 bg-red-500/10 px-3 py-2 text-xs font-semibold text-red-300 transition hover:bg-red-500/20 disabled:cursor-not-allowed disabled:opacity-40"
+                    >
+                      Deactivate
+                    </button>
+                  ) : (
+                    <button
+                      disabled={actionLoadingId === route.id}
+                      onClick={() => updateRouteStatus(route, true)}
+                      className="min-h-11 rounded-full border border-[#C8A96A]/30 bg-[#C8A96A]/10 px-3 py-2 text-xs font-semibold text-[#C8A96A] transition hover:bg-[#C8A96A]/20 disabled:cursor-not-allowed disabled:opacity-40"
+                    >
+                      Reactivate
+                    </button>
+                  )}
+
+                  <button
+                    type="button"
+                    disabled={actionLoadingId === route.id}
+                    onClick={() => archiveRoute(route)}
+                    className="col-span-2 min-h-11 rounded-full border border-red-500/30 bg-red-500/10 px-3 py-2 text-xs font-semibold text-red-300 transition hover:bg-red-500/20 disabled:cursor-not-allowed disabled:opacity-40"
+                  >
+                    Archive
+                  </button>
+                </div>
+              </article>
+            ))}
+          </div>
+
+          <div className="hidden overflow-x-auto lg:block">
             <table className="w-full min-w-[980px] table-fixed border-collapse text-left text-xs">
               <thead className="border-b border-white/10 bg-white/[0.03] text-neutral-400">
                 <tr>
@@ -676,6 +761,30 @@ function SummaryCard({
       <p
         className={
           'mt-2 text-2xl font-semibold ' +
+          (accent ? 'text-[#C8A96A]' : 'text-white')
+        }
+      >
+        {value}
+      </p>
+    </div>
+  );
+}
+
+function MobileMetric({
+  label,
+  value,
+  accent,
+}: {
+  label: string;
+  value: string;
+  accent?: boolean;
+}) {
+  return (
+    <div className="rounded-2xl border border-white/10 bg-black/30 p-3">
+      <p className="text-[11px] text-neutral-500">{label}</p>
+      <p
+        className={
+          'mt-1 break-words text-xs font-semibold ' +
           (accent ? 'text-[#C8A96A]' : 'text-white')
         }
       >

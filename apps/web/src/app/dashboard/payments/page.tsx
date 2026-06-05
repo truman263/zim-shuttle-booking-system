@@ -209,7 +209,7 @@ export default function PaymentsPage() {
 
         <button
           onClick={fetchPayments}
-          className="rounded-full border border-white/10 px-5 py-3 text-sm font-semibold text-neutral-300 transition hover:border-[#C8A96A]/40 hover:text-white"
+          className="self-start rounded-full border border-white/10 px-5 py-3 text-sm font-semibold text-neutral-300 transition hover:border-[#C8A96A]/40 hover:text-white"
         >
           Refresh
         </button>
@@ -257,7 +257,104 @@ export default function PaymentsPage() {
             </div>
           </div>
 
-          <div className="overflow-x-auto">
+          <div className="grid gap-3 p-3 lg:hidden">
+            {payments.map((payment) => {
+              const bookingTotal = getBookingTotal(payment);
+              const paidUpToThisPayment = getBookingPaidTotalUpToPayment(
+                payment,
+                payments,
+              );
+              const currentBookingPaidTotal = getCurrentBookingPaidTotal(
+                payment,
+                payments,
+              );
+              const balanceAfterThisPayment = Math.max(
+                bookingTotal - paidUpToThisPayment,
+                0,
+              );
+              const currentBookingBalance = Math.max(
+                bookingTotal - currentBookingPaidTotal,
+                0,
+              );
+              const isPaidTransaction = payment.status === 'PAID';
+              const isBookingSettled = currentBookingBalance <= 0;
+
+              return (
+                <article
+                  key={payment.id}
+                  className="rounded-2xl border border-white/10 bg-white/[0.035] p-4"
+                >
+                  <div className="flex flex-wrap items-center gap-2">
+                    <PaymentTypeBadge status={payment.paymentType} />
+                    <PaymentStatusBadge status={payment.status} />
+                  </div>
+
+                  <div className="mt-3 min-w-0">
+                    <p className="break-words text-base font-semibold text-white">
+                      {payment.booking?.bookingRef ?? 'No booking ref'}
+                    </p>
+                    <p className="mt-1 break-words text-xs text-neutral-500">
+                      Ref: {getPaymentReference(payment)}
+                    </p>
+                    <p className="mt-3 text-lg font-semibold text-[#C8A96A]">
+                      {'$' + money(payment.amount)}
+                    </p>
+                  </div>
+
+                  <div className="mt-4 rounded-2xl border border-white/10 bg-black/30 p-3">
+                    <p className="break-words text-sm font-semibold text-white">
+                      {payment.booking?.customer?.fullName ??
+                        'Customer not available'}
+                    </p>
+                    <p className="mt-1 break-words text-xs leading-5 text-neutral-400">
+                      {payment.booking?.pickupLocation ?? 'Pickup not set'}{' '}
+                      {'->'}{' '}
+                      {payment.booking?.destination ?? 'Destination not set'}
+                    </p>
+                    <div className="mt-2 flex flex-wrap gap-2">
+                      <BookingStatusBadge
+                        status={payment.booking?.status ?? 'UNKNOWN'}
+                      />
+                      {isPaidTransaction && (
+                        <PaymentStatusBadge
+                          status={payment.booking?.paymentStatus ?? 'UNKNOWN'}
+                        />
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="mt-4 grid grid-cols-2 gap-2">
+                    <MobileMetric label="Method" value={nice(payment.method)} />
+                    <MobileMetric
+                      label="Source"
+                      value={`${getPaymentSource(payment)} · ${nice(payment.gateway)}`}
+                    />
+                    <MobileMetric
+                      label="Booking total"
+                      value={'$' + money(bookingTotal)}
+                    />
+                    <MobileMetric
+                      label={isPaidTransaction ? 'Balance after' : 'Balance'}
+                      value={
+                        isPaidTransaction
+                          ? '$' + money(balanceAfterThisPayment)
+                          : isBookingSettled
+                            ? 'Settled'
+                            : '$' + money(currentBookingBalance)
+                      }
+                      accent={isPaidTransaction || isBookingSettled}
+                    />
+                  </div>
+
+                  <p className="mt-4 text-xs leading-5 text-neutral-500">
+                    {formatDate(payment.paidAt ?? payment.createdAt)}
+                  </p>
+                </article>
+              );
+            })}
+          </div>
+
+          <div className="hidden overflow-x-auto lg:block">
             <table className="w-full min-w-[1160px] table-fixed border-collapse text-left text-xs">
               <thead className="border-b border-white/10 bg-white/[0.03] text-neutral-400">
                 <tr>
@@ -443,6 +540,30 @@ function SummaryCard({
         className={
           'mt-2 text-2xl font-semibold ' +
           (accent ? 'text-[#C8A96A]' : 'text-white')
+        }
+      >
+        {value}
+      </p>
+    </div>
+  );
+}
+
+function MobileMetric({
+  label,
+  value,
+  accent,
+}: {
+  label: string;
+  value: string;
+  accent?: boolean;
+}) {
+  return (
+    <div className="rounded-2xl border border-white/10 bg-black/30 p-3">
+      <p className="text-[11px] text-neutral-500">{label}</p>
+      <p
+        className={
+          'mt-1 break-words text-xs font-semibold ' +
+          (accent ? 'text-green-300' : 'text-white')
         }
       >
         {value}

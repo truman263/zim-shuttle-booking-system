@@ -240,7 +240,7 @@ export default function NotificationsPage() {
           type="button"
           onClick={() => void loadNotifications()}
           disabled={loading}
-          className="rounded-full border border-white/10 px-5 py-3 text-sm font-semibold text-neutral-300 transition hover:border-[#C8A96A]/40 hover:text-white disabled:cursor-not-allowed disabled:opacity-50"
+          className="self-start rounded-full border border-white/10 px-5 py-3 text-sm font-semibold text-neutral-300 transition hover:border-[#C8A96A]/40 hover:text-white disabled:cursor-not-allowed disabled:opacity-50"
         >
           {loading ? 'Refreshing...' : 'Refresh'}
         </button>
@@ -510,10 +510,10 @@ function NotificationCard({
           <p className="text-xs uppercase tracking-[0.25em] text-neutral-500">
             {humanise(notification.event)}
           </p>
-          <h2 className="mt-2 truncate text-lg font-semibold text-white">
+          <h2 className="mt-2 break-words text-lg font-semibold text-white">
             {notification.subject || 'No subject'}
           </h2>
-          <p className="mt-2 text-sm text-neutral-400">
+          <p className="mt-2 break-words text-sm text-neutral-400">
             {notification.recipient || 'Not configured'}
           </p>
         </div>
