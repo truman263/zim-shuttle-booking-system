@@ -276,6 +276,15 @@ export class BookingsService {
     const driverChanged = nextDriverId !== existingBooking.driverId;
     const vehicleChanged = nextVehicleId !== existingBooking.vehicleId;
 
+    if (
+      existingBooking.status === BookingStatus.IN_PROGRESS &&
+      (!nextDriverId || !nextVehicleId)
+    ) {
+      throw new BadRequestException(
+        'In-progress trips must keep an assigned driver and vehicle',
+      );
+    }
+
     if (nextDriverId && driverChanged) {
       await this.validateDriverForAssignment(nextDriverId, companyId);
     }
@@ -550,6 +559,8 @@ export class BookingsService {
       throw new NotFoundException('Booking not found');
     }
 
+    this.validateStatusTransition(booking, status);
+
     const updatedBooking = await this.prisma.$transaction(async (tx) => {
       const result = await tx.booking.update({
         where: { id },
@@ -611,6 +622,42 @@ export class BookingsService {
     }
 
     return updatedBooking;
+  }
+
+  private validateStatusTransition(
+    booking: {
+      status: BookingStatus;
+      driverId: string | null;
+      vehicleId: string | null;
+    },
+    nextStatus: BookingStatus,
+  ) {
+    if (booking.status === nextStatus) {
+      return;
+    }
+
+    if (nextStatus === BookingStatus.IN_PROGRESS) {
+      if (booking.status !== BookingStatus.CONFIRMED) {
+        throw new BadRequestException(
+          'Trip can only be started after the booking is confirmed',
+        );
+      }
+
+      if (!booking.driverId || !booking.vehicleId) {
+        throw new BadRequestException(
+          'Assign a driver and vehicle before starting this trip.',
+        );
+      }
+    }
+
+    if (
+      nextStatus === BookingStatus.COMPLETED &&
+      booking.status !== BookingStatus.IN_PROGRESS
+    ) {
+      throw new BadRequestException(
+        'Trip can only be completed after it has started',
+      );
+    }
   }
 
   async remove(id: string) {

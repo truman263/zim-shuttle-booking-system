@@ -87,6 +87,31 @@ function getSmartEstimateDurationMinutes(
   return estimate.durationMinutes;
 }
 
+function hasSmartEstimateDetails(
+  estimate: PriceCalculation | SmartRouteEstimate | null,
+) {
+  const distanceKm = getSmartEstimateDistanceKm(estimate);
+  const durationMinutes = getSmartEstimateDurationMinutes(estimate);
+
+  return (
+    (typeof distanceKm === 'number' && distanceKm > 0) ||
+    (typeof durationMinutes === 'number' && durationMinutes > 0) ||
+    Boolean(
+      estimate &&
+        'matchedRouteName' in estimate &&
+        estimate.matchedRouteName?.trim(),
+    )
+  );
+}
+
+function resolveCustomTripType(
+  estimate: PriceCalculation | SmartRouteEstimate | null,
+) {
+  return hasSmartEstimateDetails(estimate)
+    ? 'Smart Custom Route'
+    : 'Custom Route Request';
+}
+
 
 type BookingResponse = {
   success: boolean;
@@ -595,7 +620,9 @@ export default function PublicBookingExperience({
         tripType: usesCustomRoute
           ? 'CUSTOM'
           : mapRouteTypeToTripType(selectedRoute?.routeType),
-        customTripType: usesCustomRoute ? 'Smart Custom Route' : undefined,
+        customTripType: usesCustomRoute
+          ? resolveCustomTripType(estimate)
+          : undefined,
         tripDirection: form.tripDirection,
             pickupLocation: form.pickupLocation.trim(),
             destination: form.destination.trim(),
@@ -620,7 +647,9 @@ export default function PublicBookingExperience({
       if (result.requiresManualQuote) {
         setSuccessMessage(
           result.message ||
-            'This trip requires a manual quote. You can still submit your request.',
+            (usesCustomRoute && hasSmartEstimateDetails(result)
+              ? 'Route details are ready. Manual quote confirmation is still pending.'
+              : 'This trip requires a manual quote. You can still submit your request.'),
         );
       } else {
         setSuccessMessage(
@@ -667,7 +696,9 @@ export default function PublicBookingExperience({
         tripType: usesCustomRoute
           ? 'CUSTOM'
           : mapRouteTypeToTripType(selectedRoute?.routeType),
-        customTripType: usesCustomRoute ? 'Smart Custom Route' : undefined,
+        customTripType: usesCustomRoute
+          ? resolveCustomTripType(estimate)
+          : undefined,
         tripDirection: form.tripDirection,
 
         pickupLocation: form.pickupLocation.trim(),
@@ -2089,39 +2120,58 @@ function SummaryPanel({
     );
   }
 
-  if (estimate && !estimate.requiresManualQuote) {
+  if (estimate && (!estimate.requiresManualQuote || hasSmartEstimateDetails(estimate))) {
+    const distanceKm = getSmartEstimateDistanceKm(estimate);
+    const durationMinutes = getSmartEstimateDurationMinutes(estimate);
+    const hasConfirmedEstimate =
+      !estimate.requiresManualQuote &&
+      typeof estimate.estimatedPrice === 'number';
+
     return (
       <div className="rounded-3xl border border-white/10 bg-white/[0.06] p-5 text-white backdrop-blur-xl">
         <div className="flex flex-col justify-between gap-4 md:flex-row md:items-start">
           <div>
             <p className="text-xs uppercase tracking-[0.3em] text-neutral-500">
-              Estimate
+              {hasConfirmedEstimate ? 'Estimate' : 'Route Preview'}
             </p>
 
             <p className="mt-3 text-4xl font-semibold">
-              ${formatMoney(estimate.estimatedPrice)}
+              {hasConfirmedEstimate
+                ? `$${formatMoney(estimate.estimatedPrice)}`
+                : 'Manual quote pending'}
             </p>
 
             <p className="mt-2 text-sm leading-6 text-neutral-400">
-              Estimated fare based on your trip details.
+              {hasConfirmedEstimate
+                ? 'Estimated fare based on your trip details.'
+                : 'Distance and timing can guide the request, but the LadyBird team will confirm the fare before travel.'}
             </p>
           </div>
-          {typeof getSmartEstimateDistanceKm(estimate) !== 'undefined' &&
-            getSmartEstimateDistanceKm(estimate) !== null &&
-            typeof getSmartEstimateDurationMinutes(estimate) !== 'undefined' &&
-            getSmartEstimateDurationMinutes(estimate) !== null && (
+          {typeof distanceKm !== 'undefined' &&
+            distanceKm !== null &&
+            typeof durationMinutes !== 'undefined' &&
+            durationMinutes !== null && (
               <div className="grid min-w-full gap-2 md:min-w-[360px]">
                 <div className="rounded-2xl border border-white/10 bg-black/25 px-4 py-3 text-xs">
                   <p className="text-neutral-500">Distance</p>
                   <p className="mt-1 font-semibold text-white">
-                    {getSmartEstimateDistanceKm(estimate)} km
+                    {distanceKm} km
                   </p>
                 </div>
 
                 <div className="rounded-2xl border border-white/10 bg-black/25 px-4 py-3 text-xs">
                   <p className="text-neutral-500">Estimated travel time</p>
                   <p className="mt-1 font-semibold text-white">
-                    {getSmartEstimateDurationMinutes(estimate)} min
+                    {durationMinutes} min
+                  </p>
+                </div>
+
+                <div className="rounded-2xl border border-white/10 bg-black/25 px-4 py-3 text-xs">
+                  <p className="text-neutral-500">Route status</p>
+                  <p className="mt-1 font-semibold text-white">
+                    {estimate.requiresManualQuote
+                      ? 'Manual quote pending'
+                      : 'Route estimate ready'}
                   </p>
                 </div>
               </div>

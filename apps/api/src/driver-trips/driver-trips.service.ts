@@ -116,6 +116,12 @@ export class DriverTripsService {
       );
     }
 
+    if (!driverTripToken.booking.vehicleId) {
+      throw new BadRequestException(
+        'A vehicle must be assigned before this trip can start.',
+      );
+    }
+
     const updatedToken = await this.prisma.$transaction(async (tx) => {
       await tx.booking.update({
         where: { id: driverTripToken.bookingId },

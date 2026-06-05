@@ -135,6 +135,13 @@ type Booking = {
   luggageDetails?: string | null;
   specialNotes?: string | null;
 
+  smartPricingMode?: string | null;
+  smartDistanceKm?: string | number | null;
+  smartDurationMinutes?: number | null;
+  matchedRouteId?: string | null;
+  matchedRouteName?: string | null;
+  matchedRouteDirection?: string | null;
+
   status: string;
   paymentStatus: string;
   payments?: PaymentRecord[];
@@ -1281,6 +1288,26 @@ export default function BookingsPage() {
   }
 
   async function updateBookingStatus(bookingId: string, status: string) {
+    const booking = bookings.find((item) => item.id === bookingId);
+
+    if (
+      status === 'IN_PROGRESS' &&
+      booking &&
+      (!booking.driver?.id || !booking.vehicle?.id)
+    ) {
+      setErrorMessage('Assign a driver and vehicle before starting this trip.');
+      return;
+    }
+
+    if (
+      status === 'COMPLETED' &&
+      booking &&
+      booking.status !== 'IN_PROGRESS'
+    ) {
+      setErrorMessage('Trip can only be completed after it has started.');
+      return;
+    }
+
     try {
       setActionLoadingId(bookingId);
 
@@ -2269,6 +2296,7 @@ export default function BookingsPage() {
         <BookingsTable
           bookings={filteredBookings}
           allBookings={bookings}
+          routes={routes}
           activeBookingTab={activeBookingTab}
           setActiveBookingTab={setActiveBookingTab}
           bookingStats={bookingStats}
@@ -2445,9 +2473,122 @@ function modeButtonClass(active: boolean) {
   }`;
 }
 
+function formatRouteLocation(value: string | null | undefined) {
+  if (!value?.trim()) {
+    return 'Not set';
+  }
+
+  const uppercaseTerms = new Set(['cbd', 'rgm']);
+
+  return value
+    .trim()
+    .replace(/\s+/g, ' ')
+    .split(' ')
+    .map((part) => {
+      const lower = part.toLowerCase();
+
+      if (uppercaseTerms.has(lower)) {
+        return lower.toUpperCase();
+      }
+
+      return lower.charAt(0).toUpperCase() + lower.slice(1);
+    })
+    .join(' ');
+}
+
+function normaliseRouteLocation(value: string | null | undefined) {
+  return value?.trim().toLowerCase().replace(/\s+/g, ' ') ?? '';
+}
+
+function formatRouteDistance(value: string | number | null | undefined) {
+  if (value === null || typeof value === 'undefined' || value === '') {
+    return null;
+  }
+
+  const distance = Number(value);
+
+  if (!Number.isFinite(distance) || distance <= 0) {
+    return null;
+  }
+
+  return `${distance.toFixed(distance % 1 === 0 ? 0 : 1)} km`;
+}
+
+function formatRouteDuration(value: number | null | undefined) {
+  if (!value || value <= 0) {
+    return null;
+  }
+
+  if (value < 60) {
+    return `${value} min`;
+  }
+
+  const hours = Math.floor(value / 60);
+  const minutes = value % 60;
+
+  return minutes ? `${hours} hr ${minutes} min` : `${hours} hr`;
+}
+
+function findReverseSavedRoute(booking: Booking, routes: RouteRecord[]) {
+  const pickup = normaliseRouteLocation(booking.pickupLocation);
+  const destination = normaliseRouteLocation(booking.destination);
+
+  if (!pickup || !destination) {
+    return null;
+  }
+
+  return (
+    routes.find((route) => {
+      return (
+        route.isActive !== false &&
+        normaliseRouteLocation(route.pickupCity) === destination &&
+        normaliseRouteLocation(route.destinationCity) === pickup
+      );
+    }) ?? null
+  );
+}
+
+function getBookingRouteSummary(booking: Booking, routes: RouteRecord[]) {
+  if (booking.route?.name) {
+    return {
+      title: booking.route.name,
+      status: 'Saved route',
+      metrics: [] as string[],
+      hint: null as string | null,
+    };
+  }
+
+  const distance = formatRouteDistance(booking.smartDistanceKm);
+  const duration = formatRouteDuration(booking.smartDurationMinutes);
+  const reverseRoute =
+    booking.matchedRouteDirection === 'REVERSE' && booking.matchedRouteName
+      ? { name: booking.matchedRouteName }
+      : findReverseSavedRoute(booking, routes);
+  const hasSmartData =
+    Boolean(distance) ||
+    Boolean(duration) ||
+    (Boolean(booking.matchedRouteName) &&
+      booking.matchedRouteDirection !== 'REVERSE');
+
+  return {
+    title: hasSmartData ? 'Smart custom route' : 'Custom route request',
+    status:
+      booking.matchedRouteDirection === 'DIRECT'
+        ? 'Matched saved corridor'
+        : hasSmartData
+          ? 'Distance / ETA captured'
+          : 'Manual quote pending',
+    metrics: [distance, duration].filter(Boolean) as string[],
+    hint: reverseRoute
+      ? `Possible reverse of saved route: ${reverseRoute.name}`
+      : null,
+  };
+}
+
 function BookingsTable({
   bookings,
   allBookings,
+  routes,
   activeBookingTab,
   setActiveBookingTab,
   bookingStats,
@@ -2460,6 +2601,7 @@ function BookingsTable({
 }: {
   bookings: Booking[];
   allBookings: Booking[];
+  routes: RouteRecord[];
   activeBookingTab: BookingTab;
   setActiveBookingTab: (tab: BookingTab) => void;
   bookingStats: {
@@ -2597,6 +2739,7 @@ function BookingsTable({
 
           const latestTripAction = booking.tripActionLogs?.[0];
           const isRoundTrip = booking.tripDirection === 'ROUND_TRIP';
+          const routeSummary = getBookingRouteSummary(booking, routes);
 
           return (
             <article
@@ -2620,10 +2763,11 @@ function BookingsTable({
 
               <div className="mt-4 rounded-2xl border border-white/10 bg-white/[0.03] p-3">
                 <p className="font-semibold leading-5 text-white">
-                  {booking.route?.name ?? 'Custom trip'}
+                  {routeSummary.title}
                 </p>
                 <p className="mt-2 text-sm leading-6 text-neutral-400">
-                  {booking.pickupLocation} → {booking.destination}
+                  {formatRouteLocation(booking.pickupLocation)} →{' '}
+                  {formatRouteLocation(booking.destination)}
                 </p>
                 <div className="mt-3 flex flex-wrap gap-2">
                   <MiniBadge
@@ -2631,13 +2775,18 @@ function BookingsTable({
                     tone="neutral"
                   />
                   <MiniBadge
-                    label={
-                      booking.customTripType ||
-                      booking.tripType.replaceAll('_', ' ')
-                    }
+                    label={routeSummary.status}
                     tone="neutral"
                   />
+                  {routeSummary.metrics.map((metric) => (
+                    <MiniBadge key={metric} label={metric} tone="neutral" />
+                  ))}
                 </div>
+                {routeSummary.hint && (
+                  <p className="mt-3 text-xs leading-5 text-neutral-500">
+                    {routeSummary.hint}
+                  </p>
+                )}
               </div>
 
               <div className="mt-4 grid gap-3 text-sm sm:grid-cols-2">
@@ -2820,6 +2969,7 @@ function BookingsTable({
                 booking.status === 'IN_PROGRESS';
 
               const isRoundTrip = booking.tripDirection === 'ROUND_TRIP';
+              const routeSummary = getBookingRouteSummary(booking, routes);
 
               return (
                 <tr
@@ -2840,7 +2990,7 @@ function BookingsTable({
 
                   <td className="px-4 py-5">
                     <p className="font-semibold leading-5 text-white">
-                      {booking.route?.name ?? 'Custom trip'}
+                      {routeSummary.title}
                     </p>
 
                     <div className="mt-2 flex flex-wrap gap-2">
@@ -2850,17 +3000,23 @@ function BookingsTable({
                       />
 
                       <MiniBadge
-                        label={
-                          booking.customTripType ||
-                          booking.tripType.replaceAll('_', ' ')
-                        }
+                        label={routeSummary.status}
                         tone="neutral"
                       />
+                      {routeSummary.metrics.map((metric) => (
+                        <MiniBadge key={metric} label={metric} tone="neutral" />
+                      ))}
                     </div>
 
                     <p className="mt-3 leading-5 text-neutral-500">
-                      {booking.pickupLocation} → {booking.destination}
+                      {formatRouteLocation(booking.pickupLocation)} →{' '}
+                      {formatRouteLocation(booking.destination)}
                     </p>
+                    {routeSummary.hint && (
+                      <p className="mt-2 leading-5 text-neutral-500">
+                        {routeSummary.hint}
+                      </p>
+                    )}
                   </td>
 
                   <td className="px-4 py-5">

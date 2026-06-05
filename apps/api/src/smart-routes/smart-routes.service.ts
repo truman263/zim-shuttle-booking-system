@@ -106,6 +106,29 @@ export class SmartRoutesService {
       });
 
       if (corridorMatch) {
+        if (corridorMatch.matchType === 'REVERSE') {
+          return {
+            requiresManualQuote: true,
+            pricingMode: 'CUSTOM_QUOTE',
+            companyId: dto.companyId,
+            pickupLocation: dto.pickupLocation,
+            destination: dto.destination,
+            tripDirection,
+            passengers,
+            distanceKm,
+            durationMinutes,
+            estimatedPrice: null,
+            matchedRouteId: corridorMatch.routeId,
+            matchedRouteName: corridorMatch.routeName,
+            matchedRouteDirection: corridorMatch.matchType,
+            matchedPickupCity: corridorMatch.pickupCity,
+            matchedDestinationCity: corridorMatch.destinationCity,
+            matchRadiusKm: corridorMatch.matchRadiusKm,
+            message:
+              'This custom route will be reviewed manually before pricing is confirmed.',
+          };
+        }
+
         const oneWayPrice = this.calculateMatchedRoutePrice(
           corridorMatch.basePrice,
           corridorMatch.priceUnit,

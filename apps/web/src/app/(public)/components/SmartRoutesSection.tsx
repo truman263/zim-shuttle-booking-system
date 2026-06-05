@@ -23,6 +23,7 @@ type SmartTripPreview = {
   distanceKm?: number | null;
   durationMinutes?: number | null;
   matchedRouteName?: string | null;
+  matchedRouteDirection?: string | null;
   matchedPickupCity?: string | null;
   matchedDestinationCity?: string | null;
   message?: string;
@@ -51,6 +52,29 @@ function formatLabel(value: string | null | undefined) {
     .replaceAll("_", " ")
     .toLowerCase()
     .replace(/\b\w/g, (letter) => letter.toUpperCase());
+}
+
+function formatLocationName(value: string | null | undefined) {
+  if (!value) {
+    return "";
+  }
+
+  const uppercaseTerms = new Set(["cbd", "rgm"]);
+
+  return value
+    .trim()
+    .replace(/\s+/g, " ")
+    .split(" ")
+    .map((part) => {
+      const lower = part.toLowerCase();
+
+      if (uppercaseTerms.has(lower)) {
+        return lower.toUpperCase();
+      }
+
+      return lower.charAt(0).toUpperCase() + lower.slice(1);
+    })
+    .join(" ");
 }
 
 function formatDistance(value: string | number | null | undefined) {
@@ -156,6 +180,12 @@ export function SmartRoutesSection() {
       ? formatDuration(matchingSavedRoute?.estimatedDurationMinutes)
       : formatDuration(preview?.durationMinutes);
   const previewRouteType = formatLabel(matchingSavedRoute?.routeType);
+  const hasSmartPreviewDetails = Boolean(
+    previewDistance ||
+      previewDuration ||
+      (preview?.matchedRouteName &&
+        preview.matchedRouteDirection !== "REVERSE"),
+  );
 
   async function handleTripPreview(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -283,10 +313,13 @@ export function SmartRoutesSection() {
                     <h3 className="mt-8 text-3xl font-semibold leading-[1.04] tracking-[-0.04em] sm:text-4xl">
                       {previewSource === "saved"
                         ? preview.matchedRouteName || "Saved route"
-                        : "Custom route preview"}
+                        : hasSmartPreviewDetails
+                          ? "Custom route preview"
+                          : "Custom route request"}
                     </h3>
                     <p className="mt-5 text-sm font-light leading-7 text-white/72 sm:text-base">
-                      {preview.pickupLocation} to {preview.destination}
+                      {formatLocationName(preview.pickupLocation)} to{" "}
+                      {formatLocationName(preview.destination)}
                     </p>
 
                     <div className="mt-8 grid gap-3 sm:grid-cols-2">
@@ -299,10 +332,12 @@ export function SmartRoutesSection() {
                           previewSource === "saved"
                             ? "Saved LadyBird route"
                             : preview?.requiresManualQuote
-                              ? "Manual quote review"
+                              ? "Manual quote pending"
                               : preview?.matchedRouteName
                               ? "Matched saved corridor"
-                              : "Custom route",
+                              : hasSmartPreviewDetails
+                                ? "Custom route estimate"
+                                : "Manual quote pending",
                         ],
                       ]
                         .filter((detail): detail is [string, string] =>
