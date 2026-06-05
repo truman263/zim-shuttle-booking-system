@@ -44,6 +44,7 @@ const eventOptions = [
   'PAYMENT_RECEIVED',
   'TRIP_DETAILS_ASSIGNED',
   'BOOKING_CANCELLED',
+  'DRIVER_ASSIGNED',
 ];
 
 function humanise(value?: string | null) {

@@ -45,6 +45,7 @@ enum NotificationEvent {
   PAYMENT_RECEIVED
   TRIP_DETAILS_ASSIGNED
   BOOKING_CANCELLED
+  DRIVER_ASSIGNED
 }
 
 enum NotificationDeliveryStatus {

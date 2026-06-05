@@ -10,13 +10,21 @@ import {
   TripDirection,
   VehicleStatus,
 } from '@prisma/client';
+import { NotificationsService } from '../notifications/notifications.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateBookingDto } from './dto/create-booking.dto';
 import { UpdateBookingDto } from './dto/update-booking.dto';
 
+type NotificationBookingRecord = Parameters<
+  NotificationsService['sendBookingStatusEmail']
+>[0];
+
 @Injectable()
 export class BookingsService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly notificationsService: NotificationsService,
+  ) {}
 
   async create(createBookingDto: CreateBookingDto) {
     const company = await this.prisma.company.findUnique({
@@ -180,6 +188,10 @@ export class BookingsService {
 
       return createdBooking;
     });
+
+    if (booking.driverId) {
+      await this.notifyDriverAssignment(booking, null);
+    }
 
     return booking;
   }
@@ -511,6 +523,13 @@ export class BookingsService {
       return result;
     });
 
+    if (driverChanged && nextDriverId) {
+      await this.notifyDriverAssignment(
+        updatedBooking,
+        existingBooking.driverId,
+      );
+    }
+
     return updatedBooking;
   }
 
@@ -579,6 +598,10 @@ export class BookingsService {
       return result;
     });
 
+    if (booking.status !== status) {
+      await this.notifyBookingStatusChange(updatedBooking, booking.status);
+    }
+
     return updatedBooking;
   }
 
@@ -640,6 +663,40 @@ export class BookingsService {
 
       return deletedBooking;
     });
+  }
+
+  private async notifyBookingStatusChange(
+    booking: NotificationBookingRecord,
+    previousStatus: BookingStatus,
+  ) {
+    try {
+      await this.notificationsService.sendBookingStatusEmail(
+        booking,
+        previousStatus,
+      );
+    } catch (error) {
+      console.warn(
+        `Booking status notification failed for ${booking.bookingRef}`,
+        error,
+      );
+    }
+  }
+
+  private async notifyDriverAssignment(
+    booking: NotificationBookingRecord,
+    previousDriverId: string | null,
+  ) {
+    try {
+      await this.notificationsService.sendDriverAssignmentEmail(
+        booking,
+        previousDriverId,
+      );
+    } catch (error) {
+      console.warn(
+        `Driver assignment notification failed for ${booking.bookingRef}`,
+        error,
+      );
+    }
   }
 
   private async validateRoute(routeId: string, companyId: string) {

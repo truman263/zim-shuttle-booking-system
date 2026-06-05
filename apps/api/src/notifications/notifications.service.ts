@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import {
+  BookingStatus,
   NotificationChannel,
   NotificationDeliveryStatus,
   NotificationEvent,
@@ -40,6 +41,13 @@ type BookingEmailCustomer = {
   email?: string | null;
 };
 
+type BookingEmailDriver = {
+  id: string;
+  fullName: string;
+  phone: string;
+  email?: string | null;
+};
+
 type BookingEmailRoute = {
   name: string;
   pickupCity: string;
@@ -63,6 +71,8 @@ type BookingEmailRecord = {
   returnPickupLocation?: string | null;
   returnDestination?: string | null;
   passengers: number;
+  luggageDetails?: string | null;
+  specialNotes?: string | null;
   estimatedPrice?: MoneyValue;
   finalPrice?: MoneyValue;
   depositAmount?: MoneyValue;
@@ -73,6 +83,8 @@ type BookingEmailRecord = {
   matchedRouteName?: string | null;
   company?: BookingEmailCompany | null;
   customer?: BookingEmailCustomer | null;
+  driverId?: string | null;
+  driver?: BookingEmailDriver | null;
   route?: BookingEmailRoute;
 };
 
@@ -190,6 +202,119 @@ export class NotificationsService {
       this.sendCustomerBookingEmail(booking),
       this.sendAdminBookingEmail(booking),
     ]);
+  }
+
+  async sendBookingStatusEmail(
+    booking: BookingEmailRecord,
+    previousStatus?: string | null,
+  ) {
+    if (previousStatus === booking.status) {
+      return;
+    }
+
+    if (
+      booking.status !== BookingStatus.CONFIRMED &&
+      booking.status !== BookingStatus.CANCELLED
+    ) {
+      return;
+    }
+
+    const event =
+      booking.status === BookingStatus.CONFIRMED
+        ? NotificationEvent.BOOKING_CONFIRMED
+        : NotificationEvent.BOOKING_CANCELLED;
+    const subject =
+      booking.status === BookingStatus.CONFIRMED
+        ? `Booking confirmed - ${booking.bookingRef}`
+        : `Booking cancelled - ${booking.bookingRef}`;
+    const metadata = this.mergeMetadata(
+      this.bookingMetadata(booking, 'customer'),
+      {
+        previousStatus: previousStatus ?? null,
+        newStatus: booking.status,
+      },
+    );
+    const customer = booking.customer;
+
+    if (!customer?.email) {
+      await this.log({
+        companyId: booking.companyId,
+        bookingId: booking.id,
+        customerId: booking.customerId,
+        event,
+        channel: NotificationChannel.EMAIL,
+        recipient: null,
+        subject,
+        message: 'Customer email was not provided.',
+        status: NotificationDeliveryStatus.SKIPPED,
+        errorMessage: 'Customer has no email recipient.',
+        metadata,
+      });
+      return;
+    }
+
+    const email = this.buildCustomerStatusEmail(booking, customer);
+
+    await this.sendEmailWithLog({
+      companyId: booking.companyId,
+      bookingId: booking.id,
+      customerId: booking.customerId,
+      event,
+      recipient: customer.email,
+      subject: email.subject,
+      text: email.text,
+      html: email.html,
+      metadata,
+      idempotencyKey: `booking-status-customer-${booking.id}-${previousStatus ?? 'none'}-${booking.status}`,
+    });
+  }
+
+  async sendDriverAssignmentEmail(
+    booking: BookingEmailRecord,
+    previousDriverId?: string | null,
+  ) {
+    if (!booking.driverId || previousDriverId === booking.driverId) {
+      return;
+    }
+
+    const driver = booking.driver;
+    const subject = `New trip assigned - ${booking.bookingRef}`;
+    const metadata = this.mergeMetadata(this.bookingMetadata(booking, 'driver'), {
+      previousDriverId: previousDriverId ?? null,
+      newDriverId: booking.driverId,
+    });
+
+    if (!driver?.email) {
+      await this.log({
+        companyId: booking.companyId,
+        bookingId: booking.id,
+        customerId: booking.customerId,
+        event: NotificationEvent.DRIVER_ASSIGNED,
+        channel: NotificationChannel.EMAIL,
+        recipient: null,
+        subject,
+        message: 'Assigned driver email was not provided.',
+        status: NotificationDeliveryStatus.SKIPPED,
+        errorMessage: 'Assigned driver has no email recipient.',
+        metadata,
+      });
+      return;
+    }
+
+    const email = this.buildDriverAssignmentEmail(booking, driver);
+
+    await this.sendEmailWithLog({
+      companyId: booking.companyId,
+      bookingId: booking.id,
+      customerId: booking.customerId,
+      event: NotificationEvent.DRIVER_ASSIGNED,
+      recipient: driver.email,
+      subject: email.subject,
+      text: email.text,
+      html: email.html,
+      metadata,
+      idempotencyKey: `driver-assigned-${booking.id}-${previousDriverId ?? 'none'}-${booking.driverId}`,
+    });
   }
 
   private async sendCustomerBookingEmail(booking: BookingEmailRecord) {
@@ -477,6 +602,139 @@ export class NotificationsService {
     return { subject, text, html };
   }
 
+  private buildCustomerStatusEmail(
+    booking: BookingEmailRecord,
+    customer: BookingEmailCustomer,
+  ) {
+    const trackingUrl = this.getTrackingUrl(booking.bookingRef);
+    const paymentLine = this.getPaymentLine(booking);
+    const isConfirmed = booking.status === BookingStatus.CONFIRMED;
+    const subject = isConfirmed
+      ? `Booking confirmed - ${booking.bookingRef}`
+      : `Booking cancelled - ${booking.bookingRef}`;
+    const title = isConfirmed ? 'Booking confirmed' : 'Booking cancelled';
+    const body = isConfirmed
+      ? 'Your LadyBird Shuttle Services booking has been confirmed. Please keep your booking reference for trip tracking and communication with the team.'
+      : 'Your LadyBird Shuttle Services booking has been cancelled. If you still need transport support, please submit a new request or contact the team to review the journey again.';
+    const rows: [string, string][] = isConfirmed
+      ? [
+          ['Booking reference', booking.bookingRef],
+          ['Trip', `${booking.pickupLocation} to ${booking.destination}`],
+          ['Route', this.getRouteLabel(booking)],
+          ['Pickup', this.formatDate(booking.pickupDate)],
+          ...(booking.tripDirection === 'ROUND_TRIP'
+            ? ([['Return', this.formatDate(booking.returnDate)]] as [
+                string,
+                string,
+              ][])
+            : []),
+          ['Passengers', String(booking.passengers)],
+          ['Fare', this.getPriceLabel(booking)],
+          ['Payment', paymentLine],
+        ]
+      : [
+          ['Booking reference', booking.bookingRef],
+          ['Trip', `${booking.pickupLocation} to ${booking.destination}`],
+          ['Pickup', this.formatDate(booking.pickupDate)],
+          ['Status', 'Cancelled'],
+          ['Support note', 'You may submit a new booking request if plans change.'],
+        ];
+
+    const text = [
+      `Hello ${customer.fullName},`,
+      '',
+      isConfirmed
+        ? `Your LadyBird Shuttle Services booking has been confirmed. Reference: ${booking.bookingRef}.`
+        : `Your LadyBird Shuttle Services booking has been cancelled. Reference: ${booking.bookingRef}.`,
+      body,
+      '',
+      `Trip: ${booking.pickupLocation} to ${booking.destination}`,
+      `Pickup: ${this.formatDate(booking.pickupDate)}`,
+      booking.tripDirection === 'ROUND_TRIP'
+        ? `Return: ${this.formatDate(booking.returnDate)}`
+        : null,
+      isConfirmed ? `Passengers: ${booking.passengers}` : null,
+      isConfirmed ? `Fare: ${this.getPriceLabel(booking)}` : null,
+      isConfirmed ? paymentLine : null,
+      trackingUrl ? `Track your booking: ${trackingUrl}` : null,
+      '',
+      'LadyBird Shuttle Services',
+    ]
+      .filter(Boolean)
+      .join('\n');
+
+    const html = this.wrapEmailHtml({
+      title,
+      eyebrow: 'LadyBird Shuttle Services',
+      intro: `Hello ${this.escapeHtml(customer.fullName)}, ${
+        isConfirmed
+          ? 'your booking has been confirmed.'
+          : 'your booking has been cancelled.'
+      }`,
+      body,
+      rows,
+      ctaLabel: trackingUrl ? 'Track booking' : undefined,
+      ctaUrl: trackingUrl,
+    });
+
+    return { subject, text, html };
+  }
+
+  private buildDriverAssignmentEmail(
+    booking: BookingEmailRecord,
+    driver: BookingEmailDriver,
+  ) {
+    const customer = booking.customer;
+    const routeLabel = this.getRouteLabel(booking);
+    const companyContact = this.getCompanyContactLine(booking.company);
+    const subject = `New trip assigned - ${booking.bookingRef}`;
+    const rows: [string, string][] = [
+      ['Booking reference', booking.bookingRef],
+      ['Pickup', this.formatDate(booking.pickupDate)],
+      ['Pickup point', booking.pickupLocation],
+      ['Destination', booking.destination],
+      ['Trip type', this.humanise(booking.tripDirection)],
+      ['Route', routeLabel],
+      ['Passenger', customer?.fullName || 'Not provided'],
+      ['Passenger phone', customer?.phone || 'Not provided'],
+      ['Passengers', String(booking.passengers)],
+      ['Luggage', booking.luggageDetails || 'Not provided'],
+      ['Special request', booking.specialNotes || 'Not provided'],
+      ['Company contact', companyContact],
+    ];
+
+    const text = [
+      `Hello ${driver.fullName},`,
+      '',
+      `A new trip has been assigned to you. Reference: ${booking.bookingRef}.`,
+      '',
+      `Pickup: ${this.formatDate(booking.pickupDate)}`,
+      `Pickup point: ${booking.pickupLocation}`,
+      `Destination: ${booking.destination}`,
+      `Trip type: ${this.humanise(booking.tripDirection)}`,
+      `Route: ${routeLabel}`,
+      `Passenger: ${customer?.fullName || 'Not provided'}`,
+      `Passenger phone/WhatsApp: ${customer?.phone || 'Not provided'}`,
+      `Passengers: ${booking.passengers}`,
+      `Luggage: ${booking.luggageDetails || 'Not provided'}`,
+      `Special request: ${booking.specialNotes || 'Not provided'}`,
+      '',
+      companyContact,
+    ].join('\n');
+
+    const html = this.wrapEmailHtml({
+      title: 'New trip assigned',
+      eyebrow: 'Driver assignment',
+      intro: `Hello ${this.escapeHtml(driver.fullName)}, a trip has been assigned to you.`,
+      body: 'Review the trip details below and contact LadyBird operations if anything needs clarification before pickup.',
+      rows,
+      ctaLabel: undefined,
+      ctaUrl: undefined,
+    });
+
+    return { subject, text, html };
+  }
+
   private wrapEmailHtml(input: {
     eyebrow: string;
     title: string;
@@ -597,6 +855,38 @@ export class NotificationsService {
     }
 
     return `USD ${price}`;
+  }
+
+  private getPaymentLine(booking: BookingEmailRecord) {
+    return booking.paymentStatus === 'PAID'
+      ? 'Payment status: Paid.'
+      : `Payment status: ${this.humanise(booking.paymentStatus)}. No payment has been marked as paid yet.`;
+  }
+
+  private getRouteLabel(booking: BookingEmailRecord) {
+    if (booking.route?.name) {
+      return booking.route.name;
+    }
+
+    if (booking.matchedRouteName) {
+      return booking.matchedRouteName;
+    }
+
+    return this.isCustomRoute(booking) ? 'Custom route' : 'Saved route';
+  }
+
+  private getCompanyContactLine(company?: BookingEmailCompany | null) {
+    const contacts = [
+      company?.phone ? `Phone: ${company.phone}` : null,
+      company?.whatsapp ? `WhatsApp: ${company.whatsapp}` : null,
+      company?.email ? `Email: ${company.email}` : null,
+    ].filter(Boolean);
+
+    if (contacts.length === 0) {
+      return 'Contact LadyBird operations if any trip detail needs clarification.';
+    }
+
+    return `Contact LadyBird operations if any trip detail needs clarification. ${contacts.join(' | ')}`;
   }
 
   private formatMoney(value: MoneyValue) {
