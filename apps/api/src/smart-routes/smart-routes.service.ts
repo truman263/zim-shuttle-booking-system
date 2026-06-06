@@ -21,6 +21,44 @@ type GoogleGeocodeResponse = {
   }>;
 };
 
+type GooglePlacesAutocompleteResponse = {
+  suggestions?: Array<{
+    placePrediction?: {
+      placeId?: string;
+      text?: {
+        text?: string;
+      };
+      structuredFormat?: {
+        mainText?: {
+          text?: string;
+        };
+        secondaryText?: {
+          text?: string;
+        };
+      };
+    };
+  }>;
+};
+
+type GoogleLegacyPlacesAutocompleteResponse = {
+  predictions?: Array<{
+    place_id?: string;
+    description?: string;
+    structured_formatting?: {
+      main_text?: string;
+      secondary_text?: string;
+    };
+  }>;
+  status?: string;
+};
+
+type PlaceSuggestion = {
+  placeId: string;
+  description: string;
+  mainText: string;
+  secondaryText: string;
+};
+
 type Coordinates = {
   lat: number;
   lng: number;
@@ -58,6 +96,48 @@ export class SmartRoutesService {
   private readonly maxCorridorMatchRadiusKm = 30;
 
   constructor(private readonly prisma: PrismaService) {}
+
+  async suggestPlaces(
+    input: string,
+    sessionToken?: string,
+  ): Promise<PlaceSuggestion[]> {
+    const cleanInput = input.trim().replace(/\s+/g, ' ');
+
+    if (cleanInput.length < 3) {
+      return [];
+    }
+
+    const apiKey = process.env.GOOGLE_MAPS_SERVER_KEY;
+    const region = process.env.GOOGLE_MAPS_REGION || 'ZW';
+    const language = process.env.GOOGLE_MAPS_LANGUAGE || 'en';
+    const cleanSessionToken = this.cleanPlacesSessionToken(sessionToken);
+
+    if (!apiKey) {
+      return [];
+    }
+
+    try {
+      return await this.fetchPlacesAutocomplete({
+        apiKey,
+        input: cleanInput,
+        region,
+        language,
+        sessionToken: cleanSessionToken,
+      });
+    } catch {
+      try {
+        return await this.fetchLegacyPlacesAutocomplete({
+          apiKey,
+          input: cleanInput,
+          region,
+          language,
+          sessionToken: cleanSessionToken,
+        });
+      } catch {
+        return [];
+      }
+    }
+  }
 
   async estimate(dto: EstimateSmartRouteDto) {
     const apiKey = process.env.GOOGLE_MAPS_SERVER_KEY;
@@ -415,6 +495,113 @@ export class SmartRoutesService {
     return this.roundMoney(basePrice);
   }
 
+  private async fetchPlacesAutocomplete({
+    apiKey,
+    input,
+    region,
+    language,
+    sessionToken,
+  }: {
+    apiKey: string;
+    input: string;
+    region: string;
+    language: string;
+    sessionToken?: string;
+  }): Promise<PlaceSuggestion[]> {
+    const response = await fetch(
+      'https://places.googleapis.com/v1/places:autocomplete',
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Goog-Api-Key': apiKey,
+          'X-Goog-FieldMask':
+            'suggestions.placePrediction.placeId,suggestions.placePrediction.text.text,suggestions.placePrediction.structuredFormat.mainText.text,suggestions.placePrediction.structuredFormat.secondaryText.text',
+        },
+        body: JSON.stringify({
+          input,
+          includedRegionCodes: [region.toLowerCase()],
+          languageCode: language,
+          ...(sessionToken ? { sessionToken } : {}),
+        }),
+      },
+    );
+
+    if (!response.ok) {
+      throw new Error(`Google Places API failed: ${response.status}`);
+    }
+
+    const data = (await response.json()) as GooglePlacesAutocompleteResponse;
+
+    return (data.suggestions ?? [])
+      .map((suggestion) => suggestion.placePrediction)
+      .filter((prediction): prediction is NonNullable<typeof prediction> =>
+        Boolean(prediction?.placeId && prediction.text?.text),
+      )
+      .map((prediction) => ({
+        placeId: prediction.placeId as string,
+        description: prediction.text?.text ?? '',
+        mainText:
+          prediction.structuredFormat?.mainText?.text ??
+          prediction.text?.text ??
+          '',
+        secondaryText:
+          prediction.structuredFormat?.secondaryText?.text ?? '',
+      }))
+      .slice(0, 6);
+  }
+
+  private async fetchLegacyPlacesAutocomplete({
+    apiKey,
+    input,
+    region,
+    language,
+    sessionToken,
+  }: {
+    apiKey: string;
+    input: string;
+    region: string;
+    language: string;
+    sessionToken?: string;
+  }): Promise<PlaceSuggestion[]> {
+    const url = new URL(
+      'https://maps.googleapis.com/maps/api/place/autocomplete/json',
+    );
+    url.searchParams.set('input', input);
+    url.searchParams.set('key', apiKey);
+    url.searchParams.set('components', `country:${region.toLowerCase()}`);
+    url.searchParams.set('language', language);
+    if (sessionToken) {
+      url.searchParams.set('sessiontoken', sessionToken);
+    }
+
+    const response = await fetch(url);
+
+    if (!response.ok) {
+      throw new Error(`Google Places API failed: ${response.status}`);
+    }
+
+    const data =
+      (await response.json()) as GoogleLegacyPlacesAutocompleteResponse;
+
+    if (data.status && !['OK', 'ZERO_RESULTS'].includes(data.status)) {
+      throw new Error(`Google Places API status: ${data.status}`);
+    }
+
+    return (data.predictions ?? [])
+      .filter((prediction) => prediction.place_id && prediction.description)
+      .map((prediction) => ({
+        placeId: prediction.place_id as string,
+        description: prediction.description as string,
+        mainText:
+          prediction.structured_formatting?.main_text ??
+          (prediction.description as string),
+        secondaryText:
+          prediction.structured_formatting?.secondary_text ?? '',
+      }))
+      .slice(0, 6);
+  }
+
   private async computeRoute({
     apiKey,
     region,
@@ -533,6 +720,16 @@ export class SmartRoutesService {
     }
 
     return cleanLocation;
+  }
+
+  private cleanPlacesSessionToken(sessionToken?: string) {
+    const cleanToken = sessionToken?.trim();
+
+    if (!cleanToken || !/^[A-Za-z0-9_-]{8,128}$/.test(cleanToken)) {
+      return undefined;
+    }
+
+    return cleanToken;
   }
 
   private calculateDistanceKm(a: Coordinates, b: Coordinates) {

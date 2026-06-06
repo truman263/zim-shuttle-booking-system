@@ -2,6 +2,7 @@
 
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import { apiGet, apiPost } from "@/lib/api";
+import { LocationAutocompleteInput } from "@/components/public-booking/LocationAutocompleteInput";
 
 const COMPANY_ID = "cmpfkzypy0000l4ew82k92cl1";
 
@@ -228,18 +229,33 @@ export function SmartRoutesSection() {
         passengers: 1,
       });
 
+      const hasUsefulPreview =
+        Boolean(result.distanceKm) ||
+        Boolean(result.durationMinutes) ||
+        Boolean(
+          result.matchedRouteName && result.matchedRouteDirection !== "REVERSE",
+        );
+
+      if (!hasUsefulPreview) {
+        setPreview(null);
+        setPreviewSource(null);
+        setMessage(
+          "Choose a more precise pickup or destination suggestion where possible, then check again for distance and ETA. You can still continue to booking for team confirmation.",
+        );
+        return;
+      }
+
       setPreview(result);
       setPreviewSource("smart");
 
-      if (!result.distanceKm || !result.durationMinutes) {
+      if (result.requiresManualQuote) {
         setMessage(
-          result.message ||
-            "This route will be reviewed manually and quoted by the LadyBird team.",
+          "Distance and ETA are available. Final fare confirmation happens after the LadyBird team reviews your request.",
         );
       }
     } catch {
       setMessage(
-        "This route will be reviewed manually and quoted by the LadyBird team.",
+        "Choose a more precise pickup or destination suggestion where possible, then check again for distance and ETA. You can still continue to booking for team confirmation.",
       );
     } finally {
       setCheckingTrip(false);
@@ -331,9 +347,8 @@ export function SmartRoutesSection() {
                           "Route status",
                           previewSource === "saved"
                             ? "Saved LadyBird route"
-                            : preview?.requiresManualQuote
-                              ? "Manual quote pending"
-                              : preview?.matchedRouteName
+                            : preview?.matchedRouteName &&
+                                preview.matchedRouteDirection !== "REVERSE"
                               ? "Matched saved corridor"
                               : hasSmartPreviewDetails
                                 ? "Custom route estimate"
@@ -395,21 +410,23 @@ export function SmartRoutesSection() {
             <form className="mt-5 grid gap-4" onSubmit={handleTripPreview}>
               <label className="grid gap-2 text-sm font-semibold text-neutral-950">
                 Pickup
-                <input
+                <LocationAutocompleteInput
                   value={pickup}
-                  onChange={(event) => setPickup(event.target.value)}
+                  onChange={setPickup}
                   placeholder="Example: Harare Airport"
                   className="h-13 rounded-[22px] border border-black/10 bg-[#FBFBFA] px-5 text-sm font-normal text-neutral-800 outline-none transition placeholder:text-neutral-400 focus:border-black/25 focus:bg-white"
+                  theme="light"
                 />
               </label>
 
               <label className="grid gap-2 text-sm font-semibold text-neutral-950">
                 Destination
-                <input
+                <LocationAutocompleteInput
                   value={destination}
-                  onChange={(event) => setDestination(event.target.value)}
+                  onChange={setDestination}
                   placeholder="Example: Harare CBD"
                   className="h-13 rounded-[22px] border border-black/10 bg-[#FBFBFA] px-5 text-sm font-normal text-neutral-800 outline-none transition placeholder:text-neutral-400 focus:border-black/25 focus:bg-white"
+                  theme="light"
                 />
               </label>
 

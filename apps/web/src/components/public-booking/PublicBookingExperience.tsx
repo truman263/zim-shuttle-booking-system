@@ -2,6 +2,7 @@
 
 import { FormEvent, useEffect, useMemo, useRef, useState } from 'react';
 import { apiGet, apiPost } from '@/lib/api';
+import { LocationAutocompleteInput } from './LocationAutocompleteInput';
 
 const COMPANY_ID = 'cmpfkzypy0000l4ew82k92cl1';
 const WHATSAPP_NUMBER = '263773615432';
@@ -1555,20 +1556,18 @@ function BookingFormView({
           </FormField>
 
           <FormField label="Pickup Point" required>
-            <input
+            <LocationAutocompleteInput
               value={form.pickupLocation}
-              onChange={(event) =>
-                updateForm('pickupLocation', event.target.value)
-              }
+              onChange={(value) => updateForm('pickupLocation', value)}
               placeholder="Example: Harare CBD"
               className="input-glass"
             />
           </FormField>
 
           <FormField label="Destination" required>
-            <input
+            <LocationAutocompleteInput
               value={form.destination}
-              onChange={(event) => updateForm('destination', event.target.value)}
+              onChange={(value) => updateForm('destination', value)}
               placeholder="Example: Masvingo CBD"
               className="input-glass"
             />
@@ -1615,10 +1614,10 @@ function BookingFormView({
               </FormField>
 
               <FormField label="Return Pickup Point" required>
-                <input
+                <LocationAutocompleteInput
                   value={form.returnPickupLocation}
-                  onChange={(event) =>
-                    updateForm('returnPickupLocation', event.target.value)
+                  onChange={(value) =>
+                    updateForm('returnPickupLocation', value)
                   }
                   placeholder="Example: Masvingo CBD"
                   className="input-glass"
@@ -1626,11 +1625,9 @@ function BookingFormView({
               </FormField>
 
               <FormField label="Return Destination" required>
-                <input
+                <LocationAutocompleteInput
                   value={form.returnDestination}
-                  onChange={(event) =>
-                    updateForm('returnDestination', event.target.value)
-                  }
+                  onChange={(value) => updateForm('returnDestination', value)}
                   placeholder="Example: Harare CBD"
                   className="input-glass"
                 />
