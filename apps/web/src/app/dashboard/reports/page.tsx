@@ -1,269 +1,275 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
+import type { ReactNode } from 'react';
+import {
+  Bar,
+  BarChart,
+  CartesianGrid,
+  Cell,
+  Line,
+  LineChart,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from 'recharts';
 import { apiGet } from '@/lib/api';
 
-type MoneyValue = number | string | null | undefined;
+const COMPANY_ID = 'cmpfkzypy0000l4ew82k92cl1';
 
-type EmbeddedPayment = {
-  id: string;
-  amount: MoneyValue;
-  status: string;
+const bookingStatusOptions = [
+  'PENDING',
+  'CONFIRMED',
+  'DRIVER_ASSIGNED',
+  'VEHICLE_ASSIGNED',
+  'IN_PROGRESS',
+  'COMPLETED',
+  'CANCELLED',
+  'NO_SHOW',
+];
+
+const paymentStatusOptions = [
+  'UNPAID',
+  'PARTIALLY_PAID',
+  'PAID',
+  'FAILED',
+  'REFUNDED',
+];
+
+type DatePreset = '7' | '30' | '90' | 'custom';
+
+type AnalyticsResponse = {
+  range: {
+    from: string;
+    to: string;
+  };
+  summary: {
+    totalBookings: number;
+    bookingValue: number;
+    paidRevenue: number;
+    manualQuotePending: number;
+    unassignedConfirmedTrips: number;
+    tripsInProgress: number;
+    completedTrips: number;
+    notificationFailures: number;
+  };
+  bookingsOverTime: Array<{
+    date: string;
+    count: number;
+  }>;
+  bookingStatusBreakdown: Array<{
+    status: string;
+    count: number;
+  }>;
+  paymentStatusBreakdown: Array<{
+    status: string;
+    count: number;
+    bookingValue: number;
+  }>;
+  routeDemand: Array<{
+    routeId: string | null;
+    name: string;
+    pickup: string | null;
+    destination: string | null;
+    count: number;
+  }>;
+  customRouteDemand: Array<{
+    pickup: string;
+    destination: string;
+    count: number;
+    averageDistanceKm: number | null;
+    averageDurationMinutes: number | null;
+  }>;
+  manualQuoteQueue: Array<{
+    id: string;
+    bookingRef: string;
+    routeDisplay: string;
+    pickupDate: string;
+    customerName: string;
+    status: string;
+  }>;
+  notificationHealth: {
+    breakdown: Array<{
+      status: string;
+      count: number;
+    }>;
+    recentFailures: Array<{
+      id: string;
+      event: string;
+      recipient: string | null;
+      subject: string | null;
+      errorMessage: string | null;
+      createdAt: string;
+    }>;
+  };
+  recentActivity: Array<{
+    id: string;
+    type: string;
+    title: string;
+    description: string;
+    status: string;
+    createdAt: string;
+  }>;
+  filterOptions: {
+    routes: Array<{
+      id: string;
+      name: string;
+      label: string;
+      isActive: boolean;
+    }>;
+    drivers: Array<{
+      id: string;
+      name: string;
+      status: string;
+    }>;
+    vehicles: Array<{
+      id: string;
+      name: string;
+      label: string;
+      status: string;
+    }>;
+  };
 };
 
-type RouteSummary = {
-  id: string;
-  name?: string | null;
-  pickupCity?: string | null;
-  destinationCity?: string | null;
-};
-
-type Booking = {
-  id: string;
-  bookingRef: string;
-  pickupLocation?: string | null;
-  destination?: string | null;
-  pickupDate?: string | null;
-  finalPrice?: MoneyValue;
-  estimatedPrice?: MoneyValue;
-  status: string;
+type AnalyticsFilters = {
+  from: string;
+  to: string;
+  bookingStatus: string;
   paymentStatus: string;
-  matchedRouteId?: string | null;
-  matchedRouteName?: string | null;
-  route?: RouteSummary | null;
-  payments?: EmbeddedPayment[];
+  routeId: string;
+  driverId: string;
+  vehicleId: string;
 };
 
-type PaymentBooking = {
-  id: string;
-  pickupLocation?: string | null;
-  destination?: string | null;
-  finalPrice?: MoneyValue;
-  estimatedPrice?: MoneyValue;
-  route?: RouteSummary | null;
+type ChartTooltipProps = {
+  active?: boolean;
+  payload?: Array<{
+    name?: string;
+    value?: number | string;
+    color?: string;
+  }>;
+  label?: string;
 };
 
-type Payment = {
-  id: string;
-  bookingId: string;
-  amount: MoneyValue;
-  method?: string | null;
-  status: string;
-  paymentType?: string | null;
-  paidAt?: string | null;
-  createdAt?: string | null;
-  booking?: PaymentBooking | null;
-};
-
-type RouteRecord = {
-  id: string;
-  name: string;
-  pickupCity: string;
-  destinationCity: string;
-};
-
-type BreakdownRow = {
-  label: string;
-  count: number;
-  amount: number;
-};
-
-type RouteIdentity = {
-  key: string;
-  name: string;
-  pickup: string;
-  destination: string;
-};
-
-type RouteMetric = RouteIdentity & {
-  bookingCount: number;
-  paidRevenue: number;
-  bookingValue: number;
-};
-
-function asArray<T>(data: T[] | T) {
-  return Array.isArray(data) ? data : [data];
+function toDateInputValue(date: Date) {
+  return date.toISOString().slice(0, 10);
 }
 
-function toMoneyNumber(value: MoneyValue) {
-  const amount = Number(String(value ?? 0).replace(',', '.'));
-  return Number.isFinite(amount) ? amount : 0;
-}
-
-function money(value: MoneyValue) {
-  return '$' + toMoneyNumber(value).toFixed(2);
-}
-
-function nice(value?: string | null) {
-  if (!value) {
-    return 'Not set';
-  }
-
-  return value.replaceAll('_', ' ');
-}
-
-function compactText(
-  value?: string | null,
-  fallback: string | null | undefined = 'Not set',
-) {
-  const cleaned = value?.trim();
-  const fallbackText = fallback?.trim();
-
-  if (cleaned) {
-    return cleaned;
-  }
-
-  return fallbackText || 'Not set';
-}
-
-function normalizeKey(value?: string | null) {
-  return compactText(value, 'unknown').toLowerCase().replace(/\s+/g, ' ');
-}
-
-function getBookingTotal(booking: Booking | PaymentBooking) {
-  return toMoneyNumber(booking.finalPrice ?? booking.estimatedPrice ?? 0);
-}
-
-function getBookingRouteIdentity(booking: Booking): RouteIdentity {
-  if (booking.route?.id) {
-    return {
-      key: 'route:' + booking.route.id,
-      name: compactText(
-        booking.route.name,
-        compactText(booking.matchedRouteName, 'Saved route'),
-      ),
-      pickup: compactText(booking.route.pickupCity, booking.pickupLocation),
-      destination: compactText(
-        booking.route.destinationCity,
-        booking.destination,
-      ),
-    };
-  }
-
-  if (booking.matchedRouteName) {
-    return {
-      key:
-        'matched:' +
-        normalizeKey(booking.matchedRouteId || booking.matchedRouteName),
-      name: booking.matchedRouteName,
-      pickup: compactText(booking.pickupLocation, 'Pickup not set'),
-      destination: compactText(booking.destination, 'Destination not set'),
-    };
-  }
+function getPresetRange(preset: Exclude<DatePreset, 'custom'>) {
+  const to = new Date();
+  const from = new Date();
+  from.setDate(to.getDate() - (Number(preset) - 1));
 
   return {
-    key:
-      'custom:' +
-      normalizeKey(booking.pickupLocation) +
-      ':' +
-      normalizeKey(booking.destination),
-    name: 'Custom trip',
-    pickup: compactText(booking.pickupLocation, 'Pickup not set'),
-    destination: compactText(booking.destination, 'Destination not set'),
+    from: toDateInputValue(from),
+    to: toDateInputValue(to),
   };
 }
 
-function getPaymentRouteIdentity(payment: Payment): RouteIdentity | null {
-  const booking = payment.booking;
-
-  if (!booking) {
-    return null;
-  }
-
-  if (booking.route?.id) {
-    return {
-      key: 'route:' + booking.route.id,
-      name: compactText(booking.route.name, 'Saved route'),
-      pickup: compactText(booking.route.pickupCity, booking.pickupLocation),
-      destination: compactText(
-        booking.route.destinationCity,
-        booking.destination,
-      ),
-    };
-  }
-
-  return {
-    key:
-      'custom:' +
-      normalizeKey(booking.pickupLocation) +
-      ':' +
-      normalizeKey(booking.destination),
-    name: 'Custom trip',
-    pickup: compactText(booking.pickupLocation, 'Pickup not set'),
-    destination: compactText(booking.destination, 'Destination not set'),
-  };
+function money(value: number) {
+  return '$' + Number(value || 0).toFixed(2);
 }
 
-function buildBreakdown(
-  payments: Payment[],
-  getLabel: (payment: Payment) => string,
-) {
-  const rows = new Map<string, BreakdownRow>();
-
-  payments.forEach((payment) => {
-    const label = getLabel(payment);
-    const current = rows.get(label) ?? {
-      label,
-      count: 0,
-      amount: 0,
-    };
-
-    current.count += 1;
-    current.amount += toMoneyNumber(payment.amount);
-    rows.set(label, current);
-  });
-
-  return Array.from(rows.values()).sort((first, second) => {
-    if (second.amount !== first.amount) {
-      return second.amount - first.amount;
-    }
-
-    return second.count - first.count;
-  });
+function nice(value: string) {
+  return value
+    .replaceAll('_', ' ')
+    .toLowerCase()
+    .replace(/\b\w/g, (letter) => letter.toUpperCase());
 }
 
-function getDateTime(value?: string | null) {
-  if (!value) {
-    return null;
-  }
-
+function formatDate(value: string) {
   const date = new Date(value);
 
   if (Number.isNaN(date.getTime())) {
-    return null;
+    return value;
   }
 
-  return date.getTime();
+  return date.toLocaleDateString(undefined, {
+    month: 'short',
+    day: 'numeric',
+  });
+}
+
+function formatDateTime(value: string) {
+  const date = new Date(value);
+
+  if (Number.isNaN(date.getTime())) {
+    return value;
+  }
+
+  return date.toLocaleString(undefined, {
+    month: 'short',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+}
+
+function compactLabel(value: string, length = 24) {
+  return value.length > length ? value.slice(0, length - 1) + '...' : value;
+}
+
+function statusTone(status: string) {
+  if (['SENT', 'PAID', 'COMPLETED', 'CONFIRMED'].includes(status)) {
+    return 'border-emerald-400/20 bg-emerald-400/10 text-emerald-200';
+  }
+
+  if (['FAILED', 'CANCELLED', 'NO_SHOW'].includes(status)) {
+    return 'border-red-400/20 bg-red-400/10 text-red-200';
+  }
+
+  if (['IN_PROGRESS', 'QUEUED', 'PARTIALLY_PAID'].includes(status)) {
+    return 'border-white/15 bg-white/[0.06] text-neutral-200';
+  }
+
+  return 'border-white/10 bg-white/[0.035] text-neutral-400';
+}
+
+function chartColor(index: number) {
+  const colors = ['#ffffff', '#a3a3a3', '#737373', '#22c55e', '#ef4444'];
+  return colors[index % colors.length];
 }
 
 export default function ReportsPage() {
-  const [bookings, setBookings] = useState<Booking[]>([]);
-  const [payments, setPayments] = useState<Payment[]>([]);
-  const [routes, setRoutes] = useState<RouteRecord[]>([]);
+  const initialRange = getPresetRange('30');
+  const [preset, setPreset] = useState<DatePreset>('30');
+  const [filters, setFilters] = useState<AnalyticsFilters>({
+    ...initialRange,
+    bookingStatus: '',
+    paymentStatus: '',
+    routeId: '',
+    driverId: '',
+    vehicleId: '',
+  });
+  const [analytics, setAnalytics] = useState<AnalyticsResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState('');
   const [lastUpdatedAt, setLastUpdatedAt] = useState<Date | null>(null);
 
-  async function fetchReports() {
+  async function fetchAnalytics(nextFilters = filters) {
     try {
       setLoading(true);
       setErrorMessage('');
 
-      const [bookingsData, paymentsData, routesData] = await Promise.all([
-        apiGet<Booking[] | Booking>('/bookings'),
-        apiGet<Payment[] | Payment>('/payments'),
-        apiGet<RouteRecord[] | RouteRecord>('/routes'),
-      ]);
+      const params = new URLSearchParams();
+      Object.entries(nextFilters).forEach(([key, value]) => {
+        if (value) {
+          params.set(key, value);
+        }
+      });
 
-      setBookings(asArray(bookingsData));
-      setPayments(asArray(paymentsData));
-      setRoutes(asArray(routesData));
+      const data = await apiGet<AnalyticsResponse>(
+        `/dashboard/analytics/${COMPANY_ID}?${params.toString()}`,
+      );
+
+      setAnalytics(data);
       setLastUpdatedAt(new Date());
     } catch (error) {
       setErrorMessage(
         error instanceof Error
           ? error.message
-          : 'Something went wrong while loading reports',
+          : 'Something went wrong while loading analytics.',
       );
     } finally {
       setLoading(false);
@@ -271,448 +277,711 @@ export default function ReportsPage() {
   }
 
   useEffect(() => {
-    fetchReports();
+    void fetchAnalytics();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const report = useMemo(() => {
-    const paidPayments = payments.filter(
-      (payment) => payment.status === 'PAID',
-    );
+  function updateFilter<K extends keyof AnalyticsFilters>(
+    key: K,
+    value: AnalyticsFilters[K],
+  ) {
+    const nextFilters = {
+      ...filters,
+      [key]: value,
+    };
 
-    const paidByBookingId = new Map<string, number>();
+    setFilters(nextFilters);
+    void fetchAnalytics(nextFilters);
+  }
 
-    paidPayments.forEach((payment) => {
-      paidByBookingId.set(
-        payment.bookingId,
-        (paidByBookingId.get(payment.bookingId) ?? 0) +
-          toMoneyNumber(payment.amount),
-      );
-    });
+  function applyPreset(nextPreset: DatePreset) {
+    setPreset(nextPreset);
 
-    const totalRevenueReceived = paidPayments.reduce(
-      (sum, payment) => sum + toMoneyNumber(payment.amount),
-      0,
-    );
-
-    const outstandingBalance = bookings.reduce((sum, booking) => {
-      const balance = Math.max(
-        getBookingTotal(booking) - (paidByBookingId.get(booking.id) ?? 0),
-        0,
-      );
-
-      return sum + balance;
-    }, 0);
-
-    const routeRows = new Map<string, RouteMetric>();
-    const bookingRouteKeys = new Map<string, string>();
-
-    function upsertRoute(identity: RouteIdentity) {
-      const existing = routeRows.get(identity.key);
-
-      if (existing) {
-        return existing;
-      }
-
-      const created = {
-        ...identity,
-        bookingCount: 0,
-        paidRevenue: 0,
-        bookingValue: 0,
-      };
-
-      routeRows.set(identity.key, created);
-      return created;
+    if (nextPreset === 'custom') {
+      return;
     }
 
-    routes.forEach((route) => {
-      upsertRoute({
-        key: 'route:' + route.id,
-        name: compactText(route.name, 'Saved route'),
-        pickup: compactText(route.pickupCity, 'Pickup not set'),
-        destination: compactText(route.destinationCity, 'Destination not set'),
-      });
-    });
+    const range = getPresetRange(nextPreset);
+    const nextFilters = {
+      ...filters,
+      ...range,
+    };
 
-    bookings.forEach((booking) => {
-      const identity = getBookingRouteIdentity(booking);
-      const row = upsertRoute(identity);
+    setFilters(nextFilters);
+    void fetchAnalytics(nextFilters);
+  }
 
-      row.bookingCount += 1;
-      row.bookingValue += getBookingTotal(booking);
-      bookingRouteKeys.set(booking.id, identity.key);
-    });
-
-    paidPayments.forEach((payment) => {
-      let routeKey = bookingRouteKeys.get(payment.bookingId);
-
-      if (!routeKey) {
-        const identity = getPaymentRouteIdentity(payment);
-
-        if (identity) {
-          routeKey = identity.key;
-          upsertRoute(identity);
-        }
-      }
-
-      if (!routeKey) {
-        return;
-      }
-
-      const row = routeRows.get(routeKey);
-
-      if (row) {
-        row.paidRevenue += toMoneyNumber(payment.amount);
-      }
-    });
-
-    const now = Date.now();
-    const upcomingBookings = bookings.filter((booking) => {
-      const pickupTime = getDateTime(booking.pickupDate);
-
-      return (
-        pickupTime !== null &&
-        pickupTime >= now &&
-        booking.status !== 'COMPLETED' &&
-        booking.status !== 'CANCELLED' &&
-        booking.status !== 'NO_SHOW'
-      );
-    }).length;
+  const chartData = useMemo(() => {
+    const emptyRows = [{ name: 'No data', count: 0 }];
 
     return {
-      totalRevenueReceived,
-      outstandingBalance,
-      totalBookings: bookings.length,
-      paidBookings: bookings.filter(
-        (booking) => booking.paymentStatus === 'PAID',
-      ).length,
-      unpaidPartialBookings: bookings.filter(
-        (booking) => booking.paymentStatus !== 'PAID',
-      ).length,
-      paymentMethodBreakdown: buildBreakdown(paidPayments, (payment) =>
-        nice(payment.method || 'UNKNOWN'),
-      ),
-      paymentTypeBreakdown: buildBreakdown(paidPayments, (payment) =>
-        nice(payment.paymentType || 'UNKNOWN'),
-      ),
-      routePerformance: Array.from(routeRows.values()).sort(
-        (first, second) => {
-          if (second.bookingCount !== first.bookingCount) {
-            return second.bookingCount - first.bookingCount;
-          }
-
-          return second.paidRevenue - first.paidRevenue;
-        },
-      ),
-      operations: {
-        upcoming: upcomingBookings,
-        completed: bookings.filter((booking) => booking.status === 'COMPLETED')
-          .length,
-        cancelledNoShow: bookings.filter(
-          (booking) =>
-            booking.status === 'CANCELLED' || booking.status === 'NO_SHOW',
-        ).length,
-        pendingInProgress: bookings.filter(
-          (booking) =>
-            booking.status === 'PENDING' || booking.status === 'IN_PROGRESS',
-        ).length,
-      },
+      bookingsOverTime:
+        analytics?.bookingsOverTime.map((row) => ({
+          date: formatDate(row.date),
+          count: row.count,
+        })) ?? [],
+      bookingStatus:
+        analytics?.bookingStatusBreakdown
+          .filter((row) => row.count > 0)
+          .map((row) => ({
+            name: nice(row.status),
+            count: row.count,
+            status: row.status,
+          })) ?? emptyRows,
+      paymentStatus:
+        analytics?.paymentStatusBreakdown
+          .filter((row) => row.count > 0)
+          .map((row) => ({
+            name: nice(row.status),
+            count: row.count,
+            bookingValue: row.bookingValue,
+            status: row.status,
+          })) ?? emptyRows,
+      routeDemand:
+        analytics?.routeDemand.map((route) => ({
+          name: compactLabel(route.name, 28),
+          count: route.count,
+          route: route.name,
+        })) ?? [],
+      customRouteDemand:
+        analytics?.customRouteDemand.map((route) => ({
+          name: compactLabel(`${route.pickup} to ${route.destination}`, 34),
+          count: route.count,
+          route: `${route.pickup} to ${route.destination}`,
+        })) ?? [],
     };
-  }, [bookings, payments, routes]);
+  }, [analytics]);
+
+  const summary = analytics?.summary;
 
   return (
     <section>
-      <div className="mb-8 flex flex-col justify-between gap-4 border-b border-white/10 pb-6 md:flex-row md:items-end">
+      <div className="mb-6 flex flex-col justify-between gap-4 border-b border-white/10 pb-6 lg:flex-row lg:items-end">
         <div>
           <p className="text-xs uppercase tracking-[0.35em] text-neutral-500">
-            Business Analytics
+            Business Intelligence
           </p>
-
           <h1 className="mt-3 text-3xl font-semibold tracking-tight sm:text-4xl">
-            Reports Dashboard
+            Reports & Analytics
           </h1>
-
-          <p className="mt-3 inline-flex rounded-full border border-[#C8A96A]/30 bg-[#C8A96A]/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-[#C8A96A]">
-            All-time report
+          <p className="mt-3 max-w-3xl text-sm leading-6 text-neutral-400">
+            Understand bookings, route demand, paid revenue, notification health
+            and daily operating pressure from live system records.
           </p>
-
-          <p className="mt-3 max-w-2xl text-sm leading-6 text-neutral-400">
-            Revenue, route performance and operational health from live booking
-            and payment records.
-          </p>
-
-          {lastUpdatedAt && (
+          {lastUpdatedAt ? (
             <p className="mt-2 text-xs text-neutral-600">
-              Last updated {lastUpdatedAt.toLocaleTimeString()}.
+              Last refreshed {lastUpdatedAt.toLocaleTimeString()}.
             </p>
-          )}
+          ) : null}
         </div>
 
         <button
           type="button"
-          onClick={fetchReports}
+          onClick={() => fetchAnalytics()}
           disabled={loading}
-          className="self-start rounded-full border border-white/10 px-5 py-3 text-sm font-semibold text-neutral-300 transition hover:border-[#C8A96A]/40 hover:text-white disabled:cursor-not-allowed disabled:opacity-50"
+          className="self-start rounded-full border border-white/10 px-5 py-3 text-sm font-semibold text-neutral-300 transition hover:border-white/25 hover:text-white disabled:cursor-not-allowed disabled:opacity-50"
         >
           {loading ? 'Refreshing...' : 'Refresh'}
         </button>
       </div>
 
-      {errorMessage && (
-        <div className="mb-6 rounded-3xl border border-red-500/20 bg-red-500/10 p-5 text-sm text-red-300">
+      <section className="mb-6 rounded-3xl border border-white/10 bg-white/[0.035] p-4 sm:p-5">
+        <div className="flex flex-wrap gap-2">
+          {(['7', '30', '90'] as const).map((days) => (
+            <button
+              key={days}
+              type="button"
+              onClick={() => applyPreset(days)}
+              className={`rounded-full border px-4 py-2.5 text-xs font-semibold transition ${
+                preset === days
+                  ? 'border-white bg-white text-black'
+                  : 'border-white/10 bg-black/20 text-neutral-300 hover:border-white/25'
+              }`}
+            >
+              {days} days
+            </button>
+          ))}
+          <button
+            type="button"
+            onClick={() => applyPreset('custom')}
+            className={`rounded-full border px-4 py-2.5 text-xs font-semibold transition ${
+              preset === 'custom'
+                ? 'border-white bg-white text-black'
+                : 'border-white/10 bg-black/20 text-neutral-300 hover:border-white/25'
+            }`}
+          >
+            Custom
+          </button>
+        </div>
+
+        <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-7">
+          <FilterInput
+            label="From"
+            type="date"
+            value={filters.from}
+            onChange={(value) => {
+              setPreset('custom');
+              updateFilter('from', value);
+            }}
+          />
+          <FilterInput
+            label="To"
+            type="date"
+            value={filters.to}
+            onChange={(value) => {
+              setPreset('custom');
+              updateFilter('to', value);
+            }}
+          />
+          <FilterSelect
+            label="Booking Status"
+            value={filters.bookingStatus}
+            onChange={(value) => updateFilter('bookingStatus', value)}
+            options={bookingStatusOptions.map((status) => ({
+              value: status,
+              label: nice(status),
+            }))}
+          />
+          <FilterSelect
+            label="Payment Status"
+            value={filters.paymentStatus}
+            onChange={(value) => updateFilter('paymentStatus', value)}
+            options={paymentStatusOptions.map((status) => ({
+              value: status,
+              label: nice(status),
+            }))}
+          />
+          <FilterSelect
+            label="Route"
+            value={filters.routeId}
+            onChange={(value) => updateFilter('routeId', value)}
+            options={
+              analytics?.filterOptions.routes.map((route) => ({
+                value: route.id,
+                label: route.label,
+              })) ?? []
+            }
+          />
+          <FilterSelect
+            label="Driver"
+            value={filters.driverId}
+            onChange={(value) => updateFilter('driverId', value)}
+            options={
+              analytics?.filterOptions.drivers.map((driver) => ({
+                value: driver.id,
+                label: driver.name,
+              })) ?? []
+            }
+          />
+          <FilterSelect
+            label="Vehicle"
+            value={filters.vehicleId}
+            onChange={(value) => updateFilter('vehicleId', value)}
+            options={
+              analytics?.filterOptions.vehicles.map((vehicle) => ({
+                value: vehicle.id,
+                label: vehicle.label,
+              })) ?? []
+            }
+          />
+        </div>
+      </section>
+
+      {errorMessage ? (
+        <div className="mb-6 rounded-3xl border border-red-400/20 bg-red-400/10 p-5 text-sm text-red-200">
           {errorMessage}
         </div>
-      )}
+      ) : null}
 
-      {loading && (
-        <div className="mb-6 rounded-3xl border border-white/10 bg-white/[0.04] p-6 text-sm text-neutral-400">
-          Loading reports...
+      {loading && !analytics ? (
+        <div className="rounded-3xl border border-white/10 bg-white/[0.035] p-6 text-sm text-neutral-400">
+          Loading analytics...
         </div>
-      )}
+      ) : null}
 
-      <div className="mb-3 rounded-2xl border border-white/10 bg-white/[0.04] px-4 py-3 text-xs text-neutral-400">
-        Revenue includes PAID payments only.
-      </div>
+      {summary ? (
+        <>
+          <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+            <KpiCard
+              title="Total bookings"
+              value={summary.totalBookings}
+              note="Requests created in selected range"
+            />
+            <KpiCard
+              title="Paid revenue"
+              value={money(summary.paidRevenue)}
+              note="PAID payments only"
+              tone="success"
+            />
+            <KpiCard
+              title="Booking value"
+              value={money(summary.bookingValue)}
+              note="Estimated or final booking totals"
+            />
+            <KpiCard
+              title="Manual quote pending"
+              value={summary.manualQuotePending}
+              note="Custom trips needing price action"
+              tone={summary.manualQuotePending ? 'attention' : 'neutral'}
+            />
+            <KpiCard
+              title="Unassigned confirmed trips"
+              value={summary.unassignedConfirmedTrips}
+              note="Driver or vehicle still missing"
+              tone={summary.unassignedConfirmedTrips ? 'danger' : 'neutral'}
+            />
+            <KpiCard
+              title="Trips in progress"
+              value={summary.tripsInProgress}
+              note="Active operations"
+            />
+            <KpiCard
+              title="Completed trips"
+              value={summary.completedTrips}
+              note="Closed journeys"
+              tone="success"
+            />
+            <KpiCard
+              title="Notification failures"
+              value={summary.notificationFailures}
+              note="Email events needing review"
+              tone={summary.notificationFailures ? 'danger' : 'neutral'}
+            />
+          </section>
 
-      <section className="mb-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
-        <SummaryCard
-          title="Total Revenue Received"
-          value={money(report.totalRevenueReceived)}
-          accent
-        />
-        <SummaryCard
-          title="Outstanding Balance"
-          value={money(report.outstandingBalance)}
-        />
-        <SummaryCard title="Total Bookings" value={report.totalBookings} />
-        <SummaryCard title="Fully Paid Bookings" value={report.paidBookings} />
-        <SummaryCard
-          title="Unpaid / Partial"
-          value={report.unpaidPartialBookings}
-        />
-      </section>
+          <section className="mt-6 grid gap-4 xl:grid-cols-2">
+            <ChartPanel
+              title="Bookings Over Time"
+              eyebrow="Demand"
+              description="Booking requests grouped by creation date."
+            >
+              <ResponsiveContainer width="100%" height={280}>
+                <LineChart data={chartData.bookingsOverTime}>
+                  <CartesianGrid stroke="rgba(255,255,255,0.08)" />
+                  <XAxis
+                    dataKey="date"
+                    tick={{ fill: '#a3a3a3', fontSize: 11 }}
+                    axisLine={false}
+                    tickLine={false}
+                  />
+                  <YAxis
+                    allowDecimals={false}
+                    tick={{ fill: '#a3a3a3', fontSize: 11 }}
+                    axisLine={false}
+                    tickLine={false}
+                  />
+                  <Tooltip content={<ChartTooltip />} />
+                  <Line
+                    type="monotone"
+                    dataKey="count"
+                    stroke="#ffffff"
+                    strokeWidth={2.4}
+                    dot={false}
+                    activeDot={{ r: 5, fill: '#ffffff' }}
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            </ChartPanel>
 
-      <section className="mb-6 grid gap-4 xl:grid-cols-2">
-        <BreakdownTable
-          title="Payment Method Breakdown"
-          eyebrow="Revenue and Payments"
-          rows={report.paymentMethodBreakdown}
-          emptyMessage="No paid payment methods found."
-        />
-        <BreakdownTable
-          title="Payment Type Breakdown"
-          eyebrow="Deposit, Balance and Full Payments"
-          rows={report.paymentTypeBreakdown}
-          emptyMessage="No paid payment types found."
-        />
-      </section>
+            <ChartPanel
+              title="Booking Status"
+              eyebrow="Operations"
+              description="Where bookings sit in the current workflow."
+            >
+              <ResponsiveContainer width="100%" height={280}>
+                <BarChart data={chartData.bookingStatus}>
+                  <CartesianGrid stroke="rgba(255,255,255,0.08)" />
+                  <XAxis
+                    dataKey="name"
+                    tick={{ fill: '#a3a3a3', fontSize: 11 }}
+                    axisLine={false}
+                    tickLine={false}
+                  />
+                  <YAxis
+                    allowDecimals={false}
+                    tick={{ fill: '#a3a3a3', fontSize: 11 }}
+                    axisLine={false}
+                    tickLine={false}
+                  />
+                  <Tooltip content={<ChartTooltip />} />
+                  <Bar dataKey="count" radius={[12, 12, 0, 0]}>
+                    {chartData.bookingStatus.map((_, index) => (
+                      <Cell key={index} fill={chartColor(index)} />
+                    ))}
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
+            </ChartPanel>
 
-      <section className="mb-6 overflow-hidden rounded-3xl border border-white/10 bg-[#050505]">
-        <div className="border-b border-white/10 px-6 py-5">
-          <p className="text-xs uppercase tracking-[0.3em] text-neutral-500">
-            Route Performance
-          </p>
-          <h2 className="mt-2 text-lg font-semibold">
-            Bookings and Revenue by Route
-          </h2>
-          <p className="mt-1 text-sm text-neutral-500">
-            Based on booking history and paid payment records. Active saved
-            routes are included even when they have no bookings yet.
-          </p>
-        </div>
+            <ChartPanel
+              title="Payment Status"
+              eyebrow="Money"
+              description="Booking counts and booking value by payment state."
+            >
+              <ResponsiveContainer width="100%" height={280}>
+                <BarChart data={chartData.paymentStatus}>
+                  <CartesianGrid stroke="rgba(255,255,255,0.08)" />
+                  <XAxis
+                    dataKey="name"
+                    tick={{ fill: '#a3a3a3', fontSize: 11 }}
+                    axisLine={false}
+                    tickLine={false}
+                  />
+                  <YAxis
+                    allowDecimals={false}
+                    tick={{ fill: '#a3a3a3', fontSize: 11 }}
+                    axisLine={false}
+                    tickLine={false}
+                  />
+                  <Tooltip content={<ChartTooltip />} />
+                  <Bar dataKey="count" radius={[12, 12, 0, 0]}>
+                    {chartData.paymentStatus.map((_, index) => (
+                      <Cell key={index} fill={chartColor(index)} />
+                    ))}
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
+            </ChartPanel>
 
-        <div className="overflow-x-auto">
-          <table className="w-full min-w-[920px] table-fixed border-collapse text-left text-xs">
-            <thead className="border-b border-white/10 bg-white/[0.03] text-neutral-400">
-              <tr>
-                <th className="w-[26%] px-4 py-4 font-medium">Route Name</th>
-                <th className="w-[34%] px-3 py-4 font-medium">
-                  Pickup → Destination
-                </th>
-                <th className="w-[13%] px-3 py-4 text-right font-medium">
-                  Booking Count
-                </th>
-                <th className="w-[14%] px-3 py-4 text-right font-medium">
-                  Paid Revenue
-                </th>
-                <th className="w-[13%] px-4 py-4 text-right font-medium">
-                  Booking Value
-                </th>
-              </tr>
-            </thead>
+            <ChartPanel
+              title="Top Saved Routes"
+              eyebrow="Route Demand"
+              description="Approved saved routes ranked by booking count."
+            >
+              {chartData.routeDemand.length ? (
+                <ResponsiveContainer width="100%" height={280}>
+                  <BarChart
+                    data={chartData.routeDemand}
+                    layout="vertical"
+                    margin={{ left: 8, right: 20 }}
+                  >
+                    <CartesianGrid stroke="rgba(255,255,255,0.08)" />
+                    <XAxis
+                      type="number"
+                      allowDecimals={false}
+                      tick={{ fill: '#a3a3a3', fontSize: 11 }}
+                      axisLine={false}
+                      tickLine={false}
+                    />
+                    <YAxis
+                      type="category"
+                      dataKey="name"
+                      width={130}
+                      tick={{ fill: '#a3a3a3', fontSize: 11 }}
+                      axisLine={false}
+                      tickLine={false}
+                    />
+                    <Tooltip content={<ChartTooltip />} />
+                    <Bar dataKey="count" fill="#ffffff" radius={[0, 12, 12, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              ) : (
+                <EmptyPanel message="No saved route demand in this range." />
+              )}
+            </ChartPanel>
+          </section>
 
-            <tbody>
-              {report.routePerformance.map((route) => (
-                <tr
-                  key={route.key}
-                  className="border-b border-white/5 align-top transition hover:bg-white/[0.03]"
-                >
-                  <td className="px-4 py-4">
-                    <p className="font-semibold text-white">{route.name}</p>
-                  </td>
-                  <td className="px-3 py-4 text-neutral-400">
-                    {route.pickup} → {route.destination}
-                  </td>
-                  <td className="px-3 py-4 text-right font-semibold text-white">
-                    {route.bookingCount}
-                  </td>
-                  <td className="px-3 py-4 text-right font-semibold text-[#C8A96A]">
-                    {money(route.paidRevenue)}
-                  </td>
-                  <td className="px-4 py-4 text-right font-semibold text-white">
-                    {money(route.bookingValue)}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+          <section className="mt-6 grid gap-4 xl:grid-cols-2">
+            <ChartPanel
+              title="Top Custom Route Requests"
+              eyebrow="Custom Demand"
+              description="Repeated custom corridors that may deserve saved route review."
+            >
+              {analytics.customRouteDemand.length ? (
+                <div className="space-y-3">
+                  {analytics.customRouteDemand.map((route) => (
+                    <div
+                      key={`${route.pickup}-${route.destination}`}
+                      className="rounded-2xl border border-white/10 bg-black/20 p-4"
+                    >
+                      <div className="flex items-start justify-between gap-3">
+                        <div>
+                          <p className="text-sm font-semibold text-white">
+                            {route.pickup} to {route.destination}
+                          </p>
+                          <p className="mt-1 text-xs text-neutral-500">
+                            {route.averageDistanceKm
+                              ? `${route.averageDistanceKm} km`
+                              : 'Distance not always available'}
+                            {route.averageDurationMinutes
+                              ? ` - ${route.averageDurationMinutes} min`
+                              : ''}
+                          </p>
+                        </div>
+                        <span className="rounded-full border border-white/10 px-3 py-1 text-xs text-neutral-300">
+                          {route.count}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <EmptyPanel message="No custom route demand in this range." />
+              )}
+            </ChartPanel>
 
-        {report.routePerformance.length === 0 && !loading && (
-          <div className="p-8 text-center text-sm text-neutral-500">
-            No route performance records found.
-          </div>
-        )}
-      </section>
+            <ChartPanel
+              title="Notification Health"
+              eyebrow="Communication"
+              description="Email delivery outcomes from booking notifications."
+            >
+              <div className="grid gap-3 sm:grid-cols-2">
+                {analytics.notificationHealth.breakdown.map((row) => (
+                  <div
+                    key={row.status}
+                    className="rounded-2xl border border-white/10 bg-black/20 p-4"
+                  >
+                    <p className="text-xs uppercase tracking-[0.24em] text-neutral-500">
+                      {nice(row.status)}
+                    </p>
+                    <p className="mt-2 text-2xl font-semibold">{row.count}</p>
+                  </div>
+                ))}
+              </div>
 
-      <section className="rounded-3xl border border-white/10 bg-white/[0.04] p-6">
-        <div className="mb-5">
-          <p className="text-xs uppercase tracking-[0.3em] text-neutral-500">
-            Operations
-          </p>
-          <h2 className="mt-2 text-lg font-semibold">Operations Summary</h2>
-        </div>
+              {analytics.notificationHealth.recentFailures.length ? (
+                <div className="mt-4 space-y-2">
+                  {analytics.notificationHealth.recentFailures.map((failure) => (
+                    <div
+                      key={failure.id}
+                      className="rounded-2xl border border-red-400/15 bg-red-400/5 p-3 text-xs text-red-100"
+                    >
+                      <p className="font-semibold">{nice(failure.event)}</p>
+                      <p className="mt-1 break-words text-red-200/70">
+                        {failure.errorMessage || 'Delivery failed.'}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              ) : null}
+            </ChartPanel>
+          </section>
 
-        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-          <OperationCard
-            title="Upcoming Bookings"
-            value={report.operations.upcoming}
-          />
-          <OperationCard
-            title="Completed Trips"
-            value={report.operations.completed}
-            accent
-          />
-          <OperationCard
-            title="Cancelled / No-show"
-            value={report.operations.cancelledNoShow}
-          />
-          <OperationCard
-            title="Pending/In-progress"
-            value={report.operations.pendingInProgress}
-          />
-        </div>
-      </section>
+          <section className="mt-6 grid gap-4 xl:grid-cols-2">
+            <Panel title="Manual Quote Queue" eyebrow="Pricing Attention">
+              {analytics.manualQuoteQueue.length ? (
+                <div className="space-y-3">
+                  {analytics.manualQuoteQueue.map((booking) => (
+                    <div
+                      key={booking.id}
+                      className="rounded-2xl border border-white/10 bg-white/[0.025] p-4"
+                    >
+                      <div className="flex flex-wrap items-center justify-between gap-2">
+                        <p className="font-semibold text-white">
+                          {booking.bookingRef}
+                        </p>
+                        <span
+                          className={`rounded-full border px-3 py-1 text-[11px] font-semibold ${statusTone(
+                            booking.status,
+                          )}`}
+                        >
+                          {nice(booking.status)}
+                        </span>
+                      </div>
+                      <p className="mt-2 text-sm text-neutral-300">
+                        {booking.routeDisplay}
+                      </p>
+                      <p className="mt-2 text-xs text-neutral-500">
+                        {booking.customerName} - pickup{' '}
+                        {formatDateTime(booking.pickupDate)}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <EmptyPanel message="No manual quote bookings need attention." />
+              )}
+            </Panel>
+
+            <Panel title="Recent Activity" eyebrow="Operations Feed">
+              {analytics.recentActivity.length ? (
+                <div className="space-y-3">
+                  {analytics.recentActivity.map((activity) => (
+                    <div
+                      key={activity.id}
+                      className="rounded-2xl border border-white/10 bg-white/[0.025] p-4"
+                    >
+                      <div className="flex flex-wrap items-center justify-between gap-2">
+                        <p className="font-semibold text-white">
+                          {activity.title}
+                        </p>
+                        <span
+                          className={`rounded-full border px-3 py-1 text-[11px] font-semibold ${statusTone(
+                            activity.status,
+                          )}`}
+                        >
+                          {nice(activity.type)}
+                        </span>
+                      </div>
+                      <p className="mt-2 break-words text-sm text-neutral-400">
+                        {activity.description}
+                      </p>
+                      <p className="mt-2 text-xs text-neutral-600">
+                        {formatDateTime(activity.createdAt)}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <EmptyPanel message="No recent activity in this range." />
+              )}
+            </Panel>
+          </section>
+        </>
+      ) : null}
     </section>
   );
 }
 
-function SummaryCard({
+function FilterInput({
+  label,
+  value,
+  onChange,
+  type = 'text',
+}: {
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+  type?: string;
+}) {
+  return (
+    <label className="grid gap-2 text-xs font-medium text-neutral-400">
+      {label}
+      <input
+        type={type}
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+        className="h-11 rounded-2xl border border-white/10 bg-black/25 px-3 text-sm text-white outline-none transition focus:border-white/30"
+      />
+    </label>
+  );
+}
+
+function FilterSelect({
+  label,
+  value,
+  onChange,
+  options,
+}: {
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+  options: Array<{ value: string; label: string }>;
+}) {
+  return (
+    <label className="grid gap-2 text-xs font-medium text-neutral-400">
+      {label}
+      <select
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+        className="h-11 rounded-2xl border border-white/10 bg-black/25 px-3 text-sm text-white outline-none transition focus:border-white/30"
+      >
+        <option value="">All</option>
+        {options.map((option) => (
+          <option key={option.value} value={option.value}>
+            {option.label}
+          </option>
+        ))}
+      </select>
+    </label>
+  );
+}
+
+function KpiCard({
   title,
   value,
-  accent,
+  note,
+  tone = 'neutral',
 }: {
   title: string;
   value: number | string;
-  accent?: boolean;
+  note: string;
+  tone?: 'neutral' | 'success' | 'danger' | 'attention';
 }) {
+  const toneClass = {
+    neutral: 'text-white',
+    success: 'text-emerald-200',
+    danger: 'text-red-200',
+    attention: 'text-neutral-100',
+  }[tone];
+
   return (
-    <div className="rounded-2xl border border-white/10 bg-white/[0.035] px-4 py-3.5 transition hover:border-[#C8A96A]/25">
+    <div className="rounded-2xl border border-white/10 bg-white/[0.035] px-4 py-3.5 transition hover:border-white/20">
       <p className="text-xs font-medium text-neutral-400">{title}</p>
-      <p
-        className={
-          'mt-2 text-2xl font-semibold ' +
-          (accent ? 'text-[#C8A96A]' : 'text-white')
-        }
-      >
-        {value}
-      </p>
+      <p className={`mt-2 text-2xl font-semibold ${toneClass}`}>{value}</p>
+      <p className="mt-1.5 text-xs leading-5 text-neutral-600">{note}</p>
     </div>
   );
 }
 
-function BreakdownTable({
+function ChartPanel({
   title,
   eyebrow,
-  rows,
-  emptyMessage,
+  description,
+  children,
 }: {
   title: string;
   eyebrow: string;
-  rows: BreakdownRow[];
-  emptyMessage: string;
+  description: string;
+  children: ReactNode;
 }) {
   return (
     <div className="overflow-hidden rounded-3xl border border-white/10 bg-[#050505]">
-      <div className="border-b border-white/10 px-6 py-5">
+      <div className="border-b border-white/10 px-5 py-5 sm:px-6">
         <p className="text-xs uppercase tracking-[0.3em] text-neutral-500">
           {eyebrow}
         </p>
         <h2 className="mt-2 text-lg font-semibold">{title}</h2>
+        <p className="mt-1 text-sm leading-6 text-neutral-500">
+          {description}
+        </p>
       </div>
-
-      <div className="overflow-x-auto">
-        <table className="w-full min-w-[460px] table-fixed border-collapse text-left text-xs">
-          <thead className="border-b border-white/10 bg-white/[0.03] text-neutral-400">
-            <tr>
-              <th className="w-[45%] px-4 py-4 font-medium">Category</th>
-              <th className="w-[20%] px-3 py-4 text-right font-medium">
-                Count
-              </th>
-              <th className="w-[35%] px-4 py-4 text-right font-medium">
-                Received
-              </th>
-            </tr>
-          </thead>
-          <tbody>
-            {rows.map((row) => (
-              <tr
-                key={row.label}
-                className="border-b border-white/5 transition hover:bg-white/[0.03]"
-              >
-                <td className="px-4 py-4 font-semibold text-white">
-                  {row.label}
-                </td>
-                <td className="px-3 py-4 text-right text-neutral-300">
-                  {row.count}
-                </td>
-                <td className="px-4 py-4 text-right font-semibold text-[#C8A96A]">
-                  {money(row.amount)}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-
-      {rows.length === 0 && (
-        <div className="p-8 text-center text-sm text-neutral-500">
-          {emptyMessage}
-        </div>
-      )}
+      <div className="p-3 sm:p-5">{children}</div>
     </div>
   );
 }
 
-function OperationCard({
+function Panel({
   title,
-  value,
-  accent,
+  eyebrow,
+  children,
 }: {
   title: string;
-  value: number;
-  accent?: boolean;
+  eyebrow: string;
+  children: ReactNode;
 }) {
   return (
-    <div className="rounded-2xl border border-white/10 bg-black/20 p-5">
-      <p className="text-xs font-medium text-neutral-400">{title}</p>
-      <p
-        className={
-          'mt-2 text-2xl font-semibold ' +
-          (accent ? 'text-[#C8A96A]' : 'text-white')
-        }
-      >
-        {value}
+    <div className="rounded-3xl border border-white/10 bg-white/[0.035] p-5 sm:p-6">
+      <p className="text-xs uppercase tracking-[0.3em] text-neutral-500">
+        {eyebrow}
       </p>
+      <h2 className="mt-2 text-lg font-semibold">{title}</h2>
+      <div className="mt-5">{children}</div>
+    </div>
+  );
+}
+
+function EmptyPanel({ message }: { message: string }) {
+  return (
+    <div className="rounded-2xl border border-white/10 bg-black/20 p-5 text-sm text-neutral-500">
+      {message}
+    </div>
+  );
+}
+
+function ChartTooltip({ active, payload, label }: ChartTooltipProps) {
+  if (!active || !payload?.length) {
+    return null;
+  }
+
+  return (
+    <div className="rounded-2xl border border-white/10 bg-black/90 px-3 py-2 text-xs shadow-2xl backdrop-blur-xl">
+      {label ? <p className="mb-1 font-semibold text-white">{label}</p> : null}
+      {payload.map((item) => (
+        <p key={`${item.name}-${item.value}`} className="text-neutral-300">
+          {item.name}: {item.value}
+        </p>
+      ))}
     </div>
   );
 }
