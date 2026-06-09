@@ -6,6 +6,7 @@ import {
   PaymentStatus,
   VehicleStatus,
 } from '@prisma/client';
+import * as ExcelJS from 'exceljs';
 import type { DashboardAnalyticsQuery } from './dashboard.controller';
 import { PrismaService } from '../prisma/prisma.service';
 
@@ -96,6 +97,7 @@ export class DashboardService {
           createdAt: true,
           customer: {
             select: {
+              id: true,
               fullName: true,
             },
           },
@@ -241,6 +243,21 @@ export class DashboardService {
       (sum, payment) => sum + Number(payment.amount),
       0,
     );
+    const paidBookings = bookings.filter(
+      (booking) => booking.paymentStatus === PaymentStatus.PAID,
+    ).length;
+    const pendingBookings = bookings.filter(
+      (booking) => booking.status === BookingStatus.PENDING,
+    ).length;
+    const cancelledBookings = bookings.filter(
+      (booking) =>
+        booking.status === BookingStatus.CANCELLED ||
+        booking.status === BookingStatus.NO_SHOW,
+    ).length;
+    const customerCount = new Set(
+      bookings.map((booking) => booking.customer.id),
+    ).size;
+    const unpaidAmount = Math.max(bookingValue - paidRevenue, 0);
 
     const manualQuoteBookings = bookings.filter((booking) =>
       this.isManualQuotePending(booking),
@@ -313,6 +330,12 @@ export class DashboardService {
         totalBookings: bookings.length,
         bookingValue: this.roundMoney(bookingValue),
         paidRevenue: this.roundMoney(paidRevenue),
+        paidAmount: this.roundMoney(paidRevenue),
+        unpaidAmount: this.roundMoney(unpaidAmount),
+        paidBookings,
+        pendingBookings,
+        cancelledBookings,
+        customers: customerCount,
         manualQuotePending: manualQuoteBookings.length,
         unassignedConfirmedTrips,
         tripsInProgress: bookings.filter(
@@ -368,6 +391,572 @@ export class DashboardService {
           status: vehicle.status,
         })),
       },
+    };
+  }
+
+  async exportAnalyticsWorkbook(
+    companyId: string,
+    query: DashboardAnalyticsQuery,
+  ) {
+    const company = await this.prisma.company.findUnique({
+      where: { id: companyId },
+      select: { id: true, name: true },
+    });
+
+    if (!company) {
+      throw new NotFoundException('Company not found');
+    }
+
+    const { from, to } = this.resolveDateRange(query.from, query.to);
+    const bookingStatus = this.cleanEnumValue<BookingStatus>(
+      query.bookingStatus,
+      BookingStatus,
+    );
+    const paymentStatus = this.cleanEnumValue<PaymentStatus>(
+      query.paymentStatus,
+      PaymentStatus,
+    );
+
+    const bookingWhere = {
+      companyId,
+      createdAt: {
+        gte: from,
+        lte: to,
+      },
+      ...(bookingStatus ? { status: bookingStatus } : {}),
+      ...(paymentStatus ? { paymentStatus } : {}),
+      ...(query.routeId ? { routeId: query.routeId } : {}),
+      ...(query.driverId ? { driverId: query.driverId } : {}),
+      ...(query.vehicleId ? { vehicleId: query.vehicleId } : {}),
+    };
+
+    const [bookings, routes, drivers] = await Promise.all([
+      this.prisma.booking.findMany({
+        where: bookingWhere,
+        select: {
+          id: true,
+          bookingRef: true,
+          tripType: true,
+          tripDirection: true,
+          customTripType: true,
+          pickupLocation: true,
+          destination: true,
+          pickupDate: true,
+          passengers: true,
+          finalPrice: true,
+          estimatedPrice: true,
+          depositAmount: true,
+          smartPricingMode: true,
+          smartDistanceKm: true,
+          smartDurationMinutes: true,
+          status: true,
+          paymentStatus: true,
+          createdAt: true,
+          customerId: true,
+          routeId: true,
+          driverId: true,
+          customer: {
+            select: {
+              id: true,
+              fullName: true,
+              phone: true,
+              email: true,
+            },
+          },
+          route: {
+            select: {
+              id: true,
+              name: true,
+              pickupCity: true,
+              destinationCity: true,
+              routeType: true,
+              priceUnit: true,
+              basePrice: true,
+              isActive: true,
+            },
+          },
+          driver: {
+            select: {
+              id: true,
+              fullName: true,
+              phone: true,
+              email: true,
+              status: true,
+            },
+          },
+          vehicle: {
+            select: {
+              id: true,
+              name: true,
+              registrationNo: true,
+              status: true,
+            },
+          },
+        },
+        orderBy: { createdAt: 'desc' },
+      }),
+
+      this.prisma.route.findMany({
+        where: {
+          companyId,
+          isDeleted: false,
+        },
+        select: {
+          id: true,
+          name: true,
+          pickupCity: true,
+          destinationCity: true,
+          routeType: true,
+          priceUnit: true,
+          basePrice: true,
+          isActive: true,
+        },
+        orderBy: { name: 'asc' },
+      }),
+
+      this.prisma.driver.findMany({
+        where: { companyId },
+        select: {
+          id: true,
+          fullName: true,
+          phone: true,
+          email: true,
+          status: true,
+        },
+        orderBy: { fullName: 'asc' },
+      }),
+    ]);
+
+    const bookingIds = bookings.map((booking) => booking.id);
+    const customerIds = Array.from(
+      new Set(bookings.map((booking) => booking.customerId)),
+    );
+
+    const [payments, notifications] = await Promise.all([
+      this.prisma.payment.findMany({
+        where: {
+          bookingId: {
+            in: bookingIds,
+          },
+        },
+        select: {
+          id: true,
+          amount: true,
+          status: true,
+          gateway: true,
+          paymentType: true,
+          method: true,
+          transactionRef: true,
+          gatewayReference: true,
+          paidAt: true,
+          createdAt: true,
+          booking: {
+            select: {
+              bookingRef: true,
+              customer: {
+                select: {
+                  fullName: true,
+                },
+              },
+            },
+          },
+        },
+        orderBy: { createdAt: 'desc' },
+      }),
+
+      this.prisma.notificationLog.findMany({
+        where: {
+          companyId,
+          createdAt: {
+            gte: from,
+            lte: to,
+          },
+          bookingId: {
+            in: bookingIds,
+          },
+        },
+        select: {
+          id: true,
+          bookingId: true,
+          event: true,
+          channel: true,
+          recipient: true,
+          status: true,
+          subject: true,
+          createdAt: true,
+        },
+        orderBy: { createdAt: 'desc' },
+      }),
+    ]);
+
+    const bookingById = new Map(
+      bookings.map((booking) => [booking.id, booking]),
+    );
+    const bookingValue = bookings.reduce(
+      (sum, booking) => sum + this.getBookingValue(booking),
+      0,
+    );
+    const paidAmount = payments
+      .filter((payment) => payment.status === PaymentStatus.PAID)
+      .reduce((sum, payment) => sum + Number(payment.amount), 0);
+    const unpaidAmount = Math.max(bookingValue - paidAmount, 0);
+    const manualQuoteBookings = bookings.filter((booking) =>
+      this.isManualQuotePending(booking),
+    );
+    const routeDemand = new Map<
+      string,
+      { bookingCount: number; revenue: number }
+    >();
+    const customerDemand = new Map<
+      string,
+      {
+        name: string;
+        phone: string;
+        email: string;
+        bookingCount: number;
+        totalSpend: number;
+        lastBookingDate: Date | null;
+      }
+    >();
+    const driverDemand = new Map<
+      string,
+      { assignedTrips: number; completedTrips: number }
+    >();
+
+    bookings.forEach((booking) => {
+      if (booking.routeId) {
+        const current = routeDemand.get(booking.routeId) ?? {
+          bookingCount: 0,
+          revenue: 0,
+        };
+        current.bookingCount += 1;
+        current.revenue += this.getBookingValue(booking);
+        routeDemand.set(booking.routeId, current);
+      }
+
+      const customer = customerDemand.get(booking.customerId) ?? {
+        name: booking.customer.fullName,
+        phone: booking.customer.phone,
+        email: booking.customer.email ?? '',
+        bookingCount: 0,
+        totalSpend: 0,
+        lastBookingDate: null,
+      };
+      customer.bookingCount += 1;
+      customer.totalSpend += payments
+        .filter(
+          (payment) =>
+            payment.booking?.bookingRef === booking.bookingRef &&
+            payment.status === PaymentStatus.PAID,
+        )
+        .reduce((sum, payment) => sum + Number(payment.amount), 0);
+      customer.lastBookingDate =
+        !customer.lastBookingDate || booking.createdAt > customer.lastBookingDate
+          ? booking.createdAt
+          : customer.lastBookingDate;
+      customerDemand.set(booking.customerId, customer);
+
+      if (booking.driverId) {
+        const current = driverDemand.get(booking.driverId) ?? {
+          assignedTrips: 0,
+          completedTrips: 0,
+        };
+        current.assignedTrips += 1;
+        if (booking.status === BookingStatus.COMPLETED) {
+          current.completedTrips += 1;
+        }
+        driverDemand.set(booking.driverId, current);
+      }
+    });
+
+    const workbook = new ExcelJS.Workbook();
+    workbook.creator = 'LadyBird Shuttle Services';
+    workbook.created = new Date();
+    workbook.modified = new Date();
+    workbook.subject = 'Business performance export';
+    workbook.title = 'LadyBird Shuttle Services Reports';
+
+    this.addSheet(workbook, 'Summary', [
+      { header: 'Metric', key: 'metric', width: 34 },
+      { header: 'Value', key: 'value', width: 20 },
+    ], [
+      { metric: 'Company', value: company.name },
+      { metric: 'From date', value: from },
+      { metric: 'To date', value: to },
+      { metric: 'Total bookings', value: bookings.length },
+      {
+        metric: 'Completed trips',
+        value: bookings.filter(
+          (booking) => booking.status === BookingStatus.COMPLETED,
+        ).length,
+      },
+      {
+        metric: 'Pending bookings',
+        value: bookings.filter(
+          (booking) => booking.status === BookingStatus.PENDING,
+        ).length,
+      },
+      {
+        metric: 'Cancelled bookings',
+        value: bookings.filter(
+          (booking) =>
+            booking.status === BookingStatus.CANCELLED ||
+            booking.status === BookingStatus.NO_SHOW,
+        ).length,
+      },
+      { metric: 'Total revenue', value: `$${this.roundMoney(bookingValue)}` },
+      { metric: 'Paid amount', value: `$${this.roundMoney(paidAmount)}` },
+      { metric: 'Unpaid amount', value: `$${this.roundMoney(unpaidAmount)}` },
+      { metric: 'Customers', value: customerIds.length },
+      {
+        metric: 'Custom route requests',
+        value: bookings.filter(
+          (booking) => !booking.routeId || booking.tripType === 'CUSTOM',
+        ).length,
+      },
+      {
+        metric: 'Manual quote pending count',
+        value: manualQuoteBookings.length,
+      },
+    ], {
+      dateKeys: ['value'],
+    });
+
+    this.addSheet(
+      workbook,
+      'Bookings',
+      [
+        { header: 'Booking reference', key: 'bookingRef', width: 22 },
+        { header: 'Customer name', key: 'customerName', width: 24 },
+        { header: 'Customer phone', key: 'customerPhone', width: 18 },
+        { header: 'Customer email', key: 'customerEmail', width: 28 },
+        { header: 'Pickup', key: 'pickup', width: 28 },
+        { header: 'Destination', key: 'destination', width: 28 },
+        { header: 'Route name', key: 'routeName', width: 26 },
+        { header: 'Trip type', key: 'tripType', width: 18 },
+        { header: 'Status', key: 'status', width: 18 },
+        { header: 'Payment status', key: 'paymentStatus', width: 18 },
+        { header: 'Passengers', key: 'passengers', width: 14 },
+        { header: 'Final price', key: 'finalPrice', width: 14 },
+        { header: 'Deposit amount', key: 'depositAmount', width: 16 },
+        { header: 'Balance', key: 'balance', width: 14 },
+        { header: 'Travel date', key: 'travelDate', width: 20 },
+        { header: 'Created date', key: 'createdDate', width: 20 },
+      ],
+      bookings.map((booking) => {
+        const finalPrice = this.getBookingValue(booking);
+        const depositAmount = Number(booking.depositAmount ?? 0);
+
+        return {
+          bookingRef: booking.bookingRef,
+          customerName: booking.customer.fullName,
+          customerPhone: booking.customer.phone,
+          customerEmail: booking.customer.email ?? '',
+          pickup: this.toDisplayLocation(booking.pickupLocation),
+          destination: this.toDisplayLocation(booking.destination),
+          routeName: booking.route?.name ?? 'Custom route',
+          tripType: this.niceLabel(booking.tripType),
+          status: this.niceLabel(booking.status),
+          paymentStatus: this.niceLabel(booking.paymentStatus),
+          passengers: booking.passengers,
+          finalPrice,
+          depositAmount,
+          balance: Math.max(finalPrice - depositAmount, 0),
+          travelDate: booking.pickupDate,
+          createdDate: booking.createdAt,
+        };
+      }),
+      {
+        currencyKeys: ['finalPrice', 'depositAmount', 'balance'],
+        dateKeys: ['travelDate', 'createdDate'],
+      },
+    );
+
+    this.addSheet(
+      workbook,
+      'Payments',
+      [
+        { header: 'Booking reference', key: 'bookingRef', width: 22 },
+        { header: 'Customer', key: 'customer', width: 24 },
+        { header: 'Amount', key: 'amount', width: 14 },
+        { header: 'Payment status', key: 'status', width: 18 },
+        { header: 'Payment provider', key: 'provider', width: 18 },
+        { header: 'Payment type', key: 'paymentType', width: 18 },
+        { header: 'Transaction reference', key: 'transactionRef', width: 28 },
+        { header: 'Paid date', key: 'paidDate', width: 20 },
+        { header: 'Created date', key: 'createdDate', width: 20 },
+      ],
+      payments.map((payment) => ({
+        bookingRef: payment.booking?.bookingRef ?? '',
+        customer: payment.booking?.customer.fullName ?? '',
+        amount: Number(payment.amount),
+        status: this.niceLabel(payment.status),
+        provider: this.niceLabel(payment.gateway),
+        paymentType: this.niceLabel(payment.paymentType),
+        transactionRef: payment.transactionRef ?? payment.gatewayReference ?? '',
+        paidDate: payment.paidAt,
+        createdDate: payment.createdAt,
+      })),
+      {
+        currencyKeys: ['amount'],
+        dateKeys: ['paidDate', 'createdDate'],
+      },
+    );
+
+    this.addSheet(
+      workbook,
+      'Routes',
+      [
+        { header: 'Route name', key: 'routeName', width: 28 },
+        { header: 'Pickup', key: 'pickup', width: 22 },
+        { header: 'Destination', key: 'destination', width: 22 },
+        { header: 'Route type', key: 'routeType', width: 18 },
+        { header: 'Price unit', key: 'priceUnit', width: 18 },
+        { header: 'Base price', key: 'basePrice', width: 14 },
+        { header: 'Active status', key: 'activeStatus', width: 16 },
+        { header: 'Booking count', key: 'bookingCount', width: 16 },
+        { header: 'Revenue', key: 'revenue', width: 14 },
+      ],
+      routes.map((route) => {
+        const demand = routeDemand.get(route.id) ?? {
+          bookingCount: 0,
+          revenue: 0,
+        };
+
+        return {
+          routeName: route.name,
+          pickup: route.pickupCity,
+          destination: route.destinationCity,
+          routeType: this.niceLabel(route.routeType),
+          priceUnit: this.niceLabel(route.priceUnit),
+          basePrice: Number(route.basePrice),
+          activeStatus: route.isActive ? 'Active' : 'Inactive',
+          bookingCount: demand.bookingCount,
+          revenue: this.roundMoney(demand.revenue),
+        };
+      }),
+      {
+        currencyKeys: ['basePrice', 'revenue'],
+      },
+    );
+
+    this.addSheet(
+      workbook,
+      'Customers',
+      [
+        { header: 'Customer name', key: 'customerName', width: 26 },
+        { header: 'Phone', key: 'phone', width: 18 },
+        { header: 'Email', key: 'email', width: 28 },
+        { header: 'Booking count', key: 'bookingCount', width: 16 },
+        { header: 'Total spend', key: 'totalSpend', width: 14 },
+        { header: 'Last booking date', key: 'lastBookingDate', width: 20 },
+      ],
+      Array.from(customerDemand.values()).map((customer) => ({
+        customerName: customer.name,
+        phone: customer.phone,
+        email: customer.email,
+        bookingCount: customer.bookingCount,
+        totalSpend: this.roundMoney(customer.totalSpend),
+        lastBookingDate: customer.lastBookingDate,
+      })),
+      {
+        currencyKeys: ['totalSpend'],
+        dateKeys: ['lastBookingDate'],
+      },
+    );
+
+    this.addSheet(
+      workbook,
+      'Drivers',
+      [
+        { header: 'Driver name', key: 'driverName', width: 26 },
+        { header: 'Phone/email', key: 'contact', width: 34 },
+        { header: 'Assigned trips', key: 'assignedTrips', width: 16 },
+        { header: 'Completed trips', key: 'completedTrips', width: 16 },
+        { header: 'Status', key: 'status', width: 16 },
+      ],
+      drivers.map((driver) => {
+        const demand = driverDemand.get(driver.id) ?? {
+          assignedTrips: 0,
+          completedTrips: 0,
+        };
+
+        return {
+          driverName: driver.fullName,
+          contact: [driver.phone, driver.email].filter(Boolean).join(' / '),
+          assignedTrips: demand.assignedTrips,
+          completedTrips: demand.completedTrips,
+          status: this.niceLabel(driver.status),
+        };
+      }),
+    );
+
+    this.addSheet(
+      workbook,
+      'Manual Quotes',
+      [
+        { header: 'Booking reference', key: 'bookingRef', width: 22 },
+        { header: 'Customer', key: 'customer', width: 24 },
+        { header: 'Pickup', key: 'pickup', width: 28 },
+        { header: 'Destination', key: 'destination', width: 28 },
+        { header: 'Distance', key: 'distance', width: 14 },
+        { header: 'Estimated duration', key: 'duration', width: 18 },
+        { header: 'Quote status', key: 'quoteStatus', width: 20 },
+        { header: 'Created date', key: 'createdDate', width: 20 },
+      ],
+      manualQuoteBookings.map((booking) => ({
+        bookingRef: booking.bookingRef,
+        customer: booking.customer.fullName,
+        pickup: this.toDisplayLocation(booking.pickupLocation),
+        destination: this.toDisplayLocation(booking.destination),
+        distance: booking.smartDistanceKm
+          ? Number(booking.smartDistanceKm)
+          : null,
+        duration: booking.smartDurationMinutes ?? null,
+        quoteStatus: 'Manual quote pending',
+        createdDate: booking.createdAt,
+      })),
+      {
+        dateKeys: ['createdDate'],
+      },
+    );
+
+    this.addSheet(
+      workbook,
+      'Notifications',
+      [
+        { header: 'Booking reference', key: 'bookingRef', width: 22 },
+        { header: 'Notification type', key: 'notificationType', width: 26 },
+        { header: 'Recipient', key: 'recipient', width: 34 },
+        { header: 'Status', key: 'status', width: 16 },
+        { header: 'Provider', key: 'provider', width: 16 },
+        { header: 'Created date', key: 'createdDate', width: 20 },
+      ],
+      notifications.map((notification) => ({
+        bookingRef: notification.bookingId
+          ? bookingById.get(notification.bookingId)?.bookingRef ?? ''
+          : '',
+        notificationType: this.niceLabel(notification.event),
+        recipient: notification.recipient ?? '',
+        status: this.niceLabel(notification.status),
+        provider: this.niceLabel(notification.channel),
+        createdDate: notification.createdAt,
+      })),
+      {
+        dateKeys: ['createdDate'],
+      },
+    );
+
+    const fileBuffer = Buffer.from(
+      (await workbook.xlsx.writeBuffer()) as ArrayBuffer,
+    );
+    const filename = `ladybird-reports-${this.formatDateKey(
+      from,
+    )}-to-${this.formatDateKey(to)}.xlsx`;
+
+    return {
+      buffer: fileBuffer,
+      filename,
     };
   }
 
@@ -926,6 +1515,90 @@ export class DashboardService {
 
   private normalizeLocation(value: string) {
     return value.trim().toLowerCase().replace(/\s+/g, ' ');
+  }
+
+  private addSheet(
+    workbook: ExcelJS.Workbook,
+    name: string,
+    columns: Array<{
+      header: string;
+      key: string;
+      width?: number;
+    }>,
+    rows: Array<Record<string, string | number | Date | null>>,
+    options: {
+      currencyKeys?: string[];
+      dateKeys?: string[];
+    } = {},
+  ) {
+    const worksheet = workbook.addWorksheet(name, {
+      views: [{ state: 'frozen', ySplit: 1 }],
+    });
+
+    worksheet.columns = columns.map((column) => ({
+      header: column.header,
+      key: column.key,
+      width: column.width ?? 18,
+    }));
+    worksheet.addRows(rows);
+
+    const headerRow = worksheet.getRow(1);
+    headerRow.font = { bold: true, color: { argb: 'FFFFFFFF' } };
+    headerRow.fill = {
+      type: 'pattern',
+      pattern: 'solid',
+      fgColor: { argb: 'FF111111' },
+    };
+    headerRow.alignment = { vertical: 'middle', wrapText: true };
+    headerRow.height = 22;
+
+    worksheet.eachRow((row, rowNumber) => {
+      row.eachCell((cell, columnNumber) => {
+        cell.border = {
+          bottom: { style: 'thin', color: { argb: 'FFE5E5E5' } },
+        };
+        cell.alignment = {
+          vertical: 'middle',
+          wrapText: true,
+        };
+
+        if (rowNumber === 1) {
+          return;
+        }
+
+        const key = columns[columnNumber - 1]?.key;
+        if (
+          key &&
+          options.currencyKeys?.includes(key) &&
+          typeof cell.value === 'number'
+        ) {
+          cell.numFmt = '$#,##0.00';
+        }
+
+        if (
+          key &&
+          options.dateKeys?.includes(key) &&
+          cell.value instanceof Date
+        ) {
+          cell.numFmt = 'mmm d, yyyy h:mm';
+        }
+      });
+    });
+
+    worksheet.columns.forEach((column) => {
+      let maxLength = String(column.header ?? '').length;
+
+      column.eachCell?.({ includeEmpty: false }, (cell) => {
+        const value = cell.value instanceof Date
+          ? cell.value.toISOString()
+          : String(cell.value ?? '');
+        maxLength = Math.max(maxLength, value.length);
+      });
+
+      column.width = Math.min(Math.max(maxLength + 2, column.width ?? 12), 42);
+    });
+
+    return worksheet;
   }
 
   private formatDateKey(date: Date) {
