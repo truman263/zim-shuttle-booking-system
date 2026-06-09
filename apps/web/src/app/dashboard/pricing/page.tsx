@@ -281,8 +281,8 @@ export default function PricingPage() {
   }
 
   return (
-    <div className="space-y-6 sm:space-y-8">
-      <section className="flex flex-col gap-5 border-b border-white/10 pb-6 lg:flex-row lg:items-end lg:justify-between">
+    <div className="space-y-5 sm:space-y-6">
+      <section className="flex flex-col gap-4 border-b border-white/10 pb-5 lg:flex-row lg:items-end lg:justify-between">
         <div>
           <p className="text-[11px] font-medium uppercase tracking-[0.35em] text-neutral-500">
             Pricing setup
@@ -290,7 +290,7 @@ export default function PricingPage() {
           <h1 className="mt-3 text-3xl font-medium leading-[1.05] tracking-[-0.035em] text-white sm:text-4xl">
             Pricing Control
           </h1>
-          <p className="mt-3 max-w-2xl text-sm font-light leading-7 text-neutral-400 sm:text-[15px]">
+          <p className="mt-3 max-w-2xl text-sm font-light leading-6 text-neutral-400 sm:text-[15px]">
             These rules control future custom route estimates and deposit
             calculations for your company. Saved route fares remain under
             Routes.
@@ -314,43 +314,42 @@ export default function PricingPage() {
       )}
 
       {!settings?.isConfigured ? (
-        <div className="rounded-[28px] border border-white/10 bg-white/[0.04] p-5 shadow-2xl shadow-black/20">
+        <div className="rounded-[24px] border border-white/10 bg-white/[0.04] p-4 shadow-2xl shadow-black/20 sm:p-5">
           <p className="text-[11px] font-medium uppercase tracking-[0.3em] text-neutral-500">
             Pricing setup required
           </p>
-          <h2 className="mt-3 text-lg font-medium tracking-[-0.015em] text-white sm:text-xl">
+          <h2 className="mt-2.5 text-base font-medium tracking-[-0.015em] text-white sm:text-lg">
             Review and activate pricing before it controls customer estimates.
           </h2>
-          <p className="mt-3 max-w-3xl text-sm font-light leading-7 text-neutral-400">
-            Starter values can be edited below, but custom route prices and
-            deposit amounts will stay unavailable until an owner saves and
-            activates these settings.
+          <p className="mt-2 max-w-3xl text-sm font-light leading-6 text-neutral-400">
+            Starter values are editable below. Custom route prices and deposits
+            activate after an owner saves these settings.
           </p>
         </div>
       ) : (
-        <div className="rounded-[28px] border border-emerald-500/15 bg-emerald-500/10 p-5 text-sm font-light leading-6 text-emerald-100">
+        <div className="rounded-[24px] border border-emerald-500/15 bg-emerald-500/10 p-4 text-sm font-light leading-6 text-emerald-100 sm:p-5">
           Pricing active. Future custom route estimates and deposits use these
           owner-confirmed company rules.
         </div>
       )}
 
-      <form onSubmit={handleSubmit} className="space-y-6">
-        <section className="grid gap-6 xl:grid-cols-[1.08fr_0.92fr]">
+      <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-5">
+        <section className="grid items-stretch gap-4 xl:grid-cols-2">
           <Panel
             label="Custom Route Pricing"
             title="Google distance, owner-controlled estimate rules."
-            description="Custom route estimates use Google distance when available. These are planning estimates until the fare is approved."
+            description="Uses Google distance when available. Estimates stay provisional until the fare is approved."
           >
             <ToggleRow
               label="Auto-estimate custom routes"
-              description="When off, custom trips remain manual quote requests even if distance is available."
+              description="When off, custom trips remain manual quote requests."
               checked={form.customRouteAutoEstimateEnabled}
               onChange={(value) =>
                 updateForm('customRouteAutoEstimateEnabled', value)
               }
             />
 
-            <div className="grid gap-4 md:grid-cols-3">
+            <div className="grid gap-3 sm:grid-cols-3">
               <Field
                 label="Base fare"
                 value={form.customRouteBaseFare}
@@ -381,7 +380,7 @@ export default function PricingPage() {
           <Panel
             label="Deposit Rules"
             title="Control payment expectations for new bookings."
-            description="Deposit rules apply to new bookings only. Existing bookings keep their saved payment snapshot."
+            description="Applies to new bookings only. Existing bookings keep their saved payment snapshot."
           >
             <ToggleRow
               label="Deposit required"
@@ -390,7 +389,7 @@ export default function PricingPage() {
               onChange={(value) => updateForm('depositRequired', value)}
             />
 
-            <div className="grid gap-4 md:grid-cols-2">
+            <div className="grid gap-3 sm:grid-cols-2">
               <Field
                 label="Deposit percentage"
                 value={form.depositPercentage}
@@ -403,13 +402,11 @@ export default function PricingPage() {
               />
             </div>
           </Panel>
-        </section>
 
-        <section className="grid gap-6 xl:grid-cols-[0.9fr_1.1fr]">
           <Panel
             label="Saved Route Pricing"
             title="Fixed saved route fares stay in Routes."
-            description="Route-specific fares are managed under Routes. Route fares, route types, fare units, distance, duration and active status remain managed from the Routes dashboard."
+            description="Route fares, fare units, distance, duration and active status remain managed from Routes."
           >
             <a
               href="/dashboard/routes"
@@ -422,7 +419,7 @@ export default function PricingPage() {
           <Panel
             label="Safety Preview"
             title="Example custom route calculation."
-            description="This preview is local to this page. It does not save or create a booking."
+            description="A local preview only. It does not save or create a booking."
           >
             <div className="grid gap-3 sm:grid-cols-3">
               <PreviewMetric label="Distance" value="100 km" />
@@ -437,7 +434,7 @@ export default function PricingPage() {
           </Panel>
         </section>
 
-        <div className="flex flex-col gap-3 rounded-[28px] border border-white/10 bg-white/[0.025] p-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex flex-col gap-3 rounded-[24px] border border-white/10 bg-white/[0.025] p-3.5 sm:flex-row sm:items-center sm:justify-between">
           <p className="text-sm font-light leading-6 text-neutral-400">
             Last updated:{' '}
             <span className="font-normal text-neutral-200">
@@ -467,7 +464,7 @@ export default function PricingPage() {
         </div>
       </form>
 
-      <section className="rounded-[28px] border border-white/10 bg-white/[0.035] p-5 sm:p-6">
+      <section className="rounded-[28px] border border-white/10 bg-white/[0.035] p-5">
         <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
           <div>
             <p className="text-[11px] font-medium uppercase tracking-[0.3em] text-neutral-500">
@@ -526,17 +523,17 @@ function Panel({
   children: ReactNode;
 }) {
   return (
-    <section className="rounded-[28px] border border-white/10 bg-white/[0.035] p-5 shadow-2xl shadow-black/20 sm:p-6">
+    <section className="flex h-full flex-col rounded-[26px] border border-white/10 bg-white/[0.035] p-4 shadow-2xl shadow-black/20 sm:p-5">
       <p className="text-[11px] font-medium uppercase tracking-[0.3em] text-neutral-500">
         {label}
       </p>
-      <h2 className="mt-3 text-lg font-medium tracking-[-0.02em] text-white sm:text-xl">
+      <h2 className="mt-2.5 text-base font-medium tracking-[-0.02em] text-white sm:text-lg">
         {title}
       </h2>
-      <p className="mt-3 text-sm font-light leading-7 text-neutral-400">
+      <p className="mt-2 text-sm font-light leading-6 text-neutral-400">
         {description}
       </p>
-      <div className="mt-6 space-y-5">{children}</div>
+      <div className="mt-5 space-y-4">{children}</div>
     </section>
   );
 }
@@ -562,7 +559,7 @@ function Field({
         inputMode="decimal"
         placeholder={placeholder}
         onChange={(event) => onChange(event.target.value)}
-        className="h-12 w-full rounded-2xl border border-white/10 bg-black/30 px-4 text-[15px] font-medium text-white outline-none transition placeholder:text-neutral-600 focus:border-white/30"
+        className="h-11 w-full rounded-xl border border-white/10 bg-black/30 px-3.5 text-[14px] font-medium text-white outline-none transition placeholder:text-neutral-600 focus:border-white/30"
       />
     </label>
   );
@@ -580,7 +577,7 @@ function ToggleRow({
   onChange: (value: boolean) => void;
 }) {
   return (
-    <div className="flex flex-col gap-4 rounded-2xl border border-white/10 bg-black/20 p-4 sm:flex-row sm:items-center sm:justify-between">
+    <div className="flex flex-col gap-3 rounded-2xl border border-white/10 bg-black/20 p-3.5 sm:flex-row sm:items-center sm:justify-between">
       <div>
         <p className="text-sm font-medium tracking-[-0.01em] text-white">
           {label}
@@ -611,7 +608,7 @@ function ToggleRow({
 
 function PreviewMetric({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-2xl border border-white/10 bg-black/25 p-4">
+    <div className="rounded-2xl border border-white/10 bg-black/25 p-3.5">
       <p className="text-[11px] font-medium uppercase tracking-[0.22em] text-neutral-500">
         {label}
       </p>
