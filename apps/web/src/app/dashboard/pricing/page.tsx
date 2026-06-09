@@ -266,7 +266,7 @@ export default function PricingPage() {
 
   if (loading) {
     return (
-      <div className="rounded-[28px] border border-white/10 bg-white/[0.035] p-6 text-sm text-neutral-400">
+      <div className="rounded-[28px] border border-white/10 bg-white/[0.035] p-6 text-sm leading-6 text-neutral-400">
         Loading pricing settings...
       </div>
     );
@@ -274,7 +274,7 @@ export default function PricingPage() {
 
   if (!form) {
     return (
-      <div className="rounded-[28px] border border-red-500/20 bg-red-500/10 p-6 text-sm text-red-100">
+      <div className="rounded-[28px] border border-red-500/20 bg-red-500/10 p-6 text-sm leading-6 text-red-100">
         {errorMessage || 'Pricing settings could not be loaded.'}
       </div>
     );
@@ -282,28 +282,28 @@ export default function PricingPage() {
 
   return (
     <div className="space-y-6 sm:space-y-8">
-      <section className="flex flex-col gap-4 border-b border-white/10 pb-6 lg:flex-row lg:items-end lg:justify-between">
+      <section className="flex flex-col gap-5 border-b border-white/10 pb-6 lg:flex-row lg:items-end lg:justify-between">
         <div>
-          <p className="text-xs font-medium uppercase tracking-[0.35em] text-neutral-500">
+          <p className="text-[11px] font-medium uppercase tracking-[0.35em] text-neutral-500">
             Pricing setup
           </p>
-          <h1 className="mt-3 text-3xl font-semibold tracking-[-0.04em] text-white sm:text-4xl">
+          <h1 className="mt-3 text-3xl font-medium leading-[1.05] tracking-[-0.035em] text-white sm:text-4xl">
             Pricing Control
           </h1>
-          <p className="mt-3 max-w-2xl text-sm leading-6 text-neutral-400 sm:text-base">
+          <p className="mt-3 max-w-2xl text-sm font-light leading-7 text-neutral-400 sm:text-[15px]">
             These rules control future custom route estimates and deposit
             calculations for your company. Saved route fares remain under
             Routes.
           </p>
         </div>
-        <div className="rounded-full border border-white/10 bg-white/[0.035] px-4 py-2 text-xs text-neutral-400">
+        <div className="rounded-full border border-white/10 bg-white/[0.035] px-4 py-2 text-[11px] font-medium uppercase tracking-[0.18em] text-neutral-400">
           {settings?.isConfigured ? 'Pricing active' : 'Setup required'}
         </div>
       </section>
 
       {(errorMessage || successMessage) && (
         <div
-          className={`rounded-2xl border px-4 py-3 text-sm ${
+          className={`rounded-2xl border px-4 py-3 text-sm font-medium leading-6 ${
             errorMessage
               ? 'border-red-500/20 bg-red-500/10 text-red-100'
               : 'border-emerald-500/20 bg-emerald-500/10 text-emerald-100'
@@ -315,20 +315,20 @@ export default function PricingPage() {
 
       {!settings?.isConfigured ? (
         <div className="rounded-[28px] border border-white/10 bg-white/[0.04] p-5 shadow-2xl shadow-black/20">
-          <p className="text-xs font-medium uppercase tracking-[0.3em] text-neutral-500">
+          <p className="text-[11px] font-medium uppercase tracking-[0.3em] text-neutral-500">
             Pricing setup required
           </p>
-          <h2 className="mt-3 text-xl font-semibold text-white">
+          <h2 className="mt-3 text-lg font-medium tracking-[-0.015em] text-white sm:text-xl">
             Review and activate pricing before it controls customer estimates.
           </h2>
-          <p className="mt-3 max-w-3xl text-sm leading-6 text-neutral-400">
+          <p className="mt-3 max-w-3xl text-sm font-light leading-7 text-neutral-400">
             Starter values can be edited below, but custom route prices and
             deposit amounts will stay unavailable until an owner saves and
             activates these settings.
           </p>
         </div>
       ) : (
-        <div className="rounded-[28px] border border-emerald-500/15 bg-emerald-500/10 p-5 text-sm text-emerald-100">
+        <div className="rounded-[28px] border border-emerald-500/15 bg-emerald-500/10 p-5 text-sm font-light leading-6 text-emerald-100">
           Pricing active. Future custom route estimates and deposits use these
           owner-confirmed company rules.
         </div>
@@ -413,7 +413,7 @@ export default function PricingPage() {
           >
             <a
               href="/dashboard/routes"
-              className="inline-flex h-11 items-center justify-center rounded-full border border-white/10 px-5 text-sm font-semibold text-white transition hover:border-white/30 hover:bg-white/[0.04]"
+              className="inline-flex h-11 items-center justify-center rounded-full border border-white/10 px-5 text-sm font-medium text-white transition hover:border-white/30 hover:bg-white/[0.04]"
             >
               Manage saved routes
             </a>
@@ -429,7 +429,7 @@ export default function PricingPage() {
               <PreviewMetric label="Estimate" value={money(preview.oneWayFare)} />
               <PreviewMetric label="Deposit" value={money(preview.deposit)} />
             </div>
-            <p className="text-xs leading-5 text-neutral-500">
+            <p className="text-xs font-light leading-5 text-neutral-500">
               Estimate = base fare + distance x price per km, subject to the
               minimum fare. Deposit follows the saved deposit rule and never
               exceeds the fare.
@@ -438,9 +438,9 @@ export default function PricingPage() {
         </section>
 
         <div className="flex flex-col gap-3 rounded-[28px] border border-white/10 bg-white/[0.025] p-4 sm:flex-row sm:items-center sm:justify-between">
-          <p className="text-sm text-neutral-400">
+          <p className="text-sm font-light leading-6 text-neutral-400">
             Last updated:{' '}
-            <span className="text-neutral-200">
+            <span className="font-normal text-neutral-200">
               {settings ? formatDate(settings.updatedAt) : 'Not saved yet'}
             </span>
           </p>
@@ -448,7 +448,7 @@ export default function PricingPage() {
             <button
               type="button"
               onClick={() => settings && setForm(toForm(settings))}
-              className="h-11 rounded-full border border-white/10 px-5 text-sm font-semibold text-white transition hover:border-white/30 hover:bg-white/[0.04]"
+              className="h-11 rounded-full border border-white/10 px-5 text-sm font-medium text-white transition hover:border-white/30 hover:bg-white/[0.04]"
             >
               Reset form
             </button>
@@ -470,19 +470,19 @@ export default function PricingPage() {
       <section className="rounded-[28px] border border-white/10 bg-white/[0.035] p-5 sm:p-6">
         <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
           <div>
-            <p className="text-xs font-medium uppercase tracking-[0.3em] text-neutral-500">
+            <p className="text-[11px] font-medium uppercase tracking-[0.3em] text-neutral-500">
               Pricing History
             </p>
-            <h2 className="mt-2 text-xl font-semibold text-white">
+            <h2 className="mt-2 text-lg font-medium tracking-[-0.015em] text-white sm:text-xl">
               Recent changes
             </h2>
           </div>
-          <p className="text-sm text-neutral-500">Latest 10 entries</p>
+          <p className="text-sm font-light text-neutral-500">Latest 10 entries</p>
         </div>
 
         <div className="mt-5 space-y-3">
           {audit.length === 0 ? (
-            <div className="rounded-2xl border border-white/10 bg-black/20 p-4 text-sm text-neutral-500">
+            <div className="rounded-2xl border border-white/10 bg-black/20 p-4 text-sm font-light leading-6 text-neutral-500">
               No pricing changes recorded yet.
             </div>
           ) : (
@@ -492,14 +492,14 @@ export default function PricingPage() {
                 className="rounded-2xl border border-white/10 bg-black/20 p-4"
               >
                 <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
-                  <p className="text-sm font-semibold text-white">
+                  <p className="text-sm font-medium text-white">
                     {entry.changeType.replaceAll('_', ' ')}
                   </p>
-                  <p className="text-xs text-neutral-500">
+                  <p className="text-xs font-light text-neutral-500">
                     {formatDate(entry.createdAt)}
                   </p>
                 </div>
-                <p className="mt-2 text-xs text-neutral-500">
+                <p className="mt-2 text-xs font-light text-neutral-500">
                   Updated by{' '}
                   {entry.changedByAdmin?.fullName ||
                     entry.changedByAdmin?.email ||
@@ -527,13 +527,15 @@ function Panel({
 }) {
   return (
     <section className="rounded-[28px] border border-white/10 bg-white/[0.035] p-5 shadow-2xl shadow-black/20 sm:p-6">
-      <p className="text-xs font-medium uppercase tracking-[0.3em] text-neutral-500">
+      <p className="text-[11px] font-medium uppercase tracking-[0.3em] text-neutral-500">
         {label}
       </p>
-      <h2 className="mt-3 text-xl font-semibold tracking-[-0.02em] text-white sm:text-2xl">
+      <h2 className="mt-3 text-lg font-medium tracking-[-0.02em] text-white sm:text-xl">
         {title}
       </h2>
-      <p className="mt-3 text-sm leading-6 text-neutral-400">{description}</p>
+      <p className="mt-3 text-sm font-light leading-7 text-neutral-400">
+        {description}
+      </p>
       <div className="mt-6 space-y-5">{children}</div>
     </section>
   );
@@ -552,13 +554,15 @@ function Field({
 }) {
   return (
     <label className="block">
-      <span className="text-sm font-medium text-neutral-200">{label}</span>
+      <span className="mb-2 block text-xs font-medium uppercase tracking-[0.2em] text-neutral-500">
+        {label}
+      </span>
       <input
         value={value}
         inputMode="decimal"
         placeholder={placeholder}
         onChange={(event) => onChange(event.target.value)}
-        className="mt-2 h-12 w-full rounded-2xl border border-white/10 bg-black/30 px-4 text-sm text-white outline-none transition placeholder:text-neutral-600 focus:border-white/30"
+        className="h-12 w-full rounded-2xl border border-white/10 bg-black/30 px-4 text-[15px] font-medium text-white outline-none transition placeholder:text-neutral-600 focus:border-white/30"
       />
     </label>
   );
@@ -578,8 +582,12 @@ function ToggleRow({
   return (
     <div className="flex flex-col gap-4 rounded-2xl border border-white/10 bg-black/20 p-4 sm:flex-row sm:items-center sm:justify-between">
       <div>
-        <p className="text-sm font-semibold text-white">{label}</p>
-        <p className="mt-1 text-xs leading-5 text-neutral-500">{description}</p>
+        <p className="text-sm font-medium tracking-[-0.01em] text-white">
+          {label}
+        </p>
+        <p className="mt-1 text-xs font-light leading-5 text-neutral-500">
+          {description}
+        </p>
       </div>
       <button
         type="button"
@@ -604,10 +612,10 @@ function ToggleRow({
 function PreviewMetric({ label, value }: { label: string; value: string }) {
   return (
     <div className="rounded-2xl border border-white/10 bg-black/25 p-4">
-      <p className="text-xs uppercase tracking-[0.22em] text-neutral-500">
+      <p className="text-[11px] font-medium uppercase tracking-[0.22em] text-neutral-500">
         {label}
       </p>
-      <p className="mt-2 text-xl font-semibold text-white">{value}</p>
+      <p className="mt-2 text-lg font-medium text-white sm:text-xl">{value}</p>
     </div>
   );
 }
