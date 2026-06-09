@@ -211,6 +211,8 @@ model Company {
   tripActionLogs TripActionLog[]
   zones        Zone[]
   pricingRules PricingRule[]
+  pricingSettings CompanyPricingSettings?
+  pricingChangeLogs PricingChangeLog[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -227,6 +229,8 @@ model User {
   password String
   role     UserRole @default(CUSTOMER)
   isActive Boolean  @default(true)
+  pricingChangeLogs PricingChangeLog[]
+  configuredPricingSettings CompanyPricingSettings[] @relation("PricingSettingsConfiguredBy")
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -358,6 +362,47 @@ model PricingRule {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+model CompanyPricingSettings {
+  id        String  @id @default(cuid())
+  companyId String  @unique
+  company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  customRouteAutoEstimateEnabled   Boolean @default(true)
+  customRouteBaseFare              Decimal @default(10)
+  customRoutePricePerKm            Decimal @default(1.2)
+  customRouteMinimumFare           Decimal @default(15)
+  customRouteManualQuoteThresholdKm Decimal?
+
+  depositRequired      Boolean @default(true)
+  depositPercentage    Decimal @default(30)
+  minimumDepositAmount Decimal @default(10)
+
+  isConfigured Boolean   @default(false)
+  configuredAt DateTime?
+  configuredByAdminId String?
+  configuredByAdmin   User? @relation("PricingSettingsConfiguredBy", fields: [configuredByAdminId], references: [id], onDelete: SetNull)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model PricingChangeLog {
+  id        String  @id @default(cuid())
+  companyId String
+  company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  changedByAdminId String?
+  changedByAdmin   User? @relation(fields: [changedByAdminId], references: [id], onDelete: SetNull)
+
+  changeType    String
+  previousValue Json?
+  newValue      Json
+
+  createdAt DateTime @default(now())
+
+  @@index([companyId, createdAt])
 }
 
 model Booking {

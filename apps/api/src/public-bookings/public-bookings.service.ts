@@ -13,6 +13,8 @@ import { CreateBookingDto } from '../bookings/dto/create-booking.dto';
 import { PricingCalculatorService } from '../pricing-calculator/pricing-calculator.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { NotificationsService } from '../notifications/notifications.service';
+import { PricingSettingsService } from '../pricing-settings/pricing-settings.service';
+import { SmartRoutesService } from '../smart-routes/smart-routes.service';
 import { CreatePublicBookingDto } from './dto/create-public-booking.dto';
 import { EstimatePublicBookingDto } from './dto/estimate-public-booking.dto';
 
@@ -22,6 +24,8 @@ export class PublicBookingsService {
     private readonly prisma: PrismaService,
     private readonly bookingsService: BookingsService,
     private readonly pricingCalculatorService: PricingCalculatorService,
+    private readonly pricingSettingsService: PricingSettingsService,
+    private readonly smartRoutesService: SmartRoutesService,
     private readonly notificationsService: NotificationsService,
   ) {}
 
@@ -106,19 +110,70 @@ export class PublicBookingsService {
       createDto.tripType,
     );
 
+    const pricingSettings = await this.pricingSettingsService.getOrCreate(
+      createDto.companyId,
+    );
+
     let estimatedPrice: number | undefined;
     let finalPrice: number | undefined;
     let requiresManualQuote = false;
+    let smartPricingMode: string | undefined;
+    let smartDistanceKm: number | undefined;
+    let smartDurationMinutes: number | undefined;
+    let matchedRouteId: string | undefined;
+    let matchedRouteName: string | undefined;
+    let matchedRouteDirection: string | undefined;
 
-    const hasSmartEstimate =
-      !!createDto.smartPricingMode &&
-      createDto.estimatedPrice !== undefined &&
-      createDto.finalPrice !== undefined;
+    const isCustomRouteRequest =
+      !createDto.routeId && createDto.tripType === TripType.CUSTOM;
 
-    if (hasSmartEstimate) {
-      estimatedPrice = createDto.estimatedPrice;
-      finalPrice = createDto.finalPrice;
-    } else if (pricingMode === PricingMode.CUSTOM_QUOTE) {
+    if (isCustomRouteRequest) {
+      const smartEstimate = await this.smartRoutesService.estimate({
+        companyId: createDto.companyId,
+        pickupLocation: createDto.pickupLocation,
+        destination: createDto.destination,
+        tripDirection: createDto.tripDirection ?? TripDirection.ONE_WAY,
+        passengers: createDto.passengers,
+      });
+
+      smartPricingMode =
+        'pricingMode' in smartEstimate
+          ? smartEstimate.pricingMode
+          : undefined;
+      smartDistanceKm =
+        typeof smartEstimate.distanceKm === 'number'
+          ? smartEstimate.distanceKm
+          : undefined;
+      smartDurationMinutes =
+        typeof smartEstimate.durationMinutes === 'number'
+          ? smartEstimate.durationMinutes
+          : undefined;
+      matchedRouteId =
+        'matchedRouteId' in smartEstimate
+          ? smartEstimate.matchedRouteId
+          : undefined;
+      matchedRouteName =
+        'matchedRouteName' in smartEstimate
+          ? smartEstimate.matchedRouteName
+          : undefined;
+      matchedRouteDirection =
+        'matchedRouteDirection' in smartEstimate
+          ? smartEstimate.matchedRouteDirection
+          : undefined;
+
+      if (
+        !smartEstimate.requiresManualQuote &&
+        typeof smartEstimate.estimatedPrice === 'number'
+      ) {
+        estimatedPrice = smartEstimate.estimatedPrice;
+        finalPrice = smartEstimate.estimatedPrice;
+      } else {
+        requiresManualQuote = true;
+      }
+    } else if (
+      pricingMode === PricingMode.CUSTOM_QUOTE ||
+      (!createDto.routeId && !pricingSettings.isConfigured)
+    ) {
       requiresManualQuote = true;
     } else {
       const calculatedPrice = await this.pricingCalculatorService.calculate({
@@ -143,13 +198,10 @@ export class PublicBookingsService {
       finalPrice = calculatedPrice.estimatedPrice;
     }
 
-    const depositAmount =
-      finalPrice !== undefined && finalPrice > 0
-        ? Math.min(
-            finalPrice,
-            Math.max(10, Number((finalPrice * 0.3).toFixed(2))),
-          )
-        : 0;
+    const depositAmount = this.pricingSettingsService.calculateDeposit(
+      finalPrice,
+      pricingSettings,
+    );
 
     const bookingPayload: CreateBookingDto = {
       companyId: createDto.companyId,
@@ -175,12 +227,12 @@ export class PublicBookingsService {
       finalPrice,
       depositAmount,
 
-      smartPricingMode: createDto.smartPricingMode,
-      smartDistanceKm: createDto.smartDistanceKm,
-      smartDurationMinutes: createDto.smartDurationMinutes,
-      matchedRouteId: createDto.matchedRouteId,
-      matchedRouteName: createDto.matchedRouteName,
-      matchedRouteDirection: createDto.matchedRouteDirection,
+      smartPricingMode,
+      smartDistanceKm,
+      smartDurationMinutes,
+      matchedRouteId,
+      matchedRouteName,
+      matchedRouteDirection,
     };
 
     const booking = await this.bookingsService.create(bookingPayload);

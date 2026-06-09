@@ -12,6 +12,7 @@ const navigationItems = [
   { name: 'Payments', href: '/dashboard/payments' },
   { name: 'Customers', href: '/dashboard/customers' },
   { name: 'Routes', href: '/dashboard/routes' },
+  { name: 'Pricing', href: '/dashboard/pricing' },
   { name: 'Vehicles', href: '/dashboard/vehicles' },
   { name: 'Drivers', href: '/dashboard/drivers' },
   { name: 'Reports', href: '/dashboard/reports' },

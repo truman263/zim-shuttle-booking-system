@@ -46,6 +46,12 @@ export class PublicPaymentsService {
     );
 
     if (payableAmount <= 0) {
+      if (paymentType === PaymentType.DEPOSIT) {
+        throw new BadRequestException(
+          'A deposit is not available for this booking yet. Please wait for the fare to be confirmed or choose full payment once a final fare is available.',
+        );
+      }
+
       throw new BadRequestException(
         'This booking does not have a valid payable amount.',
       );
@@ -276,10 +282,6 @@ export class PublicPaymentsService {
 
     if (depositAmount > 0) {
       return depositAmount;
-    }
-
-    if (finalPrice > 0) {
-      return Math.round(finalPrice * 0.3 * 100) / 100;
     }
 
     return 0;

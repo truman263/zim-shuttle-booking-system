@@ -14,6 +14,7 @@ import { DriversModule } from './drivers/drivers.module';
 import { PaymentsModule } from './payments/payments.module';
 import { PricingCalculatorModule } from './pricing-calculator/pricing-calculator.module';
 import { PricingRulesModule } from './pricing-rules/pricing-rules.module';
+import { PricingSettingsModule } from './pricing-settings/pricing-settings.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { PublicBookingsModule } from './public-bookings/public-bookings.module';
 import { PublicRoutesModule } from './public-routes/public-routes.module';
@@ -39,6 +40,7 @@ import { ZonesModule } from './zones/zones.module';
     DashboardModule,
     ZonesModule,
     PricingRulesModule,
+    PricingSettingsModule,
     PricingCalculatorModule,
     PublicBookingsModule,
     PublicRoutesModule,

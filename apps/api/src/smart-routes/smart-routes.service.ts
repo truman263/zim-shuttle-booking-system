@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { PricingSettingsService } from '../pricing-settings/pricing-settings.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { EstimateSmartRouteDto } from './dto/estimate-smart-route.dto';
 
@@ -85,17 +86,16 @@ type CorridorMatch = {
 
 @Injectable()
 export class SmartRoutesService {
-  private readonly baseFare = 10;
-  private readonly pricePerKm = 1.2;
-  private readonly minimumFare = 15;
-
   /**
    * Maximum corridor tolerance for long inter-city routes.
    * Short urban routes use a much smaller dynamic radius to avoid over-matching.
    */
   private readonly maxCorridorMatchRadiusKm = 30;
 
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly pricingSettingsService: PricingSettingsService,
+  ) {}
 
   async suggestPlaces(
     input: string,
@@ -146,6 +146,9 @@ export class SmartRoutesService {
 
     const passengers = Number(dto.passengers || 1);
     const tripDirection = dto.tripDirection || 'ONE_WAY';
+    const pricingSettings = await this.pricingSettingsService.getOrCreate(
+      dto.companyId,
+    );
 
     if (!apiKey) {
       return {
@@ -160,7 +163,7 @@ export class SmartRoutesService {
         distanceKm: null,
         durationMinutes: null,
         message:
-          'This route will be reviewed manually and quoted by the LadyBird team.',
+          'This route will be reviewed manually and quoted by the team.',
       };
     }
 
@@ -255,7 +258,66 @@ export class SmartRoutesService {
         };
       }
 
-      const oneWayPrice = this.calculateOneWayPrice(distanceKm);
+      if (!pricingSettings.isConfigured) {
+        return {
+          requiresManualQuote: true,
+          pricingMode: 'CUSTOM_QUOTE',
+          companyId: dto.companyId,
+          pickupLocation: dto.pickupLocation,
+          destination: dto.destination,
+          tripDirection,
+          passengers,
+          distanceKm,
+          durationMinutes,
+          estimatedPrice: null,
+          message:
+            'Pricing setup is not active yet. This custom route will be reviewed manually before pricing is confirmed.',
+        };
+      }
+
+      if (!pricingSettings.customRouteAutoEstimateEnabled) {
+        return {
+          requiresManualQuote: true,
+          pricingMode: 'CUSTOM_QUOTE',
+          companyId: dto.companyId,
+          pickupLocation: dto.pickupLocation,
+          destination: dto.destination,
+          tripDirection,
+          passengers,
+          distanceKm,
+          durationMinutes,
+          estimatedPrice: null,
+          message:
+            'This custom route will be reviewed manually before pricing is confirmed.',
+        };
+      }
+
+      if (
+        pricingSettings.customRouteManualQuoteThresholdKm !== null &&
+        distanceKm > pricingSettings.customRouteManualQuoteThresholdKm
+      ) {
+        return {
+          requiresManualQuote: true,
+          pricingMode: 'CUSTOM_QUOTE',
+          companyId: dto.companyId,
+          pickupLocation: dto.pickupLocation,
+          destination: dto.destination,
+          tripDirection,
+          passengers,
+          distanceKm,
+          durationMinutes,
+          estimatedPrice: null,
+          message:
+            'This route is outside the automatic estimate range and will be quoted by the team.',
+        };
+      }
+
+      const oneWayPrice = this.calculateOneWayPrice(
+        distanceKm,
+        pricingSettings.customRouteBaseFare,
+        pricingSettings.customRoutePricePerKm,
+        pricingSettings.customRouteMinimumFare,
+      );
       const estimatedPrice =
         tripDirection === 'ROUND_TRIP'
           ? this.roundMoney(oneWayPrice * 2)
@@ -275,11 +337,13 @@ export class SmartRoutesService {
         breakdown: [
           {
             label: 'Base fare',
-            amount: this.baseFare,
+            amount: pricingSettings.customRouteBaseFare,
           },
           {
-            label: `${distanceKm} km × $${this.pricePerKm.toFixed(2)}`,
-            amount: this.roundMoney(distanceKm * this.pricePerKm),
+            label: `${distanceKm} km x $${pricingSettings.customRoutePricePerKm.toFixed(2)}`,
+            amount: this.roundMoney(
+              distanceKm * pricingSettings.customRoutePricePerKm,
+            ),
           },
           ...(tripDirection === 'ROUND_TRIP'
             ? [
@@ -768,9 +832,14 @@ export class SmartRoutesService {
     return seconds;
   }
 
-  private calculateOneWayPrice(distanceKm: number) {
-    const calculated = this.baseFare + distanceKm * this.pricePerKm;
-    return this.roundMoney(Math.max(this.minimumFare, calculated));
+  private calculateOneWayPrice(
+    distanceKm: number,
+    baseFare: number,
+    pricePerKm: number,
+    minimumFare: number,
+  ) {
+    const calculated = baseFare + distanceKm * pricePerKm;
+    return this.roundMoney(Math.max(minimumFare, calculated));
   }
 
   private roundMoney(value: number) {

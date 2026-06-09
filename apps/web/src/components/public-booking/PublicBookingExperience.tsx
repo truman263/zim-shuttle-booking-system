@@ -233,16 +233,6 @@ const initialForm: BookingForm = {
   customerEmail: '',
 };
 
-function calculateDepositAmount(value: string | number | null | undefined) {
-  const price = Number(value ?? 0);
-
-  if (!Number.isFinite(price) || price <= 0) {
-    return 0;
-  }
-
-  return Math.min(price, Math.max(10, Number((price * 0.3).toFixed(2))));
-}
-
 function calculateBalanceAfterDeposit(
   price: string | number | null | undefined,
   deposit: string | number | null | undefined,
@@ -754,14 +744,6 @@ export default function PublicBookingExperience({
           usesCustomRoute && estimate && 'matchedRouteDirection' in estimate
             ? estimate.matchedRouteDirection || undefined
             : undefined,
-        depositAmount: calculateDepositAmount(
-          usesCustomRoute
-            ? estimate?.estimatedPrice
-            : selectedRoute
-              ? Number(selectedRoute.basePrice) *
-                (form.tripDirection === 'ROUND_TRIP' ? 2 : 1)
-              : undefined,
-        ),
       });
 
       setBookingResponse(response);
