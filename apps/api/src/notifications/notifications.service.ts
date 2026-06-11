@@ -72,6 +72,7 @@ type BookingEmailRecord = {
   returnDestination?: string | null;
   passengers: number;
   luggageDetails?: string | null;
+  flightDetails?: string | null;
   specialNotes?: string | null;
   estimatedPrice?: MoneyValue;
   finalPrice?: MoneyValue;
@@ -506,6 +507,7 @@ export class NotificationsService {
         ? `Return: ${this.formatDate(booking.returnDate)}`
         : null,
       `Passengers: ${booking.passengers}`,
+      booking.flightDetails ? `Flight details: ${booking.flightDetails}` : null,
       `Fare: ${priceLabel}`,
       paymentLine,
       trackingUrl ? `Track your booking: ${trackingUrl}` : null,
@@ -531,6 +533,9 @@ export class NotificationsService {
             ][])
           : []),
         ['Passengers', String(booking.passengers)],
+        ...(booking.flightDetails
+          ? ([['Flight Details', booking.flightDetails]] as [string, string][])
+          : []),
         ['Fare', priceLabel],
         ['Payment', paymentLine],
       ],
@@ -566,6 +571,7 @@ export class NotificationsService {
         ? `Return: ${this.formatDate(booking.returnDate)}`
         : null,
       `Passengers: ${booking.passengers}`,
+      booking.flightDetails ? `Flight details: ${booking.flightDetails}` : null,
       `Fare: ${this.getPriceLabel(booking)}`,
       `Status: ${this.humanise(booking.status)}`,
       `Payment status: ${this.humanise(booking.paymentStatus)}`,
@@ -598,6 +604,9 @@ export class NotificationsService {
             ][])
           : []),
         ['Passengers', String(booking.passengers)],
+        ...(booking.flightDetails
+          ? ([['Flight Details', booking.flightDetails]] as [string, string][])
+          : []),
         ['Fare', this.getPriceLabel(booking)],
         ['Status', this.humanise(booking.status)],
         ['Payment', this.humanise(booking.paymentStatus)],
@@ -636,6 +645,12 @@ export class NotificationsService {
               ][])
             : []),
           ['Passengers', String(booking.passengers)],
+          ...(booking.flightDetails
+            ? ([['Flight Details', booking.flightDetails]] as [
+                string,
+                string,
+              ][])
+            : []),
           ['Fare', this.getPriceLabel(booking)],
           ['Payment', paymentLine],
         ]
@@ -661,6 +676,9 @@ export class NotificationsService {
         ? `Return: ${this.formatDate(booking.returnDate)}`
         : null,
       isConfirmed ? `Passengers: ${booking.passengers}` : null,
+      isConfirmed && booking.flightDetails
+        ? `Flight details: ${booking.flightDetails}`
+        : null,
       isConfirmed ? `Fare: ${this.getPriceLabel(booking)}` : null,
       isConfirmed ? paymentLine : null,
       trackingUrl ? `Track your booking: ${trackingUrl}` : null,
@@ -709,6 +727,9 @@ export class NotificationsService {
       ['Passenger phone', customer?.phone || 'Not provided'],
       ['Passengers', String(booking.passengers)],
       ['Luggage', booking.luggageDetails || 'Not provided'],
+      ...(booking.flightDetails
+        ? ([['Flight Details', booking.flightDetails]] as [string, string][])
+        : []),
       ['Special request', booking.specialNotes || 'Not provided'],
     ];
 
@@ -728,6 +749,7 @@ export class NotificationsService {
       `Passenger phone/WhatsApp: ${customer?.phone || 'Not provided'}`,
       `Passengers: ${booking.passengers}`,
       `Luggage: ${booking.luggageDetails || 'Not provided'}`,
+      booking.flightDetails ? `Flight details: ${booking.flightDetails}` : null,
       `Special request: ${booking.specialNotes || 'Not provided'}`,
       '',
       companyContact,
@@ -753,6 +775,7 @@ export class NotificationsService {
       `Passenger phone/WhatsApp: ${customer?.phone || 'Not provided'}`,
       `Passengers: ${booking.passengers}`,
       `Luggage: ${booking.luggageDetails || 'Not provided'}`,
+      booking.flightDetails ? `Flight details: ${booking.flightDetails}` : null,
       `Special request: ${booking.specialNotes || 'Not provided'}`,
       driverTripUrl ? 'Driver trip link: [secure driver trip link]' : null,
       '',

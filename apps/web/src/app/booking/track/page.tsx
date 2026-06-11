@@ -20,6 +20,7 @@ type TrackedBooking = {
   returnPickupLocation?: string | null;
   returnDestination?: string | null;
   passengers: number;
+  flightDetails?: string | null;
   estimatedPrice?: string | number | null;
   finalPrice?: string | number | null;
   depositAmount?: string | number | null;
@@ -287,6 +288,9 @@ export default function TrackBookingPage() {
                           ? `${booking.returnPickupLocation || 'Return pickup'} -> ${
                               booking.returnDestination || 'Return destination'
                             }`
+                          : '',
+                        booking.flightDetails
+                          ? `Flight Details: ${booking.flightDetails}`
                           : '',
                       ].filter(Boolean)}
                     />

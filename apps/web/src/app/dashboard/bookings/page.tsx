@@ -133,6 +133,7 @@ type Booking = {
   depositAmount?: string | number | null;
 
   luggageDetails?: string | null;
+  flightDetails?: string | null;
   specialNotes?: string | null;
 
   smartPricingMode?: string | null;
@@ -220,6 +221,7 @@ type BookingForm = {
   roundTripDiscountPercentage: string;
 
   luggageDetails: string;
+  flightDetails: string;
   specialNotes: string;
 
   estimatedPrice: string;
@@ -272,6 +274,7 @@ const initialForm: BookingForm = {
   roundTripDiscountPercentage: '0',
 
   luggageDetails: '',
+  flightDetails: '',
   specialNotes: '',
 
   estimatedPrice: '',
@@ -742,6 +745,7 @@ export default function BookingsPage() {
       passengers: String(booking.passengers ?? 1),
 
       luggageDetails: booking.luggageDetails ?? '',
+      flightDetails: booking.flightDetails ?? '',
       specialNotes: booking.specialNotes ?? '',
 
       estimatedPrice: booking.estimatedPrice
@@ -1159,6 +1163,7 @@ export default function BookingsPage() {
 
         passengers,
         luggageDetails: form.luggageDetails.trim() || undefined,
+        flightDetails: form.flightDetails.trim() || undefined,
         specialNotes: form.specialNotes.trim() || undefined,
         estimatedPrice,
         finalPrice,
@@ -1981,6 +1986,19 @@ export default function BookingsPage() {
                   />
                 </FormField>
 
+                <FormField label="Flight Details">
+                  <input
+                    value={form.flightDetails}
+                    onChange={(event) =>
+                      updateForm('flightDetails', event.target.value)
+                    }
+                    placeholder="Example: Emirates EK713"
+                    className="input-field"
+                  />
+                </FormField>
+              </div>
+
+              <div className="mt-4">
                 <FormField label="Special Notes">
                   <input
                     value={form.specialNotes}
@@ -2805,6 +2823,11 @@ function BookingsTable({
                         : 'Not set'}
                     </p>
                   )}
+                  {booking.flightDetails && (
+                    <p className="mt-2 break-words leading-5 text-neutral-400">
+                      Flight: {booking.flightDetails}
+                    </p>
+                  )}
                 </div>
 
                 <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-3">
@@ -3229,6 +3252,11 @@ function ScheduleBlock({ booking }: { booking: Booking }) {
         <p className="mt-1 font-semibold leading-5 text-white">
           {new Date(booking.pickupDate).toLocaleString()}
         </p>
+        {booking.flightDetails && (
+          <p className="mt-2 break-words leading-5 text-neutral-500">
+            Flight: {booking.flightDetails}
+          </p>
+        )}
       </div>
 
       {isRoundTrip ? (

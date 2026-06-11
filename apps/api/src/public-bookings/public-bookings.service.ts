@@ -222,6 +222,7 @@ export class PublicBookingsService {
       durationDays: createDto.durationDays,
       passengers: createDto.passengers,
       luggageDetails: createDto.luggageDetails,
+      flightDetails: createDto.flightDetails,
       specialNotes: this.buildCustomerSpecialNotes(createDto),
       estimatedPrice,
       finalPrice,
@@ -256,6 +257,7 @@ export class PublicBookingsService {
       estimatedPrice: booking.estimatedPrice,
       finalPrice: booking.finalPrice,
       depositAmount: booking.depositAmount,
+      flightDetails: booking.flightDetails,
       smartPricingMode: booking.smartPricingMode,
       smartDistanceKm: booking.smartDistanceKm,
       smartDurationMinutes: booking.smartDurationMinutes,
@@ -304,6 +306,7 @@ export class PublicBookingsService {
       returnPickupLocation: booking.returnPickupLocation,
       returnDestination: booking.returnDestination,
       passengers: booking.passengers,
+      flightDetails: booking.flightDetails,
       estimatedPrice: booking.estimatedPrice,
       finalPrice: booking.finalPrice,
       depositAmount: booking.depositAmount,
@@ -354,16 +357,11 @@ export class PublicBookingsService {
 
   private async findOrCreateCustomer(createDto: CreatePublicBookingDto) {
     const cleanName = createDto.customerName.trim();
-    const cleanNationalId = createDto.nationalId.trim();
     const cleanPhone = createDto.customerPhone.trim();
     const cleanEmail = createDto.customerEmail.trim();
 
     if (!cleanName) {
       throw new BadRequestException('Customer name is required');
-    }
-
-    if (!cleanNationalId) {
-      throw new BadRequestException('Customer ID or passport number is required');
     }
 
     if (!cleanPhone) {
@@ -388,7 +386,7 @@ export class PublicBookingsService {
         },
         data: {
           fullName: cleanName,
-          nationalId: cleanNationalId,
+          nationalId: null,
           email: cleanEmail,
         },
       });
@@ -400,7 +398,7 @@ export class PublicBookingsService {
         fullName: cleanName,
         phone: cleanPhone,
         email: cleanEmail,
-        nationalId: cleanNationalId,
+        nationalId: null,
         address: '',
       },
     });

@@ -23,9 +23,9 @@ export class CreatePublicBookingDto {
   @IsString()
   customerName: string;
 
-  
+  @IsOptional()
   @IsString()
-  nationalId: string;
+  nationalId?: string;
 
 @IsString()
   customerPhone: string;
@@ -130,6 +130,10 @@ export class CreatePublicBookingDto {
   @IsOptional()
   @IsString()
   luggageDetails?: string;
+
+  @IsOptional()
+  @IsString()
+  flightDetails?: string;
 
   @IsOptional()
   @IsString()

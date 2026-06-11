@@ -442,6 +442,7 @@ model Booking {
 
   passengers     Int
   luggageDetails String?
+  flightDetails  String?
   specialNotes   String?
 
   estimatedPrice Decimal?

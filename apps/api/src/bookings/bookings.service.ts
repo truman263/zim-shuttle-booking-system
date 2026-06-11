@@ -169,6 +169,7 @@ export class BookingsService {
           passengers: createBookingDto.passengers,
 
           luggageDetails: createBookingDto.luggageDetails?.trim(),
+          flightDetails: createBookingDto.flightDetails?.trim(),
           specialNotes: createBookingDto.specialNotes?.trim(),
 
           estimatedPrice: createBookingDto.estimatedPrice,
@@ -507,6 +508,10 @@ export class BookingsService {
             updateBookingDto.luggageDetails === undefined
               ? undefined
               : updateBookingDto.luggageDetails?.trim() || null,
+          flightDetails:
+            updateBookingDto.flightDetails === undefined
+              ? undefined
+              : updateBookingDto.flightDetails?.trim() || null,
           specialNotes:
             updateBookingDto.specialNotes === undefined
               ? undefined

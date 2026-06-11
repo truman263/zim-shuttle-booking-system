@@ -93,6 +93,10 @@ export class CreateBookingDto {
 
   @IsOptional()
   @IsString()
+  flightDetails?: string;
+
+  @IsOptional()
+  @IsString()
   specialNotes?: string;
 
   @IsOptional()

@@ -122,6 +122,7 @@ type BookingResponse = {
   bookingId: string;
   status: string;
   paymentStatus: string;
+  flightDetails?: string | null;
   estimatedPrice?: string | number | null;
   finalPrice?: string | number | null;
   depositAmount?: string | number | null;
@@ -164,6 +165,7 @@ type TrackedBooking = {
   returnPickupLocation?: string | null;
   returnDestination?: string | null;
   passengers: number;
+  flightDetails?: string | null;
   estimatedPrice?: string | number | null;
   finalPrice?: string | number | null;
   depositAmount?: string | number | null;
@@ -201,10 +203,10 @@ type BookingForm = {
 
   passengers: string;
   luggageDetails: string;
+  flightDetails: string;
   specialNotes: string;
 
   customerName: string;
-  customerIdNumber: string;
   customerPhone: string;
   customerEmail: string;
 };
@@ -225,10 +227,10 @@ const initialForm: BookingForm = {
 
   passengers: '1',
   luggageDetails: '',
+  flightDetails: '',
   specialNotes: '',
 
   customerName: '',
-  customerIdNumber: '',
   customerPhone: '',
   customerEmail: '',
 };
@@ -282,6 +284,27 @@ export default function PublicBookingExperience({
   const selectedRoute = routes.find((route) => route.id === form.routeId);
   const usesRoundTrip = form.tripDirection === 'ROUND_TRIP';
   const usesCustomRoute = form.routeMode === 'CUSTOM_ROUTE';
+  const isAirportPickup = useMemo(() => {
+    const routeText = [
+      selectedRoute?.routeType,
+      selectedRoute?.name,
+      selectedRoute?.pickupCity,
+      form.pickupLocation,
+    ]
+      .filter(Boolean)
+      .join(' ')
+      .toLowerCase();
+
+    return (
+      selectedRoute?.routeType === 'AIRPORT_TRANSFER' ||
+      routeText.includes('airport')
+    );
+  }, [
+    form.pickupLocation,
+    selectedRoute?.name,
+    selectedRoute?.pickupCity,
+    selectedRoute?.routeType,
+  ]);
 
   const activeRoutes = useMemo(() => {
     return routes.filter((route) => route.isActive && !route.isDeleted);
@@ -563,10 +586,6 @@ export default function PublicBookingExperience({
         return 'Please enter your full name.';
       }
 
-      if (!form.customerIdNumber.trim()) {
-        return 'Please enter your ID or passport number.';
-      }
-
       if (!form.customerPhone.trim()) {
         return 'Please enter your phone or WhatsApp number.';
       }
@@ -679,7 +698,6 @@ export default function PublicBookingExperience({
       const response = await apiPost<BookingResponse>('/public-bookings', {
         companyId: COMPANY_ID,
         customerName: form.customerName.trim(),
-        nationalId: form.customerIdNumber.trim(),
         customerPhone: form.customerPhone.trim(),
         customerEmail: form.customerEmail.trim(),
 
@@ -711,6 +729,7 @@ export default function PublicBookingExperience({
 
         passengers: Number(form.passengers),
         luggageDetails: form.luggageDetails.trim() || undefined,
+        flightDetails: form.flightDetails.trim() || undefined,
         specialNotes: form.specialNotes.trim() || undefined,
 
         roundTripDiscountPercentage: 0,
@@ -937,6 +956,7 @@ export default function PublicBookingExperience({
                 setTripDirection={setTripDirection}
                 usesRoundTrip={usesRoundTrip}
                 usesCustomRoute={usesCustomRoute}
+                isAirportPickup={isAirportPickup}
                 setRouteMode={setRouteMode}
               />
             ) : (
@@ -1405,6 +1425,7 @@ function BookingFormView({
   setTripDirection,
   usesRoundTrip,
   usesCustomRoute,
+  isAirportPickup,
   setRouteMode,
 }: {
   form: BookingForm;
@@ -1420,6 +1441,7 @@ function BookingFormView({
   setTripDirection: (direction: TripDirection) => void;
   usesRoundTrip: boolean;
   usesCustomRoute: boolean;
+  isAirportPickup: boolean;
   setRouteMode: (mode: RouteMode) => void;
 }) {
   const hasSavedRoutes = activeRoutes.length > 0;
@@ -1577,6 +1599,23 @@ function BookingFormView({
               className="input-glass"
             />
           </FormField>
+
+          {isAirportPickup && (
+            <FormField label="Flight Details">
+              <input
+                value={form.flightDetails}
+                onChange={(event) =>
+                  updateForm('flightDetails', event.target.value)
+                }
+                placeholder="Example: Emirates EK713 or Qatar Airways QR1455"
+                className="input-glass"
+              />
+              <p className="mt-2 text-xs leading-5 text-neutral-500">
+                For airport pickups, please provide your airline and flight
+                number so we can monitor your arrival.
+              </p>
+            </FormField>
+          )}
         </div>
 
         {usesRoundTrip && (
@@ -1637,7 +1676,7 @@ function BookingFormView({
           subtitle="We will use these details to confirm your booking."
         />
 
-        <div className="mt-3 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+        <div className="mt-3 grid gap-3 md:grid-cols-3">
           <FormField label="Full Name" required>
             <input
               value={form.customerName}
@@ -1645,17 +1684,6 @@ function BookingFormView({
                 updateForm('customerName', event.target.value)
               }
               placeholder="Enter your full name"
-              className="input-glass"
-            />
-          </FormField>
-
-          <FormField label="ID / Passport No." required>
-            <input
-              value={form.customerIdNumber}
-              onChange={(event) =>
-                updateForm('customerIdNumber', event.target.value)
-              }
-              placeholder="ID or passport number"
               className="input-glass"
             />
           </FormField>
@@ -2012,7 +2040,10 @@ function SummaryPanel({
               trackedBooking.tripDirection === 'ROUND_TRIP'
                 ? `Return: ${formatDate(trackedBooking.returnDate)}`
                 : `Drop-off: ${formatDate(trackedBooking.dropoffDate)}`,
-            ]}
+              trackedBooking.flightDetails
+                ? `Flight Details: ${trackedBooking.flightDetails}`
+                : '',
+            ].filter(Boolean)}
           />
 
           <InfoBlock

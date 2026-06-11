@@ -91,6 +91,10 @@ export class UpdateBookingDto {
 
   @IsOptional()
   @IsString()
+  flightDetails?: string | null;
+
+  @IsOptional()
+  @IsString()
   specialNotes?: string | null;
 
   @IsOptional()
