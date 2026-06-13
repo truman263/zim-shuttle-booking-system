@@ -1,6 +1,7 @@
 'use client';
 
 import { FormEvent, useEffect, useMemo, useRef, useState } from 'react';
+import Link from 'next/link';
 import { apiGet, apiPost } from '@/lib/api';
 import { LocationAutocompleteInput } from './LocationAutocompleteInput';
 
@@ -1745,6 +1746,19 @@ function BookingFormView({
           {submitting ? 'Submitting...' : 'Submit Booking'}
         </button>
       </div>
+
+      <p className="max-w-3xl text-xs font-light leading-6 text-neutral-400">
+        By submitting this booking request, you agree that LadyBird Shuttle
+        Services may use your details to process and manage your booking. Read
+        our{' '}
+        <Link
+          href="/privacy-policy"
+          className="font-medium text-white underline decoration-white/30 underline-offset-4 transition hover:decoration-white"
+        >
+          Privacy Policy
+        </Link>
+        .
+      </p>
     </form>
   );
 }

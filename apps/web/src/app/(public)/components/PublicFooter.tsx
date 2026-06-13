@@ -24,6 +24,7 @@ export function PublicFooter() {
   const bookingLinks = [
     { label: "Book Now", href: "/booking" },
     { label: "Track Booking", href: "/booking/track" },
+    { label: "Privacy Policy", href: "/privacy-policy" },
   ];
 
   return (
